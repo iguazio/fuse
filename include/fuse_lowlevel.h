@@ -24,6 +24,7 @@
 #endif
 
 #include "fuse_common.h"
+#include "dptr_list.h"
 
 #include <utime.h>
 #include <fcntl.h>
@@ -1683,6 +1684,9 @@ int fuse_session_exited(struct fuse_session *se);
  * @return 0 on success, -1 on error
  */
 int fuse_session_loop(struct fuse_session *se);
+
+int fuse_session_loop_async(struct fuse_session *se, int fd, struct dlist_head *ready_responces);
+
 
 /**
  * Enter a multi-threaded event loop

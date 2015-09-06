@@ -458,7 +458,7 @@ int main(int argc, char *argv[])
 	struct fuse_chan *ch;
 	char *mountpoint;
 	int ret = -1;
-	struct lo_data lo = { .debug = 0 };
+	struct lo_data lo = { .debug = 1 };
 
 	if (fuse_opt_parse(&args, &lo, lo_opts, NULL) == -1)
 		exit(1);

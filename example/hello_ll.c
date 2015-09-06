@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
 				fuse_session_add_chan(se, ch);
 
 				/* Block until ctrl+c or fusermount -u */
-				err = fuse_session_loop(se);
+				err = fuse_session_loop_async(se,0,0);
 
 				fuse_remove_signal_handlers(se);
 				fuse_session_remove_chan(ch);

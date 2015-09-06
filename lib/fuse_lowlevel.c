@@ -173,6 +173,7 @@ static int fuse_chan_recv(struct fuse_session *se, struct fuse_buf *buf,
 	}
 
 restart:
+
 	res = read(fuse_chan_fd(ch), buf->mem, f->bufsize);
 	err = errno;
 

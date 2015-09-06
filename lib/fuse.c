@@ -36,6 +36,7 @@
 #include <sys/time.h>
 #include <sys/mman.h>
 #include <sys/file.h>
+#include "ig_async_responce.h"
 
 #define FUSE_NODE_SLAB 1
 
@@ -2637,17 +2638,35 @@ static void fuse_lib_forget_multi(fuse_req_t req, size_t count,
 
 	fuse_reply_none(req);
 }
+//////////////////////////////////////////////////////////////////////////
+struct ig_async_responce ig_async_responces;
+
+static void fuse_lib_getattr_respond( struct fuse * f, fuse_ino_t ino, struct stat *buf, fuse_req_t req ) 
+{
+    struct node *node;
+
+    pthread_mutex_lock(&f->lock);
+    node = get_node(f, ino);
+    if (node->is_hidden && buf->st_nlink > 0)
+      buf->st_nlink--;
+    if (f->conf.auto_cache)
+      update_stat(node, buf);
+    pthread_mutex_unlock(&f->lock);
+    set_stat(f, ino, buf);
+    fuse_reply_attr(req, buf, f->conf.attr_timeout);
+}
+
 
 
 static void fuse_lib_getattr(fuse_req_t req, fuse_ino_t ino,
 			     struct fuse_file_info *fi)
 {
 	struct fuse *f = req_fuse_prepare(req);
-	struct stat buf;
+	struct stat *buf = (struct stat *)malloc(sizeof(struct stat));
 	char *path;
 	int err;
 
-	memset(&buf, 0, sizeof(buf));
+	memset(buf, 0, sizeof(*buf));
 
 	if (fi != NULL && f->fs->op.fgetattr)
 		err = get_path_nullok(f, ino, &path);
@@ -2657,26 +2676,27 @@ static void fuse_lib_getattr(fuse_req_t req, fuse_ino_t ino,
 		struct fuse_intr_data d;
 		fuse_prepare_interrupt(f, req, &d);
 		if (fi)
-			err = fuse_fs_fgetattr(f->fs, path, &buf, fi);
+			err = fuse_fs_fgetattr(f->fs, path, buf, fi);
 		else
-			err = fuse_fs_getattr(f->fs, path, &buf);
+			err = fuse_fs_getattr(f->fs, path, buf);
 		fuse_finish_interrupt(f, req, &d);
 		free_path(f, ino, path);
 	}
-	if (!err) {
-		struct node *node;
-
-		pthread_mutex_lock(&f->lock);
-		node = get_node(f, ino);
-		if (node->is_hidden && buf.st_nlink > 0)
-			buf.st_nlink--;
-		if (f->conf.auto_cache)
-			update_stat(node, &buf);
-		pthread_mutex_unlock(&f->lock);
-		set_stat(f, ino, &buf);
-		fuse_reply_attr(req, &buf, f->conf.attr_timeout);
-	} else
+/*
+    if (err == 0x123456){
+        ig_async_responces.data.getattr_resp = buf;
+        ig_async_responces.req = req;
+        ig_async_responces.return_code = 0;
+        ig_async_responces.ino = ino;
+        ig_async_responces.release = NULL; 
+        return; 
+    }
+*/
+	if (!err)
+        fuse_lib_getattr_respond(f, ino, buf, req);
+	else 
 		reply_err(req, err);
+    free(buf);
 }
 
 int fuse_fs_chmod(struct fuse_fs *fs, const char *path, mode_t mode)
