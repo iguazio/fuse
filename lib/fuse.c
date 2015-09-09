@@ -36,7 +36,7 @@
 #include <sys/time.h>
 #include <sys/mman.h>
 #include <sys/file.h>
-#include "ig_async_responce.h"
+#include "fuse_async_responce.h"
 
 #define FUSE_NODE_SLAB 1
 
@@ -2638,9 +2638,8 @@ static void fuse_lib_forget_multi(fuse_req_t req, size_t count,
 
 	fuse_reply_none(req);
 }
-//////////////////////////////////////////////////////////////////////////
-struct ig_async_responce ig_async_responces;
 
+//////////////////////////////////////////////////////////////////////////
 static void fuse_lib_getattr_respond( struct fuse * f, fuse_ino_t ino, struct stat *buf, fuse_req_t req ) 
 {
     struct node *node;
@@ -2683,7 +2682,7 @@ static void fuse_lib_getattr(fuse_req_t req, fuse_ino_t ino,
 	}
 
 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_lib_add_pending(f, req, ino, FUSE_GETATTR);
+		fuse_async_add_pending(NULL,f, req, ino, FUSE_GETATTR);
         return; 
     }
 
@@ -2808,7 +2807,7 @@ static void fuse_lib_access(fuse_req_t req, fuse_ino_t ino, int mask)
 	}
 
 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_lib_add_pending(f, req, ino, FUSE_ACCESS);
+		fuse_async_add_pending(NULL,f, req, ino, FUSE_ACCESS);
         return;
     }
 	reply_err(req, err);
@@ -2830,7 +2829,7 @@ static void fuse_lib_readlink(fuse_req_t req, fuse_ino_t ino)
 		free_path(f, ino, path);
 	}
 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_lib_add_pending(f, req, ino, FUSE_READLINK);
+		fuse_async_add_pending(NULL,f, req, ino, FUSE_READLINK);
         return;
     }
 	if (!err) {
@@ -2899,7 +2898,7 @@ static void fuse_lib_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name,
 		free_path(f, parent, path);
 	}
 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_lib_add_pending(f, req, 0, FUSE_MKDIR);
+		fuse_async_add_pending(NULL,f, req, 0, FUSE_MKDIR);
         return;
     }
 
@@ -2930,7 +2929,7 @@ static void fuse_lib_unlink(fuse_req_t req, fuse_ino_t parent,
 		free_path_wrlock(f, parent, wnode, path);
 	}
 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_lib_add_pending(f, req, 0, FUSE_UNLINK);
+		fuse_async_add_pending(NULL,f, req, 0, FUSE_UNLINK);
         return;
     }
 	reply_err(req, err);
@@ -2955,7 +2954,7 @@ static void fuse_lib_rmdir(fuse_req_t req, fuse_ino_t parent, const char *name)
 		free_path_wrlock(f, parent, wnode, path);
 	}
 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_lib_add_pending(f, req, 0, FUSE_RMDIR);
+		fuse_async_add_pending(NULL,f, req, 0, FUSE_RMDIR);
         return;
     }
 	reply_err(req, err);
@@ -2981,7 +2980,7 @@ static void fuse_lib_symlink(fuse_req_t req, const char *linkname,
 		free_path(f, parent, path);
 	}
 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_lib_add_pending(f, req, 0, FUSE_SYMLINK);
+		fuse_async_add_pending(NULL,f, req, 0, FUSE_SYMLINK);
         return;
     }
 	reply_entry(req, &e, err);
@@ -3023,7 +3022,7 @@ static void fuse_lib_rename(fuse_req_t req, fuse_ino_t olddir,
 		free_path2(f, olddir, newdir, wnode1, wnode2, oldpath, newpath);
 	}
 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_lib_add_pending(f, req, 0, FUSE_SYMLINK);
+		fuse_async_add_pending(NULL,f, req, 0, FUSE_SYMLINK);
         return;
     }
 	reply_err(req, err);
@@ -3052,7 +3051,7 @@ static void fuse_lib_link(fuse_req_t req, fuse_ino_t ino, fuse_ino_t newparent,
 		free_path2(f, ino, newparent, NULL, NULL, oldpath, newpath);
 	}
 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_lib_add_pending(f, req, ino, FUSE_LINK);
+		fuse_async_add_pending(NULL,f, req, ino, FUSE_LINK);
         return;
     }
 	reply_entry(req, &e, err);
@@ -3105,7 +3104,7 @@ static void fuse_lib_create(fuse_req_t req, fuse_ino_t parent,
 		fuse_prepare_interrupt(f, req, &d);
 		err = fuse_fs_create(f->fs, path, mode, fi);
 		if (err == FUSE_LIB_ERROR_PENDING_REQ){
-			fuse_lib_add_pending(f, req, 0, FUSE_CREATE);
+			fuse_async_add_pending(NULL,f, req, 0, FUSE_CREATE);
 			fuse_finish_interrupt(f, req, &d);
 	        return;
 	    }
@@ -3198,7 +3197,7 @@ static void fuse_lib_open(fuse_req_t req, fuse_ino_t ino,
 		fuse_prepare_interrupt(f, req, &d);
 		err = fuse_fs_open(f->fs, path, fi);
 		if (err == FUSE_LIB_ERROR_PENDING_REQ){
-			fuse_lib_add_pending(f, req, ino, FUSE_OPEN);
+			fuse_async_add_pending(NULL,f, req, ino, FUSE_OPEN);
 			fuse_finish_interrupt(f, req, &d);
 	        return;
 	    }
@@ -3248,7 +3247,7 @@ static void fuse_lib_read(fuse_req_t req, fuse_ino_t ino, size_t size,
 	}
 
 	if (res == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_lib_add_pending(f, req, ino, FUSE_READ);
+		fuse_async_add_pending(NULL,f, req, ino, FUSE_READ);
 		fuse_free_buf(buf);
         return;
     }
@@ -3279,7 +3278,7 @@ static void fuse_lib_write_buf(fuse_req_t req, fuse_ino_t ino,
 		free_path(f, ino, path);
 	}
 	if (res == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_lib_add_pending(f, req, ino, FUSE_WRITE);
+		fuse_async_add_pending(NULL,f, req, ino, FUSE_WRITE);
         return;
     }
 
@@ -3306,7 +3305,7 @@ static void fuse_lib_fsync(fuse_req_t req, fuse_ino_t ino, int datasync,
 		free_path(f, ino, path);
 	}
 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_lib_add_pending(f, req, ino, FUSE_FSYNC);
+		fuse_async_add_pending(NULL,f, req, ino, FUSE_FSYNC);
         return;
     }
 	reply_err(req, err);
@@ -3358,7 +3357,7 @@ static void fuse_lib_opendir(fuse_req_t req, fuse_ino_t ino,
 		dh->fh = fi.fh;
 	}
 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_lib_add_pending(f, req, ino, FUSE_READDIR);
+		fuse_async_add_pending(NULL,f, req, ino, FUSE_READDIR);
 		pthread_mutex_destroy(&dh->lock);
 		free_path(f, ino, path);
         return;
@@ -3612,7 +3611,13 @@ static int readdir_fill(struct fuse *f, fuse_req_t req, fuse_ino_t ino,
 		fuse_prepare_interrupt(f, req, &d);
 		err = fuse_fs_readdir(f->fs, path, dh, filler, off, fi, flags);
 		fuse_finish_interrupt(f, req, &d);
-		dh->req = NULL;
+        if (err == FUSE_LIB_ERROR_PENDING_REQ){
+            fuse_async_add_pending(dh, f, req, ino, 
+                (flags & FUSE_READDIR_PLUS)?FUSE_READDIRPLUS:FUSE_READDIR);
+            free_path(f, ino, path);
+            return FUSE_LIB_ERROR_PENDING_REQ; 
+        }
+        dh->req = NULL;
 		if (!err)
 			err = dh->error;
 		if (err)
@@ -3683,6 +3688,9 @@ static void fuse_readdir_common(fuse_req_t req, fuse_ino_t ino, size_t size,
 
 	if (!dh->filled) {
 		err = readdir_fill(f, req, ino, size, off, dh, &fi, flags);
+        if (err == FUSE_LIB_ERROR_PENDING_REQ)
+            goto out;
+
 		if (err) {
 			reply_err(req, err);
 			goto out;
@@ -3700,14 +3708,33 @@ static void fuse_readdir_common(fuse_req_t req, fuse_ino_t ino, size_t size,
 out:
 	pthread_mutex_unlock(&dh->lock);
 }
-/*FixMe: messy one*/
+
+
+static void fuse_lib_readdir_respond( struct fuse * f, fuse_ino_t ino, struct fuse_dh *dh, fuse_req_t req ,enum fuse_readdir_flags flags) 
+{
+    
+    dh->req = NULL;
+    if (dh->error)
+        dh->filled = 0;
+    //FixMe: passed as parameter from the driver
+    int size = 4096;
+	pthread_mutex_lock(&dh->lock);
+    dh->filled = 1;
+	dh->needlen = size;
+    int err = readdir_fill_from_list(req, dh, 0, flags);
+    if (err)
+        reply_err(req, err);
+    else
+	    fuse_reply_buf(req, dh->contents, dh->len);
+	pthread_mutex_unlock(&dh->lock);
+}
+
 static void fuse_lib_readdir(fuse_req_t req, fuse_ino_t ino, size_t size,
 			     off_t off, struct fuse_file_info *llfi)
 {
 	fuse_readdir_common(req, ino, size, off, llfi, 0);
 }
 
-/*FixMe: messy one*/
 static void fuse_lib_readdirplus(fuse_req_t req, fuse_ino_t ino, size_t size,
 				  off_t off, struct fuse_file_info *llfi)
 {
@@ -3737,7 +3764,7 @@ static void fuse_lib_releasedir(fuse_req_t req, fuse_ino_t ino,
 	free(dh->contents);
 	free(dh);
 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_lib_add_pending(f, req, ino, FUSE_RELEASEDIR);
+		fuse_async_add_pending(NULL,f, req, ino, FUSE_RELEASEDIR);
         return;
     }
 	reply_err(req, 0);
@@ -3762,7 +3789,7 @@ static void fuse_lib_fsyncdir(fuse_req_t req, fuse_ino_t ino, int datasync,
 		free_path(f, ino, path);
 	}
 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_lib_add_pending(f, req, ino, FUSE_FSYNCDIR);
+		fuse_async_add_pending(NULL,f, req, ino, FUSE_FSYNCDIR);
         return;
     }
 	reply_err(req, err);
@@ -3788,7 +3815,7 @@ static void fuse_lib_statfs(fuse_req_t req, fuse_ino_t ino)
 	}
 
 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_lib_add_pending(f, req, ino, FUSE_STATFS);
+		fuse_async_add_pending(NULL,f, req, ino, FUSE_STATFS);
         return;
     }
 	if (!err)
@@ -3813,7 +3840,7 @@ static void fuse_lib_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name,
 		free_path(f, ino, path);
 	}
 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_lib_add_pending(f, req, ino, FUSE_SETXATTR);
+		fuse_async_add_pending(NULL,f, req, ino, FUSE_SETXATTR);
         return;
     }
 
@@ -3853,7 +3880,7 @@ static void fuse_lib_getxattr(fuse_req_t req, fuse_ino_t ino, const char *name,
 
 	res = common_getxattr(f, req, ino, name, value, size);
 	if (res == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_lib_add_pending(f, req, ino, FUSE_GETXATTR);
+		fuse_async_add_pending(NULL,f, req, ino, FUSE_GETXATTR);
 		if (value)
 			free(value);
         return;
@@ -3901,7 +3928,7 @@ static void fuse_lib_listxattr(fuse_req_t req, fuse_ino_t ino, size_t size)
 	}
 	res = common_listxattr(f, req, ino, list, size);
 	if (res == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_lib_add_pending(f, req, ino, FUSE_LISTXATTR);
+		fuse_async_add_pending(NULL,f, req, ino, FUSE_LISTXATTR);
 		if (list)
 			free(list);
         return;
@@ -3935,7 +3962,7 @@ static void fuse_lib_removexattr(fuse_req_t req, fuse_ino_t ino,
 		free_path(f, ino, path);
 	}
 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_lib_add_pending(f, req, ino, FUSE_REMOVEXATTR);
+		fuse_async_add_pending(NULL,f, req, ino, FUSE_REMOVEXATTR);
         return;
     }
 	reply_err(req, err);
@@ -4114,7 +4141,7 @@ static void fuse_lib_release(fuse_req_t req, fuse_ino_t ino,
 	free_path(f, ino, path);
 
 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_lib_add_pending(f, req, ino, FUSE_RELEASE);
+		fuse_async_add_pending(NULL,f, req, ino, FUSE_RELEASE);
         return;
     }
 	reply_err(req, err);
@@ -4237,7 +4264,7 @@ static void fuse_lib_bmap(fuse_req_t req, fuse_ino_t ino, size_t blocksize,
 		free_path(f, ino, path);
 	}
 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_lib_add_pending(f, req, ino, FUSE_BMAP);
+		fuse_async_add_pending(NULL,f, req, ino, FUSE_BMAP);
         return;
     }
 	if (!err)
@@ -4289,7 +4316,7 @@ static void fuse_lib_ioctl(fuse_req_t req, fuse_ino_t ino, int cmd, void *arg,
 	fuse_finish_interrupt(f, req, &d);
 	free_path(f, ino, path);
 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_lib_add_pending(f, req, ino, FUSE_IOCTL);
+		fuse_async_add_pending(NULL,f, req, ino, FUSE_IOCTL);
 		free(out_buf);
         return;
     }
@@ -4319,7 +4346,7 @@ static void fuse_lib_poll(fuse_req_t req, fuse_ino_t ino,
 		free_path(f, ino, path);
 	}
 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_lib_add_pending(f, req, ino, FUSE_POLL);
+		fuse_async_add_pending(NULL,f, req, ino, FUSE_POLL);
         return;
     }
 	if (!err)
@@ -4344,7 +4371,7 @@ static void fuse_lib_fallocate(fuse_req_t req, fuse_ino_t ino, int mode,
 		free_path(f, ino, path);
 	}
 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_lib_add_pending(f, req, ino, FUSE_FALLOCATE);
+		fuse_async_add_pending(NULL,f, req, ino, FUSE_FALLOCATE);
         return;
     }
 	reply_err(req, err);
@@ -4520,6 +4547,17 @@ int fuse_loop(struct fuse *f)
 		return fuse_session_loop_remember(f);
 
 	return fuse_session_loop(f->se);
+}
+
+int fuse_loop_async(struct fuse *f, int fd, fuse_async_get_msg_t callback_on_new_msg, void* callback_payload)
+{
+    if (!f)
+        return -1;
+
+    if (lru_enabled(f))
+        return fuse_session_loop_remember(f);
+
+    return fuse_session_loop_async(f->se, fd, callback_on_new_msg, callback_payload);
 }
 
 void fuse_exit(struct fuse *f)
@@ -4978,8 +5016,9 @@ void fuse_destroy(struct fuse *f)
 	fuse_delete_context_key();
 }
 
-void *fuse_async_responce_alloc(void *user_data){
-	struct ig_async_responce *res = malloc(sizeof(struct ig_async_responce));
+struct fuse_async_responce * fuse_async_responce_alloc(void *user_data)
+{
+	struct fuse_async_responce *res = malloc(sizeof(struct fuse_async_responce));
 	if (res){
 		memset(res,0,sizeof(*res));
 		res->cmd_req = user_data;
@@ -4987,3 +5026,32 @@ void *fuse_async_responce_alloc(void *user_data){
 	fuse_get_context()->async_request = res;
 	return res;
 }
+
+void fuse_async_session_process_responce( struct fuse_session * se, struct fuse_async_responce * responce, union fuse_async_responce_data* resp_data ) 
+{
+    se = NULL;
+    switch(responce->opcode){
+        case FUSE_GETATTR:
+            fuse_lib_getattr_respond( responce->f, responce->ino, &resp_data->getattr, responce->req);
+            break;
+        case FUSE_READDIR:
+            fuse_lib_readdir_respond(responce->f, responce->ino, responce->dh, responce->req,0);
+            break;
+        case FUSE_READDIRPLUS:
+            fuse_lib_readdir_respond(responce->f, responce->ino, responce->dh, responce->req,FUSE_READDIR_PLUS);
+            break;
+        default:
+            break;
+    }
+}
+
+void fuse_async_add_pending(struct fuse_dh *dh, struct fuse* f, fuse_req_t req, fuse_ino_t ino,
+                            enum fuse_opcode opcode){
+    struct fuse_async_responce* resp = (struct fuse_async_responce* )fuse_get_context()->async_request;
+    resp->f = f;
+    resp->req = req;
+    resp->ino = ino;
+    resp->opcode = opcode;
+    resp->dh = dh;
+}
+

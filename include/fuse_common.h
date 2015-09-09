@@ -17,6 +17,8 @@
 #include "fuse_opt.h"
 #include <stdint.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <limits.h>
 
 /** Major version of FUSE library interface */
 #define FUSE_MAJOR_VERSION 3
@@ -522,5 +524,14 @@ _Static_assert(sizeof(off_t) == 8, "fuse: off_t must be 64bit");
 struct _fuse_off_t_must_be_64bit_dummy_struct \
 	{ unsigned _fuse_off_t_must_be_64bit:((sizeof(off_t) == 8) ? 1 : -1); };
 #endif
+
+
+union fuse_async_responce_data{
+    struct stat getattr;
+    char readlink[PATH_MAX];
+    char create[PATH_MAX];
+};
+typedef struct fuse_async_responce *(*fuse_async_get_msg_t)(void* payload,union fuse_async_responce_data* data);
+
 
 #endif /* _FUSE_COMMON_H_ */

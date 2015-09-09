@@ -8,6 +8,8 @@
 
 #include "config.h"
 #include "fuse_lowlevel.h"
+#include "fuse_async_responce.h"
+#include "fuse.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,7 +17,10 @@
 #include <stropts.h>
 #include <poll.h>
 
-int fuse_session_loop_async( struct fuse_session *se, int fd, struct dlist_head *ready_responces )
+
+
+
+int fuse_session_loop_async( struct fuse_session *se, int fd, fuse_async_get_msg_t callback_on_new_msg, void* callback_payload)
 {
     int res = 0;
     struct fuse_chan *ch = fuse_session_chan(se);
@@ -45,11 +50,15 @@ int fuse_session_loop_async( struct fuse_session *se, int fd, struct dlist_head 
                     break;
                 fuse_session_process_buf(se, &fbuf, ch);
             }
-            
             if (fds[1].revents & POLLIN){
-
+                union fuse_async_responce_data resp_data;
+                struct fuse_async_responce *responce = callback_on_new_msg(callback_payload, &resp_data);
+                while(NULL != responce){
+                    fuse_async_session_process_responce(se, responce, &resp_data);
+                    break;
+                    //responce = callback_on_new_msg(callback_payload, &resp_data);
+                }
             }
-
         }
     }
 

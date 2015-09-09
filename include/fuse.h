@@ -19,6 +19,7 @@
 #include "fuse_common.h"
 
 #include <fcntl.h>
+#include <limits.h>
 #include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -604,6 +605,8 @@ struct fuse_context {
 	mode_t umask;
 };
 
+
+
 /**
  * Main function of FUSE.
  *
@@ -678,6 +681,8 @@ void fuse_destroy(struct fuse *f);
  * See also: fuse_loop()
  */
 int fuse_loop(struct fuse *f);
+
+int fuse_loop_async(struct fuse *f, int fd, fuse_async_get_msg_t callback_on_new_msg, void* callback_payload);
 
 /**
  * Exit from event loop
@@ -761,6 +766,11 @@ int fuse_interrupted(void);
  */
 int fuse_main_real(int argc, char *argv[], const struct fuse_operations *op,
 		   size_t op_size, void *user_data);
+
+
+int fuse_main_real_async(int argc, char *argv[], const struct fuse_operations *op,
+                         size_t op_size, void *user_data,int fd, fuse_async_get_msg_t callback_on_new_msg, void* callback_payload);
+
 
 /**
  * Start the cleanup thread when using option "remember".
@@ -939,10 +949,12 @@ struct fuse_session *fuse_get_session(struct fuse *f);
 }
 #endif
 
-
-void *fuse_async_responce_alloc();
-void fuse_async_responce_set_req(void* req);
-
+struct fuse_async_responce;
 #define FUSE_LIB_ERROR_PENDING_REQ 0x12345678
+
+
+
+struct fuse_async_responce *fuse_async_responce_alloc(void* req);
+void fuse_async_session_process_responce( struct fuse_session * se, struct fuse_async_responce * responce, union fuse_async_responce_data* resp_data );
 
 #endif /* _FUSE_H_ */
