@@ -18,6 +18,7 @@ iconv_source =
 endif
 
 libfuse3_la_SOURCES = 		\
+	fuse_fsm.c			\
 	fuse.c			\
 	fuse_i.h		\
 	fuse_loop.c		\

@@ -51,10 +51,9 @@ int fuse_session_loop_async( struct fuse_session *se, int fd, fuse_async_get_msg
                 fuse_session_process_buf(se, &fbuf, ch);
             }
             if (fds[1].revents & POLLIN){
-                union fuse_async_responce_data resp_data;
-                struct fuse_async_responce *responce = callback_on_new_msg(callback_payload, &resp_data);
+                struct fuse_async_responce *responce = callback_on_new_msg(callback_payload);
                 while(NULL != responce){
-                    fuse_async_session_process_responce(se, responce, &resp_data);
+                    fuse_async_session_process_responce(responce);
                     break;
                     //responce = callback_on_new_msg(callback_payload, &resp_data);
                 }

@@ -37,6 +37,7 @@
 #include <sys/mman.h>
 #include <sys/file.h>
 #include "fuse_async_responce.h"
+#include "fuse_fsm.h"
 
 #define FUSE_NODE_SLAB 1
 
@@ -876,13 +877,11 @@ static void inc_nlookup(struct node *node)
 		node->refctr++;
 	node->nlookup++;
 }
-
 static struct node *find_node(struct fuse *f, fuse_ino_t parent,
 			      const char *name)
 {
 	struct node *node;
 
-	pthread_mutex_lock(&f->lock);
 	if (!name)
 		node = get_node(f, parent);
 	else
@@ -2383,6 +2382,7 @@ static int do_lookup(struct fuse *f, fuse_ino_t nodeid, const char *name,
 {
 	struct node *node;
 
+	pthread_mutex_lock(&f->lock);
 	node = find_node(f, nodeid, name);
 	if (node == NULL)
 		return -ENOMEM;
@@ -2555,7 +2555,9 @@ static void fuse_lib_destroy(void *data)
 	fuse_fs_destroy(f->fs);
 	f->fs = NULL;
 }
-
+#if 0
+#include "fuse_lib_lookup.h"
+#else
 static void fuse_lib_lookup(fuse_req_t req, fuse_ino_t parent,
 			    const char *name)
 {
@@ -2597,6 +2599,7 @@ static void fuse_lib_lookup(fuse_req_t req, fuse_ino_t parent,
 			fprintf(stderr, "LOOKUP %s\n", path);
 		fuse_prepare_interrupt(f, req, &d);
 		err = lookup_path(f, parent, name, path, &e, NULL);
+
 		if (err == -ENOENT && f->conf.negative_timeout != 0.0) {
 			e.ino = 0;
 			e.entry_timeout = f->conf.negative_timeout;
@@ -2612,6 +2615,7 @@ static void fuse_lib_lookup(fuse_req_t req, fuse_ino_t parent,
 	}
 	reply_entry(req, &e, err);
 }
+#endif
 
 static void do_forget(struct fuse *f, fuse_ino_t ino, uint64_t nlookup)
 {
@@ -2639,6 +2643,9 @@ static void fuse_lib_forget_multi(fuse_req_t req, size_t count,
 	fuse_reply_none(req);
 }
 
+#if 1
+#include "fuse_lib_getattr.h"
+#else
 //////////////////////////////////////////////////////////////////////////
 static void fuse_lib_getattr_respond( struct fuse * f, fuse_ino_t ino, struct stat *buf, fuse_req_t req ) 
 {
@@ -2691,6 +2698,7 @@ static void fuse_lib_getattr(fuse_req_t req, fuse_ino_t ino,
 	else 
 		reply_err(req, err);
 }
+#endif
 
 int fuse_fs_chmod(struct fuse_fs *fs, const char *path, mode_t mode)
 {
@@ -2806,10 +2814,10 @@ static void fuse_lib_access(fuse_req_t req, fuse_ino_t ino, int mask)
 		free_path(f, ino, path);
 	}
 
-	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_async_add_pending(NULL,f, req, ino, FUSE_ACCESS);
-        return;
-    }
+// 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
+// 		fuse_async_add_pending(NULL,f, req, ino, FUSE_ACCESS);
+//         return;
+//     }
 	reply_err(req, err);
 }
 
@@ -2828,10 +2836,10 @@ static void fuse_lib_readlink(fuse_req_t req, fuse_ino_t ino)
 		fuse_finish_interrupt(f, req, &d);
 		free_path(f, ino, path);
 	}
-	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_async_add_pending(NULL,f, req, ino, FUSE_READLINK);
-        return;
-    }
+// 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
+// 		fuse_async_add_pending(NULL,f, req, ino, FUSE_READLINK);
+//         return;
+//     }
 	if (!err) {
 		linkname[PATH_MAX] = '\0';
 		fuse_reply_readlink(req, linkname);
@@ -2897,10 +2905,10 @@ static void fuse_lib_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name,
 		fuse_finish_interrupt(f, req, &d);
 		free_path(f, parent, path);
 	}
-	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_async_add_pending(NULL,f, req, 0, FUSE_MKDIR);
-        return;
-    }
+// 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
+// 		fuse_async_add_pending(NULL,f, req, 0, FUSE_MKDIR);
+//         return;
+//     }
 
 	reply_entry(req, &e, err);
 }
@@ -2928,10 +2936,10 @@ static void fuse_lib_unlink(fuse_req_t req, fuse_ino_t parent,
 		fuse_finish_interrupt(f, req, &d);
 		free_path_wrlock(f, parent, wnode, path);
 	}
-	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_async_add_pending(NULL,f, req, 0, FUSE_UNLINK);
-        return;
-    }
+// 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
+// 		fuse_async_add_pending(NULL,f, req, 0, FUSE_UNLINK);
+//         return;
+//     }
 	reply_err(req, err);
 }
 
@@ -2953,10 +2961,10 @@ static void fuse_lib_rmdir(fuse_req_t req, fuse_ino_t parent, const char *name)
 			remove_node(f, parent, name);
 		free_path_wrlock(f, parent, wnode, path);
 	}
-	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_async_add_pending(NULL,f, req, 0, FUSE_RMDIR);
-        return;
-    }
+// 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
+// 		fuse_async_add_pending(NULL,f, req, 0, FUSE_RMDIR);
+//         return;
+//     }
 	reply_err(req, err);
 }
 
@@ -2979,10 +2987,10 @@ static void fuse_lib_symlink(fuse_req_t req, const char *linkname,
 		fuse_finish_interrupt(f, req, &d);
 		free_path(f, parent, path);
 	}
-	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_async_add_pending(NULL,f, req, 0, FUSE_SYMLINK);
-        return;
-    }
+// 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
+// 		fuse_async_add_pending(NULL,f, req, 0, FUSE_SYMLINK);
+//         return;
+//     }
 	reply_entry(req, &e, err);
 }
 
@@ -3021,10 +3029,10 @@ static void fuse_lib_rename(fuse_req_t req, fuse_ino_t olddir,
 		fuse_finish_interrupt(f, req, &d);
 		free_path2(f, olddir, newdir, wnode1, wnode2, oldpath, newpath);
 	}
-	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_async_add_pending(NULL,f, req, 0, FUSE_SYMLINK);
-        return;
-    }
+// 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
+// 		fuse_async_add_pending(NULL,f, req, 0, FUSE_SYMLINK);
+//         return;
+//     }
 	reply_err(req, err);
 }
 
@@ -3050,10 +3058,10 @@ static void fuse_lib_link(fuse_req_t req, fuse_ino_t ino, fuse_ino_t newparent,
 		fuse_finish_interrupt(f, req, &d);
 		free_path2(f, ino, newparent, NULL, NULL, oldpath, newpath);
 	}
-	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_async_add_pending(NULL,f, req, ino, FUSE_LINK);
-        return;
-    }
+// 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
+// 		fuse_async_add_pending(NULL,f, req, ino, FUSE_LINK);
+//         return;
+//     }
 	reply_entry(req, &e, err);
 }
 
@@ -3103,11 +3111,11 @@ static void fuse_lib_create(fuse_req_t req, fuse_ino_t parent,
 	if (!err) {
 		fuse_prepare_interrupt(f, req, &d);
 		err = fuse_fs_create(f->fs, path, mode, fi);
-		if (err == FUSE_LIB_ERROR_PENDING_REQ){
-			fuse_async_add_pending(NULL,f, req, 0, FUSE_CREATE);
-			fuse_finish_interrupt(f, req, &d);
-	        return;
-	    }
+// 		if (err == FUSE_LIB_ERROR_PENDING_REQ){
+// 			fuse_async_add_pending(NULL,f, req, 0, FUSE_CREATE);
+// 			fuse_finish_interrupt(f, req, &d);
+// 	        return;
+// 	    }
 
 		if (!err) {
 			err = lookup_path(f, parent, name, path, &e, fi);
@@ -3196,11 +3204,11 @@ static void fuse_lib_open(fuse_req_t req, fuse_ino_t ino,
 	if (!err) {
 		fuse_prepare_interrupt(f, req, &d);
 		err = fuse_fs_open(f->fs, path, fi);
-		if (err == FUSE_LIB_ERROR_PENDING_REQ){
-			fuse_async_add_pending(NULL,f, req, ino, FUSE_OPEN);
-			fuse_finish_interrupt(f, req, &d);
-	        return;
-	    }
+// 		if (err == FUSE_LIB_ERROR_PENDING_REQ){
+// 			fuse_async_add_pending(NULL,f, req, ino, FUSE_OPEN);
+// 			fuse_finish_interrupt(f, req, &d);
+// 	        return;
+// 	    }
 		if (!err) {
 			if (f->conf.direct_io)
 				fi->direct_io = 1;
@@ -3246,11 +3254,11 @@ static void fuse_lib_read(fuse_req_t req, fuse_ino_t ino, size_t size,
 		free_path(f, ino, path);
 	}
 
-	if (res == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_async_add_pending(NULL,f, req, ino, FUSE_READ);
-		fuse_free_buf(buf);
-        return;
-    }
+// 	if (res == FUSE_LIB_ERROR_PENDING_REQ){
+// 		fuse_async_add_pending(NULL,f, req, ino, FUSE_READ);
+// 		fuse_free_buf(buf);
+//         return;
+//     }
 
 	if (res == 0)
 		fuse_reply_data(req, buf, FUSE_BUF_SPLICE_MOVE);
@@ -3277,10 +3285,10 @@ static void fuse_lib_write_buf(fuse_req_t req, fuse_ino_t ino,
 		fuse_finish_interrupt(f, req, &d);
 		free_path(f, ino, path);
 	}
-	if (res == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_async_add_pending(NULL,f, req, ino, FUSE_WRITE);
-        return;
-    }
+// 	if (res == FUSE_LIB_ERROR_PENDING_REQ){
+// 		fuse_async_add_pending(NULL,f, req, ino, FUSE_WRITE);
+//         return;
+//     }
 
 	if (res >= 0)
 		fuse_reply_write(req, res);
@@ -3304,10 +3312,10 @@ static void fuse_lib_fsync(fuse_req_t req, fuse_ino_t ino, int datasync,
 		fuse_finish_interrupt(f, req, &d);
 		free_path(f, ino, path);
 	}
-	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_async_add_pending(NULL,f, req, ino, FUSE_FSYNC);
-        return;
-    }
+// 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
+// 		fuse_async_add_pending(NULL,f, req, ino, FUSE_FSYNC);
+//         return;
+//     }
 	reply_err(req, err);
 }
 
@@ -3356,12 +3364,12 @@ static void fuse_lib_opendir(fuse_req_t req, fuse_ino_t ino,
 		fuse_finish_interrupt(f, req, &d);
 		dh->fh = fi.fh;
 	}
-	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_async_add_pending(NULL,f, req, ino, FUSE_READDIR);
-		pthread_mutex_destroy(&dh->lock);
-		free_path(f, ino, path);
-        return;
-    }
+// 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
+// 		fuse_async_add_pending(NULL,f, req, ino, FUSE_READDIR);
+// 		pthread_mutex_destroy(&dh->lock);
+// 		free_path(f, ino, path);
+//         return;
+//     }
 
 	if (!err) {
 		if (fuse_reply_open(req, llfi) == -ENOENT) {
@@ -3580,6 +3588,9 @@ static void free_direntries(struct fuse_direntry *de)
 		de = next;
 	}
 }
+#if 1
+#include "fuse_lib_readdir.h"
+#else
 
 static int readdir_fill(struct fuse *f, fuse_req_t req, fuse_ino_t ino,
 			size_t size, off_t off, struct fuse_dh *dh,
@@ -3611,12 +3622,13 @@ static int readdir_fill(struct fuse *f, fuse_req_t req, fuse_ino_t ino,
 		fuse_prepare_interrupt(f, req, &d);
 		err = fuse_fs_readdir(f->fs, path, dh, filler, off, fi, flags);
 		fuse_finish_interrupt(f, req, &d);
-        if (err == FUSE_LIB_ERROR_PENDING_REQ){
-            fuse_async_add_pending(dh, f, req, ino, 
-                (flags & FUSE_READDIR_PLUS)?FUSE_READDIRPLUS:FUSE_READDIR);
-            free_path(f, ino, path);
-            return FUSE_LIB_ERROR_PENDING_REQ; 
-        }
+
+//         if (err == FUSE_LIB_ERROR_PENDING_REQ){
+//             fuse_async_add_pending(/*dh*/NULL, f, req, ino, 
+//                 (flags & FUSE_READDIR_PLUS)?FUSE_READDIRPLUS:FUSE_READDIR);
+//             free_path(f, ino, path);
+//             return FUSE_LIB_ERROR_PENDING_REQ; 
+//         }
         dh->req = NULL;
 		if (!err)
 			err = dh->error;
@@ -3670,7 +3682,6 @@ static int readdir_fill_from_list(fuse_req_t req, struct fuse_dh *dh,
 	}
 	return 0;
 }
-
 static void fuse_readdir_common(fuse_req_t req, fuse_ino_t ino, size_t size,
 				off_t off, struct fuse_file_info *llfi,
 				enum fuse_readdir_flags flags)
@@ -3740,6 +3751,7 @@ static void fuse_lib_readdirplus(fuse_req_t req, fuse_ino_t ino, size_t size,
 {
 	fuse_readdir_common(req, ino, size, off, llfi, FUSE_READDIR_PLUS);
 }
+#endif
 
 static void fuse_lib_releasedir(fuse_req_t req, fuse_ino_t ino,
 				struct fuse_file_info *llfi)
@@ -3763,10 +3775,10 @@ static void fuse_lib_releasedir(fuse_req_t req, fuse_ino_t ino,
 	free_direntries(dh->first);
 	free(dh->contents);
 	free(dh);
-	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_async_add_pending(NULL,f, req, ino, FUSE_RELEASEDIR);
-        return;
-    }
+// 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
+// 		fuse_async_add_pending(NULL,f, req, ino, FUSE_RELEASEDIR);
+//         return;
+//     }
 	reply_err(req, 0);
 }
 
@@ -3788,10 +3800,10 @@ static void fuse_lib_fsyncdir(fuse_req_t req, fuse_ino_t ino, int datasync,
 		fuse_finish_interrupt(f, req, &d);
 		free_path(f, ino, path);
 	}
-	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_async_add_pending(NULL,f, req, ino, FUSE_FSYNCDIR);
-        return;
-    }
+// 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
+// 		fuse_async_add_pending(NULL,f, req, ino, FUSE_FSYNCDIR);
+//         return;
+//     }
 	reply_err(req, err);
 }
 
@@ -3814,10 +3826,10 @@ static void fuse_lib_statfs(fuse_req_t req, fuse_ino_t ino)
 		free_path(f, ino, path);
 	}
 
-	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_async_add_pending(NULL,f, req, ino, FUSE_STATFS);
-        return;
-    }
+// 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
+// 		fuse_async_add_pending(NULL,f, req, ino, FUSE_STATFS);
+//         return;
+//     }
 	if (!err)
 		fuse_reply_statfs(req, &buf);
 	else
@@ -3839,10 +3851,10 @@ static void fuse_lib_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name,
 		fuse_finish_interrupt(f, req, &d);
 		free_path(f, ino, path);
 	}
-	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_async_add_pending(NULL,f, req, ino, FUSE_SETXATTR);
-        return;
-    }
+// 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
+// 		fuse_async_add_pending(NULL,f, req, ino, FUSE_SETXATTR);
+//         return;
+//     }
 
 	reply_err(req, err);
 }
@@ -3879,12 +3891,12 @@ static void fuse_lib_getxattr(fuse_req_t req, fuse_ino_t ino, const char *name,
 	}
 
 	res = common_getxattr(f, req, ino, name, value, size);
-	if (res == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_async_add_pending(NULL,f, req, ino, FUSE_GETXATTR);
-		if (value)
-			free(value);
-        return;
-    }
+// 	if (res == FUSE_LIB_ERROR_PENDING_REQ){
+// 		fuse_async_add_pending(NULL,f, req, ino, FUSE_GETXATTR);
+// 		if (value)
+// 			free(value);
+//         return;
+//     }
 
 	if (size && res > 0)
 		fuse_reply_buf(req, value, res);
@@ -3927,12 +3939,12 @@ static void fuse_lib_listxattr(fuse_req_t req, fuse_ino_t ino, size_t size)
 		}
 	}
 	res = common_listxattr(f, req, ino, list, size);
-	if (res == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_async_add_pending(NULL,f, req, ino, FUSE_LISTXATTR);
-		if (list)
-			free(list);
-        return;
-    }
+// 	if (res == FUSE_LIB_ERROR_PENDING_REQ){
+// 		fuse_async_add_pending(NULL,f, req, ino, FUSE_LISTXATTR);
+// 		if (list)
+// 			free(list);
+//         return;
+//     }
 
 	if (size && res > 0)
 		fuse_reply_buf(req, list, res);
@@ -3961,10 +3973,10 @@ static void fuse_lib_removexattr(fuse_req_t req, fuse_ino_t ino,
 		fuse_finish_interrupt(f, req, &d);
 		free_path(f, ino, path);
 	}
-	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_async_add_pending(NULL,f, req, ino, FUSE_REMOVEXATTR);
-        return;
-    }
+// 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
+// 		fuse_async_add_pending(NULL,f, req, ino, FUSE_REMOVEXATTR);
+//         return;
+//     }
 	reply_err(req, err);
 }
 
@@ -4140,10 +4152,10 @@ static void fuse_lib_release(fuse_req_t req, fuse_ino_t ino,
 	fuse_finish_interrupt(f, req, &d);
 	free_path(f, ino, path);
 
-	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_async_add_pending(NULL,f, req, ino, FUSE_RELEASE);
-        return;
-    }
+// 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
+// 		fuse_async_add_pending(NULL,f, req, ino, FUSE_RELEASE);
+//         return;
+//     }
 	reply_err(req, err);
 }
 
@@ -4263,10 +4275,10 @@ static void fuse_lib_bmap(fuse_req_t req, fuse_ino_t ino, size_t blocksize,
 		fuse_finish_interrupt(f, req, &d);
 		free_path(f, ino, path);
 	}
-	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_async_add_pending(NULL,f, req, ino, FUSE_BMAP);
-        return;
-    }
+// 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
+// 		fuse_async_add_pending(NULL,f, req, ino, FUSE_BMAP);
+//         return;
+//     }
 	if (!err)
 		fuse_reply_bmap(req, idx);
 	else
@@ -4315,11 +4327,11 @@ static void fuse_lib_ioctl(fuse_req_t req, fuse_ino_t ino, int cmd, void *arg,
 
 	fuse_finish_interrupt(f, req, &d);
 	free_path(f, ino, path);
-	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_async_add_pending(NULL,f, req, ino, FUSE_IOCTL);
-		free(out_buf);
-        return;
-    }
+// 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
+// 		fuse_async_add_pending(NULL,f, req, ino, FUSE_IOCTL);
+// 		free(out_buf);
+//         return;
+//     }
 
 	fuse_reply_ioctl(req, err, out_buf, out_bufsz);
 	goto out;
@@ -4345,10 +4357,10 @@ static void fuse_lib_poll(fuse_req_t req, fuse_ino_t ino,
 		fuse_finish_interrupt(f, req, &d);
 		free_path(f, ino, path);
 	}
-	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_async_add_pending(NULL,f, req, ino, FUSE_POLL);
-        return;
-    }
+// 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
+// 		fuse_async_add_pending(NULL,f, req, ino, FUSE_POLL);
+//         return;
+//     }
 	if (!err)
 		fuse_reply_poll(req, revents);
 	else
@@ -4370,10 +4382,10 @@ static void fuse_lib_fallocate(fuse_req_t req, fuse_ino_t ino, int mode,
 		fuse_finish_interrupt(f, req, &d);
 		free_path(f, ino, path);
 	}
-	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_async_add_pending(NULL,f, req, ino, FUSE_FALLOCATE);
-        return;
-    }
+// 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
+// 		fuse_async_add_pending(NULL,f, req, ino, FUSE_FALLOCATE);
+//         return;
+//     }
 	reply_err(req, err);
 }
 
@@ -5027,31 +5039,30 @@ struct fuse_async_responce * fuse_async_responce_alloc(void *user_data)
 	return res;
 }
 
-void fuse_async_session_process_responce( struct fuse_session * se, struct fuse_async_responce * responce, union fuse_async_responce_data* resp_data ) 
+void fuse_async_session_process_responce(struct fuse_async_responce * responce) 
 {
-    se = NULL;
-    switch(responce->opcode){
-        case FUSE_GETATTR:
-            fuse_lib_getattr_respond( responce->f, responce->ino, &resp_data->getattr, responce->req);
-            break;
-        case FUSE_READDIR:
-            fuse_lib_readdir_respond(responce->f, responce->ino, responce->dh, responce->req,0);
-            break;
-        case FUSE_READDIRPLUS:
-            fuse_lib_readdir_respond(responce->f, responce->ino, responce->dh, responce->req,FUSE_READDIR_PLUS);
-            break;
-        default:
-            break;
-    }
+//     se = NULL;
+//     switch(responce->opcode){
+//         case FUSE_GETATTR:
+//             fuse_lib_getattr_respond( responce->f, responce->ino, &resp_data->getattr, responce->req);
+//             break;
+//         case FUSE_READDIR:
+//             fuse_lib_readdir_respond(responce->f, responce->ino, responce->dh, responce->req,0);
+//             break;
+//         case FUSE_READDIRPLUS:
+//             fuse_lib_readdir_respond(responce->f, responce->ino, responce->dh, responce->req,FUSE_READDIR_PLUS);
+//             break;
+//         default:
+//             break;
+//     }
+    fuse_fsm_run(responce->fsm,"ok");
+    if (!strcmp(fuse_fsm_cur_state(responce->fsm),"DESTROYED"))
+        FUSE_FSM_FREE(responce->fsm);
 }
 
-void fuse_async_add_pending(struct fuse_dh *dh, struct fuse* f, fuse_req_t req, fuse_ino_t ino,
-                            enum fuse_opcode opcode){
+void fuse_async_add_pending( struct fuse_fsm *fsm )
+{
     struct fuse_async_responce* resp = (struct fuse_async_responce* )fuse_get_context()->async_request;
-    resp->f = f;
-    resp->req = req;
-    resp->ino = ino;
-    resp->opcode = opcode;
-    resp->dh = dh;
+    resp->fsm = fsm;
 }
 

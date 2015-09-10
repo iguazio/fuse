@@ -955,6 +955,6 @@ struct fuse_async_responce;
 
 
 struct fuse_async_responce *fuse_async_responce_alloc(void* req);
-void fuse_async_session_process_responce( struct fuse_session * se, struct fuse_async_responce * responce, union fuse_async_responce_data* resp_data );
+void fuse_async_session_process_responce(struct fuse_async_responce * responce);
 
 #endif /* _FUSE_H_ */

@@ -526,12 +526,9 @@ struct _fuse_off_t_must_be_64bit_dummy_struct \
 #endif
 
 
-union fuse_async_responce_data{
-    struct stat getattr;
-    char readlink[PATH_MAX];
-    char create[PATH_MAX];
-};
-typedef struct fuse_async_responce *(*fuse_async_get_msg_t)(void* payload,union fuse_async_responce_data* data);
+
+typedef struct fuse_async_responce *(*fuse_async_get_msg_t)(void* payload);
+
 
 
 #endif /* _FUSE_COMMON_H_ */
