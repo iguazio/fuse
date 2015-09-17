@@ -2481,6 +2481,9 @@ void fuse_session_process_buf(struct fuse_session *se,
 			      const struct fuse_buf *buf, struct fuse_chan *ch)
 {
 	struct fuse_ll *f = se->f;
+
+    f->debug = 1;
+
 	const size_t write_header_size = sizeof(struct fuse_in_header) +
 		sizeof(struct fuse_write_in);
 	struct fuse_bufvec bufv = { .buf[0] = *buf, .count = 1 };

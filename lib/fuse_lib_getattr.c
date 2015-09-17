@@ -1,9 +1,5 @@
-#pragma once
+#include "fuse_lib.h"
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-// #pragma GCC diagnostic ignored "-Wmissing-declarations"
-
-#include "fuse_fsm.h"
 /*/////////////////////////////////////////////////////////////////////////
                 states
 events          CREATED         FGETS_SENT          GETS_SENT         DESTROYED    
@@ -24,6 +20,8 @@ struct fsm_getattr_data{
     int err;
     fuse_req_t req;
 };
+
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 
 static void f1(const char * from,const char * to,void *data){
     struct fsm_getattr_data *dt = (struct fsm_getattr_data *)data;
@@ -63,16 +61,16 @@ static void f4(const char * from,const char * to,void *data){
 }
 
 FUSE_FSM_EVENTS(GETATTR,"send_fget","send_get","ok","error")
-FUSE_FSM_STATES(GETATTR,        "CREATED",        "FGETS_SENT",   "GETS_SENT"       ,   "DESTROYED")
-FUSE_FSM_ENTRY(/*"send_fget"*/ {"FGETS_SENT",f1}, NONE             ,   NONE         ,   NONE)           
-FUSE_FSM_ENTRY(/*"send_get"*/  {"GETS_SENT",f2},  NONE             ,   NONE         ,   NONE)           
-FUSE_FSM_ENTRY(/*"ok"*/        {"DESTROYED",f3},  {"DESTROYED",f3} ,{"DESTROYED",f3},   NONE)           
-FUSE_FSM_LAST (/*"error"*/     {"DESTROYED",f4},  {"DESTROYED",f4} ,{"DESTROYED",f4},   NONE)           
+FUSE_FSM_STATES(GETATTR,        "CREATED",   "FGETS",      "GETS"    ,"DONE")
+FUSE_FSM_ENTRY(/*"send_fget"*/ {"FGETS",f1}, NONE,         NONE      ,NONE)           
+FUSE_FSM_ENTRY(/*"send_get"*/  {"GETS",f2},  NONE,         NONE      ,NONE)           
+FUSE_FSM_ENTRY(/*"ok"*/        {"DONE",f3},  {"DONE",f3}, {"DONE",f3},NONE)           
+FUSE_FSM_LAST (/*"error"*/     {"DONE",f4},  {"DONE",f4}, {"DONE",f4},NONE)           
 
 
 
 
-static void fuse_lib_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi)
+void fuse_lib_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi)
 {
     struct fuse_fsm *new_fsm = NULL;
     FUSE_FSM_ALLOC(GETATTR,new_fsm,struct fsm_getattr_data);
@@ -106,6 +104,6 @@ static void fuse_lib_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
     else
         fuse_fsm_run(new_fsm, dt->err ? "error" : "ok");
 
-    if (!strcmp(fuse_fsm_cur_state(new_fsm),"DESTROYED"))
+    if (!strcmp(fuse_fsm_cur_state(new_fsm),"DONE"))
         FUSE_FSM_FREE(new_fsm);
 }

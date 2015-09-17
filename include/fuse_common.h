@@ -529,6 +529,6 @@ struct _fuse_off_t_must_be_64bit_dummy_struct \
 
 typedef struct fuse_async_responce *(*fuse_async_get_msg_t)(void* payload);
 
-
+void fuse_buf_free(struct fuse_bufvec *buf);
 
 #endif /* _FUSE_COMMON_H_ */

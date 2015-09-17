@@ -1,13 +1,6 @@
-#pragma once
-
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-// #pragma GCC diagnostic ignored "-Wmissing-declarations"
-
-#include "fuse_fsm.h"
-
+#include "fuse_lib.h"
 static int readdir_fill_from_list(fuse_req_t req, struct fuse_dh *dh,
                                   off_t off, enum fuse_readdir_flags flags);
-
 
 struct fsm_readdir_data{
     char *path;
@@ -20,8 +13,11 @@ struct fsm_readdir_data{
     enum fuse_readdir_flags flags;
     int err;
 };
+
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+
 /*Send request to the fs*/
-static void rddir(const char * from,const char * to,void *data){
+static void f1(const char * from,const char * to,void *data){
     struct fsm_readdir_data *dt = (struct fsm_readdir_data *)data;
     struct fuse_intr_data d;
     fuse_fill_dir_t filler = fill_dir;
@@ -42,7 +38,7 @@ static void rddir(const char * from,const char * to,void *data){
     fuse_finish_interrupt(dt->f, dt->req, &d);
 }
 /*There is correct data - send it back to the driver*/
-static void rdok(const char * from,const char * to,void *data){
+static void f2(const char * from,const char * to,void *data){
     struct fsm_readdir_data *dt = (struct fsm_readdir_data *)data;
     dt->dh->req = NULL;
     dt->dh->filled = 1;
@@ -50,7 +46,7 @@ static void rdok(const char * from,const char * to,void *data){
         dt->dh->filled = 0;
     pthread_mutex_lock(&dt->dh->lock);
     dt->dh->needlen = dt->size;
-    int err = readdir_fill_from_list(dt->req, dt->dh, 0, dt->flags);
+    int err = readdir_fill_from_list(dt->req, dt->dh, dt->off, dt->flags);
     if (err)
         reply_err(dt->req, err);
     else
@@ -59,16 +55,11 @@ static void rdok(const char * from,const char * to,void *data){
 }
 
 /*Error - report driver*/
-static void rderr(const char * from,const char * to,void *data){
+static void f3(const char * from,const char * to,void *data){
     struct fsm_readdir_data *dt = (struct fsm_readdir_data *)data;
     reply_err(dt->req, dt->err);
 }
 
-FUSE_FSM_EVENTS(READDIR,"read","ok","error")
-FUSE_FSM_STATES(READDIR,  "CREATED",       "RDIR_SENT"      ,   "DESTROYED")
-FUSE_FSM_ENTRY(/*read*/ {"RDIR_SENT",rddir},  NONE             ,   NONE)           
-FUSE_FSM_ENTRY(/*ok*/   {"DESTROYED",rdok},  {"DESTROYED",rdok} ,   NONE)           
-FUSE_FSM_LAST (/*error*/{"DESTROYED",rderr},  {"DESTROYED",rderr} ,   NONE)           
 
 
 static int readdir_fill_from_list(fuse_req_t req, struct fuse_dh *dh,
@@ -115,6 +106,11 @@ static int readdir_fill_from_list(fuse_req_t req, struct fuse_dh *dh,
     return 0;
 }
 
+FUSE_FSM_EVENTS(READDIR,"read","ok","error")
+FUSE_FSM_STATES(READDIR,  "CREATED",  "RDIR"      ,   "DONE")
+FUSE_FSM_ENTRY(/*read*/ {"RDIR",f1},  NONE        ,   NONE)           
+FUSE_FSM_ENTRY(/*ok*/   {"DONE",f2},  {"DONE",f2} ,   NONE)           
+FUSE_FSM_LAST (/*error*/{"DONE",f3},  {"DONE",f3} ,   NONE)           
 
 static void fuse_readdir_common(fuse_req_t req, fuse_ino_t ino, size_t size,
 				off_t off, struct fuse_file_info *llfi,
@@ -162,23 +158,20 @@ static void fuse_readdir_common(fuse_req_t req, fuse_ino_t ino, size_t size,
     else if (dh->filled)
         fuse_fsm_run(new_fsm, dt->err ? "error" : "ok");
     
-    if (!strcmp(fuse_fsm_cur_state(new_fsm),"DESTROYED"))
+    if (!strcmp(fuse_fsm_cur_state(new_fsm),"DONE"))
         FUSE_FSM_FREE(new_fsm);
 
     pthread_mutex_unlock(&dh->lock);
 }
 
-
-
-static void fuse_lib_readdir(fuse_req_t req, fuse_ino_t ino, size_t size,
+void fuse_lib_readdir(fuse_req_t req, fuse_ino_t ino, size_t size,
 			     off_t off, struct fuse_file_info *llfi)
 {
 	fuse_readdir_common(req, ino, size, off, llfi, 0);
 }
 
-static void fuse_lib_readdirplus(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off, struct fuse_file_info *llfi)
+void fuse_lib_readdirplus(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off, struct fuse_file_info *llfi)
 {
 	fuse_readdir_common(req, ino, size, off, llfi, FUSE_READDIR_PLUS);
 }
-
 

@@ -18,7 +18,23 @@ iconv_source =
 endif
 
 libfuse3_la_SOURCES = 		\
+	fuse_lib_lookup.c \
+	fuse_lib_lookup_path.c \
+  fuse_lib_getattr.c \
+	fuse_lib_readdir.c \
 	fuse_fsm.c			\
+	fuse_interrupt.c			\
+	fuse_lock.c  \
+	fuse_module.c  \
+	fuse_node.c  \
+	fuse_path.c  \
+	fuse_queue_element.c\
+	fuse_lib_context.c \
+	fuse_id_hash.c \
+	fuse_req.c \ 
+	fuse_list.c \ 
+	fuse_fs.c			\
+	fuse_lib.c			\
 	fuse.c			\
 	fuse_i.h		\
 	fuse_loop.c		\

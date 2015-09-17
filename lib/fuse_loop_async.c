@@ -55,7 +55,6 @@ int fuse_session_loop_async( struct fuse_session *se, int fd, fuse_async_get_msg
                 while(NULL != responce){
                     fuse_async_session_process_responce(responce);
                     break;
-                    //responce = callback_on_new_msg(callback_payload, &resp_data);
                 }
             }
         }
