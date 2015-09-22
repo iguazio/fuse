@@ -1,5 +1,6 @@
 #include "fuse_queue_element.h"
 #include "fuse_prv.h"
+#include "fuse_path.h"
 
 void queue_element_wakeup( struct fuse *f, struct lock_queue_element *qe )
 {

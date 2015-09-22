@@ -25,17 +25,20 @@ struct fsm_lookup_path_data{
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
-static void f1(const char * from,const char * to,void *data){
+static const char* f1(const char * from,const char * to,void *data){
     struct fsm_lookup_path_data *dt = (struct fsm_lookup_path_data *)data;
     dt->err = fuse_fs_fgetattr(dt->f->fs, dt->path, &dt->e->attr, dt->fi);
+	return NULL;
 }
 
-static void f2(const char * from,const char * to,void *data){
+static const char* f2(const char * from,const char * to,void *data){
     struct fsm_lookup_path_data *dt = (struct fsm_lookup_path_data *)data;
     dt->err = fuse_fs_getattr(dt->f->fs, dt->path, &dt->e->attr);
+	return NULL;
+
 }
 
-static void f3(const char * from,const char * to,void *data){
+static const char* f3(const char * from,const char * to,void *data){
     struct fsm_lookup_path_data *dt = (struct fsm_lookup_path_data *)data;
 
     int res = do_lookup(dt->f, dt->nodeid, dt->name, dt->e);
@@ -45,12 +48,15 @@ static void f3(const char * from,const char * to,void *data){
     }
     if (dt->parent_fsm)
         fuse_fsm_run(dt->parent_fsm, "ok");
+	return NULL;
 }
 
-static void f4(const char * from,const char * to,void *data){
+static const char* f4(const char * from,const char * to,void *data){
     struct fsm_lookup_path_data *dt = (struct fsm_lookup_path_data *)data;
     if (dt->parent_fsm)
         fuse_fsm_run(dt->parent_fsm, "error");
+	return NULL;
+
 }
 
 FUSE_FSM_EVENTS(LOOKUP_PATH,"send_fget","send_get","ok","error")

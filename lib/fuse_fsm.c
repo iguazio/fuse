@@ -26,10 +26,12 @@ int fuse_fsm_run( struct fuse_fsm * fsm, const char* event )
     if (event_id == -1)
         return -1;
 
-    const struct fuse_fsm_entry *entry = &fsm->fuse_fsm_transition_table[fsm->num_of_events*event_id + curr_s];
+    const struct fuse_fsm_entry *entry = &fsm->fuse_fsm_transition_table[fsm->num_of_states*event_id + curr_s];
 
-    entry->f(fsm->states[curr_s],entry->next_state, fsm->data);
+    const char* next_event = entry->f(fsm->states[curr_s],entry->next_state, fsm->data);
     fsm->current_state = state_str_to_id(fsm,entry->next_state);
+	if (next_event != NULL)
+		return fuse_fsm_run(fsm, next_event);
     return 0;
 }
 
@@ -38,6 +40,7 @@ const char* fuse_fsm_cur_state( struct fuse_fsm * fsm )
     return fsm->states[fsm->current_state];
 }
 
-void fuse_lib_fsm_transition_function_null(const char * from,const char * to,void *data){
+const char* fuse_lib_fsm_transition_function_null(const char * from,const char * to,void *data){
     fprintf(stderr,"panic - unexpected state transition (%s->%s),%p\n",from,to,data);
+	return NULL;
 }

@@ -94,7 +94,6 @@ char *hidden_name(struct fuse *f, fuse_ino_t dir, const char *oldname,
 int hide_node(struct fuse *f, const char *oldpath,
               fuse_ino_t dir, const char *oldname);
 
-void open_auto_cache(struct fuse *f, fuse_ino_t ino, const char *path,struct fuse_file_info *fi);
 int fill_dir(void *dh_, const char *name, const struct stat *statp,
              off_t off, enum fuse_fill_dir_flags flags);
 int fill_dir_plus(void *dh_, const char *name, const struct stat *statp,
@@ -103,3 +102,6 @@ void free_direntries(struct fuse_direntry *de);
 int extend_contents(struct fuse_dh *dh, unsigned minsize);
 struct fuse_dh *get_dirhandle(const struct fuse_file_info *llfi,struct fuse_file_info *fi);
 
+void curr_time(struct timespec *now);
+double diff_timespec(const struct timespec *t1,
+	const struct timespec *t2);

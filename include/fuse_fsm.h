@@ -5,8 +5,8 @@
 
 #include "fuse_async_responce.h"
 
-typedef void (*fuse_lib_fsm_transition_function_t)(const char * from,const char * to,void *data);
-void fuse_lib_fsm_transition_function_null(const char * from,const char * to,void *data);
+typedef const char* (*fuse_lib_fsm_transition_function_t)(const char * from,const char * to,void *data);
+const char* fuse_lib_fsm_transition_function_null(const char * from,const char * to,void *data);
 
 struct fuse_fsm_entry{
     const char *next_state;

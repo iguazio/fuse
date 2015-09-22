@@ -23,23 +23,25 @@ struct fsm_getattr_data{
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
-static void f1(const char * from,const char * to,void *data){
+static const char* f1(const char * from,const char * to,void *data){
     struct fsm_getattr_data *dt = (struct fsm_getattr_data *)data;
     struct fuse_intr_data d;
     fuse_prepare_interrupt(dt->f, dt->req, &d);
     dt->err = fuse_fs_fgetattr(dt->f->fs, dt->path, &dt->buf, dt->fi);
     fuse_finish_interrupt(dt->f, dt->req, &d);
+	return NULL;
 }
 
-static void f2(const char * from,const char * to,void *data){
+static const char* f2(const char * from,const char * to,void *data){
     struct fsm_getattr_data *dt = (struct fsm_getattr_data *)data;
     struct fuse_intr_data d;
     fuse_prepare_interrupt(dt->f, dt->req, &d);
     dt->err = fuse_fs_getattr(dt->f->fs, dt->path, &dt->buf);
     fuse_finish_interrupt(dt->f, dt->req, &d);
+	return NULL;
 }
 
-static void f3(const char * from,const char * to,void *data){
+static const char* f3(const char * from,const char * to,void *data){
     struct fsm_getattr_data *dt = (struct fsm_getattr_data *)data;
     struct node *node;
 
@@ -52,12 +54,15 @@ static void f3(const char * from,const char * to,void *data){
     pthread_mutex_unlock(&dt->f->lock);
     set_stat(dt->f, dt->ino, &dt->buf);
     fuse_reply_attr(dt->req, &dt->buf, dt->f->conf.attr_timeout);
+	return NULL;
+
 }
 
 
-static void f4(const char * from,const char * to,void *data){
+static const char* f4(const char * from,const char * to,void *data){
     struct fsm_getattr_data *dt = (struct fsm_getattr_data *)data;
     reply_err(dt->req, dt->err);
+	return NULL;
 }
 
 FUSE_FSM_EVENTS(GETATTR,"send_fget","send_get","ok","error")

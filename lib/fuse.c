@@ -75,9 +75,6 @@ struct node *get_node(struct fuse *f, fuse_ino_t nodeid)
 }
 
 
-static void curr_time(struct timespec *now);
-static double diff_timespec(const struct timespec *t1,
-			   const struct timespec *t2);
 
 static void remove_node_lru(struct node *node)
 {
@@ -658,7 +655,7 @@ static int mtime_eq(const struct stat *stbuf, const struct timespec *ts)
 #define CLOCK_MONOTONIC CLOCK_REALTIME
 #endif
 
-static void curr_time(struct timespec *now)
+void curr_time(struct timespec *now)
 {
 	static clockid_t clockid = CLOCK_MONOTONIC;
 	int res = clock_gettime(clockid, now);
@@ -765,43 +762,11 @@ void fuse_do_release(struct fuse *f, fuse_ino_t ino, const char *path,
 	}
 }
 
-static double diff_timespec(const struct timespec *t1,
+double diff_timespec(const struct timespec *t1,
 			    const struct timespec *t2)
 {
 	return (t1->tv_sec - t2->tv_sec) +
 		((double) t1->tv_nsec - (double) t2->tv_nsec) / 1000000000.0;
-}
-
-/*FixMe: we should handle the fuse_fs_fgetattr() call as part of the OPEN*/
-void open_auto_cache(struct fuse *f, fuse_ino_t ino, const char *path,
-			    struct fuse_file_info *fi)
-{
-	struct node *node;
-
-	pthread_mutex_lock(&f->lock);
-	node = get_node(f, ino);
-	if (node->cache_valid) {
-		struct timespec now;
-
-		curr_time(&now);
-		if (diff_timespec(&now, &node->stat_updated) >
-		    f->conf.ac_attr_timeout) {
-			struct stat stbuf;
-			int err;
-			pthread_mutex_unlock(&f->lock);
-			err = fuse_fs_fgetattr(f->fs, path, &stbuf, fi);
-			pthread_mutex_lock(&f->lock);
-			if (!err)
-				update_stat(node, &stbuf);
-			else
-				node->cache_valid = 0;
-		}
-	}
-	if (node->cache_valid)
-		fi->keep_cache = 1;
-
-	node->cache_valid = 1;
-	pthread_mutex_unlock(&f->lock);
 }
 
 

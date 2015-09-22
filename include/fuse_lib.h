@@ -13,3 +13,4 @@ void fuse_lib_readdirplus(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
 void fuse_lib_lookup(fuse_req_t req, fuse_ino_t parent, const char *name);
 
 void fuse_lib_open(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi);
+void fuse_lib_read(fuse_req_t req, fuse_ino_t ino, size_t size,off_t off, struct fuse_file_info *fi);

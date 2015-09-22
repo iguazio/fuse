@@ -7,7 +7,8 @@ struct fsm_readdir_data{
     struct fuse * f;
     struct fuse_file_info fi;
     fuse_ino_t ino;
-    fuse_req_t req;    struct fuse_dh *dh;
+    fuse_req_t req;
+    struct fuse_dh *dh;
     int size;
     int off;
     enum fuse_readdir_flags flags;
@@ -17,7 +18,7 @@ struct fsm_readdir_data{
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
 /*Send request to the fs*/
-static void f1(const char * from,const char * to,void *data){
+static const char* f1(const char * from,const char * to,void *data){
     struct fsm_readdir_data *dt = (struct fsm_readdir_data *)data;
     struct fuse_intr_data d;
     fuse_fill_dir_t filler = fill_dir;
@@ -36,9 +37,11 @@ static void f1(const char * from,const char * to,void *data){
     fuse_prepare_interrupt(dt->f, dt->req, &d);
     dt->err = fuse_fs_readdir(dt->f->fs, dt->path, dt->dh, filler, dt->off, &dt->fi, dt->flags);
     fuse_finish_interrupt(dt->f, dt->req, &d);
+	return NULL;
+
 }
 /*There is correct data - send it back to the driver*/
-static void f2(const char * from,const char * to,void *data){
+static const char* f2(const char * from,const char * to,void *data){
     struct fsm_readdir_data *dt = (struct fsm_readdir_data *)data;
     dt->dh->req = NULL;
     dt->dh->filled = 1;
@@ -52,12 +55,15 @@ static void f2(const char * from,const char * to,void *data){
     else
         fuse_reply_buf(dt->req, dt->dh->contents, dt->dh->len);
     pthread_mutex_unlock(&dt->dh->lock);
+	return NULL;
+
 }
 
 /*Error - report driver*/
-static void f3(const char * from,const char * to,void *data){
+static const char* f3(const char * from,const char * to,void *data){
     struct fsm_readdir_data *dt = (struct fsm_readdir_data *)data;
     reply_err(dt->req, dt->err);
+	return NULL;
 }
 
 
@@ -123,7 +129,6 @@ static void fuse_readdir_common(fuse_req_t req, fuse_ino_t ino, size_t size,
     
     struct fuse *f = req_fuse_prepare(req);
 	struct fuse_dh *dh = get_dirhandle(llfi, &dt->fi);
-	int err;
 
     dt->dh = dh;
     dt->off = off;

@@ -14,17 +14,21 @@ struct fsm_lookup_data{
     int err;
 };
 
-static void f1(const char * from,const char * to,void *data){
+static const char* f1(const char * from,const char * to,void *data){
     struct fsm_lookup_data *dt = (struct fsm_lookup_data *)data;
     dt->err = lookup_path(dt->owner,dt->f, dt->parent, dt->name, dt->path, &dt->e, NULL);
+	return NULL;
+
 }
-static void f2(const char * from,const char * to,void *data){
+static const char* f2(const char * from,const char * to,void *data){
     struct fsm_lookup_data *dt = (struct fsm_lookup_data *)data;
     dt->err = 0;
     reply_entry(dt->req, &dt->e, dt->err);
+	return NULL;
+
 }
 
-static void f3(const char * from,const char * to,void *data){
+static const char* f3(const char * from,const char * to,void *data){
     struct fsm_lookup_data *dt = (struct fsm_lookup_data *)data;
     if (dt->err == -ENOENT && dt->f->conf.negative_timeout != 0.0){
         dt->e.ino = 0;
@@ -32,6 +36,8 @@ static void f3(const char * from,const char * to,void *data){
         dt->err = 0;
     }
     reply_entry(dt->req, &dt->e, dt->err);
+	return NULL;
+
 }
 
 FUSE_FSM_EVENTS(LOOKUP, "lookup","ok","error")
