@@ -5,45 +5,62 @@
 
 struct fsm_lookup_data{
     struct fuse_fsm *owner;
+    struct fuse_intr_data d;
     struct fuse *f;
     fuse_ino_t parent;
     const char *name;
     const char *path;
     struct fuse_entry_param e;  
     fuse_req_t req;
-    int err;
+    struct node *dot;
+
 };
 
-static const char* f1(const char * from,const char * to,void *data){
+static const char* f1(struct fuse_fsm* fsm,const char * from,const char * to,void *data){
     struct fsm_lookup_data *dt = (struct fsm_lookup_data *)data;
-    dt->err = lookup_path(dt->owner,dt->f, dt->parent, dt->name, dt->path, &dt->e, NULL);
-	return NULL;
+    fuse_prepare_interrupt(dt->f, dt->req, &dt->d);
+    int err = lookup_path(dt->owner,dt->f, dt->parent, dt->name, dt->path, &dt->e, NULL);
+    if (err == FUSE_LIB_ERROR_PENDING_REQ)
+        return NULL;
+    fuse_fsm_set_err(fsm, err);
+    return (err)?"error":"ok";
 
 }
-static const char* f2(const char * from,const char * to,void *data){
+static const char* f2(struct fuse_fsm* fsm,const char * from,const char * to,void *data){
     struct fsm_lookup_data *dt = (struct fsm_lookup_data *)data;
-    dt->err = 0;
-    reply_entry(dt->req, &dt->e, dt->err);
+    fuse_finish_interrupt(dt->f, dt->req, &dt->d);
+    free_path(dt->f, dt->parent, (char*)dt->path);
+    reply_entry(dt->req, &dt->e, 0);
+    if (dt->dot) {
+        pthread_mutex_lock(&dt->f->lock);
+        unref_node(dt->f, dt->dot);
+        pthread_mutex_unlock(&dt->f->lock);
+    }
 	return NULL;
-
 }
 
-static const char* f3(const char * from,const char * to,void *data){
+static const char* f3(struct fuse_fsm* fsm,const char * from,const char * to,void *data){
     struct fsm_lookup_data *dt = (struct fsm_lookup_data *)data;
-    if (dt->err == -ENOENT && dt->f->conf.negative_timeout != 0.0){
+    fuse_finish_interrupt(dt->f, dt->req, &dt->d);
+    free_path(dt->f, dt->parent, (char*)dt->path);
+    int err = fuse_fsm_get_err(fsm);
+    if (err == -ENOENT && dt->f->conf.negative_timeout != 0.0){
         dt->e.ino = 0;
         dt->e.entry_timeout = dt->f->conf.negative_timeout;
-        dt->err = 0;
+        err = 0;
     }
-    reply_entry(dt->req, &dt->e, dt->err);
+    reply_err(dt->req, err);
+    if (dt->dot) {
+        pthread_mutex_lock(&dt->f->lock);
+        unref_node(dt->f, dt->dot);
+        pthread_mutex_unlock(&dt->f->lock);
+    }
 	return NULL;
-
 }
 
-FUSE_FSM_EVENTS(LOOKUP, "lookup","ok","error")
+FUSE_FSM_EVENTS(LOOKUP, "ok","error")
 FUSE_FSM_STATES(LOOKUP,  "CREATED",         "LOOK_PATH" , "DONE")
-FUSE_FSM_ENTRY(/*lookup*/{"LOOK_PATH",f1},  NONE        , NONE)           
-FUSE_FSM_ENTRY(/*ok*/    {"DONE",f2},       {"DONE",f2} , NONE)           
+FUSE_FSM_ENTRY(/*ok*/    {"LOOK_PATH",f1},  {"DONE",f2} , NONE)           
 FUSE_FSM_LAST (/*error*/ {"DONE",f3},       {"DONE",f3} , NONE)
 
 
@@ -93,27 +110,21 @@ void fuse_lib_lookup(fuse_req_t req, fuse_ino_t parent,
         dt->path = path;
         dt->req = req;
         dt->owner = new_fsm;
+        dt->dot = dot;
 
 
-        struct fuse_intr_data d;
         if (f->conf.debug)
             fprintf(stderr, "LOOKUP %s\n", path);
         
-        fuse_prepare_interrupt(f, req, &d);
-        fuse_fsm_run(new_fsm, "lookup");
-        fuse_finish_interrupt(f, req, &d);
-
-        if (!strcmp(fuse_fsm_cur_state(new_fsm),"DONE")){
-            fuse_fsm_run(new_fsm, (dt->err)? "error" : "ok");
+        fuse_fsm_run(new_fsm, "ok");
+        if (!strcmp(fuse_fsm_cur_state(new_fsm),"DONE"))
             FUSE_FSM_FREE(new_fsm);
+    }else{
+        reply_err(req,err);
+        if (dot) {
+            pthread_mutex_lock(&f->lock);
+            unref_node(f, dot);
+            pthread_mutex_unlock(&f->lock);
         }
-        err = dt->err;
-    }
-    free_path(f, parent, path);
-
-    if (dot) {
-        pthread_mutex_lock(&f->lock);
-        unref_node(f, dot);
-        pthread_mutex_unlock(&f->lock);
     }
 }

@@ -12,33 +12,35 @@ error           FAILED(f3)      FAILED(f3)          FAILED(f3)
 
 
 struct fsm_lookup_path_data{
-    struct fuse_fsm *parent_fsm;
+    struct fuse_fsm *parent;
     struct fuse_fsm *i_am;
     struct fuse_entry_param *e;
     const char *path;
     const char *name;
     struct fuse * f;
-    struct fuse_file_info *fi;
+    struct fuse_file_info fi;
+    int has_fi;
     fuse_ino_t nodeid;
     int err;
 };
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
-static const char* f1(const char * from,const char * to,void *data){
+static const char* f1(struct fuse_fsm* fsm,const char * from,const char * to,void *data){
     struct fsm_lookup_path_data *dt = (struct fsm_lookup_path_data *)data;
-    dt->err = fuse_fs_fgetattr(dt->f->fs, dt->path, &dt->e->attr, dt->fi);
-	return NULL;
+    int err;
+    if(dt->has_fi)
+        err = fuse_fs_fgetattr(fsm, dt->f->fs, dt->path, &dt->e->attr, &dt->fi);
+    else
+        err = fuse_fs_getattr(fsm, dt->f->fs, dt->path, &dt->e->attr);
+    if (err == FUSE_LIB_ERROR_PENDING_REQ)
+        return NULL;
+    fuse_fsm_set_err(fsm, err);
+    return (err)?"error":"ok";
 }
 
-static const char* f2(const char * from,const char * to,void *data){
-    struct fsm_lookup_path_data *dt = (struct fsm_lookup_path_data *)data;
-    dt->err = fuse_fs_getattr(dt->f->fs, dt->path, &dt->e->attr);
-	return NULL;
 
-}
-
-static const char* f3(const char * from,const char * to,void *data){
+static const char* f3(struct fuse_fsm* fsm,const char * from,const char * to,void *data){
     struct fsm_lookup_path_data *dt = (struct fsm_lookup_path_data *)data;
 
     int res = do_lookup(dt->f, dt->nodeid, dt->name, dt->e);
@@ -46,25 +48,25 @@ static const char* f3(const char * from,const char * to,void *data){
         fprintf(stderr, "   NODEID: %llu\n",
             (unsigned long long) dt->e->ino);
     }
-    if (dt->parent_fsm)
-        fuse_fsm_run(dt->parent_fsm, "ok");
+    if (dt->parent)
+        fuse_fsm_run(dt->parent, "ok");
 	return NULL;
 }
 
-static const char* f4(const char * from,const char * to,void *data){
+static const char* f4(struct fuse_fsm* fsm,const char * from,const char * to,void *data){
     struct fsm_lookup_path_data *dt = (struct fsm_lookup_path_data *)data;
-    if (dt->parent_fsm)
-        fuse_fsm_run(dt->parent_fsm, "error");
+    int err = fuse_fsm_get_err(fsm);
+    if (dt->parent){
+        fuse_fsm_set_err(dt->parent,err);
+        fuse_fsm_run(dt->parent, "error");
+    }
 	return NULL;
-
 }
 
-FUSE_FSM_EVENTS(LOOKUP_PATH,"send_fget","send_get","ok","error")
-FUSE_FSM_STATES(LOOKUP_PATH,        "CREATED",    "FGETS"     ,"GETS"     ,"DONE")
-FUSE_FSM_ENTRY(/*"send_fget"*/      {"FGETS",f1}, NONE        ,NONE       ,NONE)           
-FUSE_FSM_ENTRY(/*"send_get"*/       {"GETS",f2},  NONE        ,NONE       ,NONE)           
-FUSE_FSM_ENTRY(/*"ok"*/             {"DONE",f3},  {"DONE",f3} ,{"DONE",f3},NONE)           
-FUSE_FSM_LAST (/*"error"*/          {"DONE",f4},  {"DONE",f4} ,{"DONE",f4},NONE)           
+FUSE_FSM_EVENTS(LOOKUP_PATH,"ok","error")
+FUSE_FSM_STATES(LOOKUP_PATH,        "CREATED",    "GETS"     ,"DONE")
+FUSE_FSM_ENTRY(/*"ok"*/             {"GETS",f1},  {"DONE",f3},NONE)           
+FUSE_FSM_LAST (/*"error"*/          {"DONE",f4},  {"DONE",f4},NONE)           
 
 
 
@@ -80,24 +82,22 @@ int lookup_path(struct fuse_fsm *parent,
 
 
     dt->f = f;
-    dt->fi = fi;
+    dt->has_fi = (fi != NULL);
+    if(dt->has_fi)
+        dt->fi = *fi;
     dt->nodeid = nodeid;
-    dt->parent_fsm = parent;
+    dt->parent = parent;
     dt->name = name;
     dt->path = path;
     dt->i_am = new_fsm;
     dt->e = e;
     
-    fuse_fsm_run(new_fsm, (fi)? "send_fget" : "send_get");
-    if (dt->err == FUSE_LIB_ERROR_PENDING_REQ)
-        fuse_async_add_pending(new_fsm);
-
+    fuse_fsm_run(new_fsm, "ok");
     if (!strcmp(fuse_fsm_cur_state(new_fsm),"DONE")){
-        if(parent)
-            fuse_fsm_run(parent, (dt->err)? "error" : "ok");
         FUSE_FSM_FREE(new_fsm);
+        return 0;
     }
-    return dt->err;
+    return FUSE_LIB_ERROR_PENDING_REQ;
 }
 
 

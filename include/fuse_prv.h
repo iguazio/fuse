@@ -69,7 +69,10 @@ struct fuse_direntry {
 struct node *get_node_nocheck(struct fuse *f, fuse_ino_t nodeid);
 void reply_entry(fuse_req_t req, const struct fuse_entry_param *e,
                         int err);
-void fuse_do_release(struct fuse *f, fuse_ino_t ino, const char *path,struct fuse_file_info *fi);
+int fuse_flush_common(struct fuse *f, fuse_req_t req, fuse_ino_t ino,
+                      const char *path, struct fuse_file_info *fi);
+
+int fuse_do_release(fuse_req_t req,struct fuse *f, fuse_ino_t ino, const char *path,struct fuse_file_info *fi);
 struct node *get_node(struct fuse *f, fuse_ino_t nodeid);
 struct node *lookup_node(struct fuse *f, fuse_ino_t parent,
     const char *name);
@@ -89,10 +92,8 @@ void update_stat(struct node *node, const struct stat *stbuf);
 void set_stat(struct fuse *f, fuse_ino_t nodeid, struct stat *stbuf);
 void reply_err(fuse_req_t req, int err);
 int is_open(struct fuse *f, fuse_ino_t dir, const char *name);
-char *hidden_name(struct fuse *f, fuse_ino_t dir, const char *oldname,
-                  char *newname, size_t bufsize);
-int hide_node(struct fuse *f, const char *oldpath,
-              fuse_ino_t dir, const char *oldname);
+char *hidden_name(struct fuse_fsm* fsm, struct fuse *f, fuse_ino_t dir, const char *oldname, char *newname, size_t bufsize);
+int hide_node( struct fuse_fsm* fsm, struct fuse *f, const char *oldpath, fuse_ino_t dir, const char *oldname);
 
 int fill_dir(void *dh_, const char *name, const struct stat *statp,
              off_t off, enum fuse_fill_dir_flags flags);

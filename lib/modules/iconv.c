@@ -101,50 +101,50 @@ err:
 	return err;
 }
 
-static int iconv_getattr(const char *path, struct stat *stbuf)
+static int iconv_getattr(struct fuse_fsm* fsm __attribute__ ((unused)),  const char *path, struct stat *stbuf)
 {
 	struct iconv *ic = iconv_get();
 	char *newpath;
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
-		err = fuse_fs_getattr(ic->next, newpath, stbuf);
+		err = fuse_fs_getattr(fsm, ic->next, newpath, stbuf);
 		free(newpath);
 	}
 	return err;
 }
 
-static int iconv_fgetattr(const char *path, struct stat *stbuf,
+static int iconv_fgetattr(struct fuse_fsm* fsm __attribute__ ((unused)),  const char *path, struct stat *stbuf,
 			  struct fuse_file_info *fi)
 {
 	struct iconv *ic = iconv_get();
 	char *newpath;
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
-		err = fuse_fs_fgetattr(ic->next, newpath, stbuf, fi);
+		err = fuse_fs_fgetattr(fsm, ic->next, newpath, stbuf, fi);
 		free(newpath);
 	}
 	return err;
 }
 
-static int iconv_access(const char *path, int mask)
+static int iconv_access(struct fuse_fsm* fsm __attribute__ ((unused)),  const char *path, int mask)
 {
 	struct iconv *ic = iconv_get();
 	char *newpath;
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
-		err = fuse_fs_access(ic->next, newpath, mask);
+		err = fuse_fs_access(fsm, ic->next, newpath, mask);
 		free(newpath);
 	}
 	return err;
 }
 
-static int iconv_readlink(const char *path, char *buf, size_t size)
+static int iconv_readlink(struct fuse_fsm* fsm __attribute__ ((unused)),  const char *path, char *buf, size_t size)
 {
 	struct iconv *ic = iconv_get();
 	char *newpath;
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
-		err = fuse_fs_readlink(ic->next, newpath, buf, size);
+		err = fuse_fs_readlink(fsm, ic->next, newpath, buf, size);
 		if (!err) {
 			char *newlink;
 			err = iconv_convpath(ic, buf, &newlink, 1);
@@ -159,13 +159,13 @@ static int iconv_readlink(const char *path, char *buf, size_t size)
 	return err;
 }
 
-static int iconv_opendir(const char *path, struct fuse_file_info *fi)
+static int iconv_opendir(struct fuse_fsm* fsm __attribute__ ((unused)),  const char *path, struct fuse_file_info *fi)
 {
 	struct iconv *ic = iconv_get();
 	char *newpath;
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
-		err = fuse_fs_opendir(ic->next, newpath, fi);
+		err = fuse_fs_opendir(fsm, ic->next, newpath, fi);
 		free(newpath);
 	}
 	return err;
@@ -185,7 +185,7 @@ static int iconv_dir_fill(void *buf, const char *name,
 	return res;
 }
 
-static int iconv_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
+static int iconv_readdir(struct fuse_fsm* fsm __attribute__ ((unused)),  const char *path, void *buf, fuse_fill_dir_t filler __attribute__ ((unused)),
 			 off_t offset, struct fuse_file_info *fi,
 			 enum fuse_readdir_flags flags)
 {
@@ -196,75 +196,75 @@ static int iconv_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		struct iconv_dh dh;
 		dh.ic = ic;
 		dh.prev_buf = buf;
-		dh.prev_filler = filler;
-		err = fuse_fs_readdir(ic->next, newpath, &dh, iconv_dir_fill,
+		dh.prev_filler = iconv_dir_fill;
+		err = fuse_fs_readdir(fsm, ic->next, newpath, &dh, filler,
 				      offset, fi, flags);
 		free(newpath);
 	}
 	return err;
 }
 
-static int iconv_releasedir(const char *path, struct fuse_file_info *fi)
+static int iconv_releasedir(struct fuse_fsm* fsm __attribute__ ((unused)),  const char *path, struct fuse_file_info *fi)
 {
 	struct iconv *ic = iconv_get();
 	char *newpath;
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
-		err = fuse_fs_releasedir(ic->next, newpath, fi);
+		err = fuse_fs_releasedir(fsm, ic->next, newpath, fi);
 		free(newpath);
 	}
 	return err;
 }
 
-static int iconv_mknod(const char *path, mode_t mode, dev_t rdev)
+static int iconv_mknod(struct fuse_fsm* fsm __attribute__ ((unused)),  const char *path, mode_t mode, dev_t rdev)
 {
 	struct iconv *ic = iconv_get();
 	char *newpath;
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
-		err = fuse_fs_mknod(ic->next, newpath, mode, rdev);
+		err = fuse_fs_mknod(fsm, ic->next, newpath, mode, rdev);
 		free(newpath);
 	}
 	return err;
 }
 
-static int iconv_mkdir(const char *path, mode_t mode)
+static int iconv_mkdir(struct fuse_fsm* fsm __attribute__ ((unused)),  const char *path, mode_t mode)
 {
 	struct iconv *ic = iconv_get();
 	char *newpath;
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
-		err = fuse_fs_mkdir(ic->next, newpath, mode);
+		err = fuse_fs_mkdir(fsm, ic->next, newpath, mode);
 		free(newpath);
 	}
 	return err;
 }
 
-static int iconv_unlink(const char *path)
+static int iconv_unlink(struct fuse_fsm* fsm __attribute__ ((unused)),  const char *path)
 {
 	struct iconv *ic = iconv_get();
 	char *newpath;
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
-		err = fuse_fs_unlink(ic->next, newpath);
+		err = fuse_fs_unlink(fsm, ic->next, newpath);
 		free(newpath);
 	}
 	return err;
 }
 
-static int iconv_rmdir(const char *path)
+static int iconv_rmdir(struct fuse_fsm* fsm __attribute__ ((unused)),  const char *path)
 {
 	struct iconv *ic = iconv_get();
 	char *newpath;
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
-		err = fuse_fs_rmdir(ic->next, newpath);
+		err = fuse_fs_rmdir(fsm, ic->next, newpath);
 		free(newpath);
 	}
 	return err;
 }
 
-static int iconv_symlink(const char *from, const char *to)
+static int iconv_symlink(struct fuse_fsm* fsm __attribute__ ((unused)),  const char *from, const char *to)
 {
 	struct iconv *ic = iconv_get();
 	char *newfrom;
@@ -273,7 +273,7 @@ static int iconv_symlink(const char *from, const char *to)
 	if (!err) {
 		err = iconv_convpath(ic, to, &newto, 0);
 		if (!err) {
-			err = fuse_fs_symlink(ic->next, newfrom, newto);
+			err = fuse_fs_symlink(fsm, ic->next, newfrom, newto);
 			free(newto);
 		}
 		free(newfrom);
@@ -281,7 +281,7 @@ static int iconv_symlink(const char *from, const char *to)
 	return err;
 }
 
-static int iconv_rename(const char *from, const char *to, unsigned int flags)
+static int iconv_rename(struct fuse_fsm* fsm __attribute__ ((unused)),  const char *from, const char *to, unsigned int flags)
 {
 	struct iconv *ic = iconv_get();
 	char *newfrom;
@@ -290,7 +290,7 @@ static int iconv_rename(const char *from, const char *to, unsigned int flags)
 	if (!err) {
 		err = iconv_convpath(ic, to, &newto, 0);
 		if (!err) {
-			err = fuse_fs_rename(ic->next, newfrom, newto, flags);
+			err = fuse_fs_rename(fsm, ic->next, newfrom, newto, flags);
 			free(newto);
 		}
 		free(newfrom);
@@ -298,7 +298,7 @@ static int iconv_rename(const char *from, const char *to, unsigned int flags)
 	return err;
 }
 
-static int iconv_link(const char *from, const char *to)
+static int iconv_link(struct fuse_fsm* fsm __attribute__ ((unused)),  const char *from, const char *to)
 {
 	struct iconv *ic = iconv_get();
 	char *newfrom;
@@ -307,7 +307,7 @@ static int iconv_link(const char *from, const char *to)
 	if (!err) {
 		err = iconv_convpath(ic, to, &newto, 0);
 		if (!err) {
-			err = fuse_fs_link(ic->next, newfrom, newto);
+			err = fuse_fs_link(fsm, ic->next, newfrom, newto);
 			free(newto);
 		}
 		free(newfrom);
@@ -315,269 +315,269 @@ static int iconv_link(const char *from, const char *to)
 	return err;
 }
 
-static int iconv_chmod(const char *path, mode_t mode)
+static int iconv_chmod(struct fuse_fsm* fsm __attribute__ ((unused)),  const char *path, mode_t mode)
 {
 	struct iconv *ic = iconv_get();
 	char *newpath;
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
-		err = fuse_fs_chmod(ic->next, newpath, mode);
+		err = fuse_fs_chmod(fsm, ic->next, newpath, mode);
 		free(newpath);
 	}
 	return err;
 }
 
-static int iconv_chown(const char *path, uid_t uid, gid_t gid)
+static int iconv_chown(struct fuse_fsm* fsm __attribute__ ((unused)),  const char *path, uid_t uid, gid_t gid)
 {
 	struct iconv *ic = iconv_get();
 	char *newpath;
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
-		err = fuse_fs_chown(ic->next, newpath, uid, gid);
+		err = fuse_fs_chown(fsm, ic->next, newpath, uid, gid);
 		free(newpath);
 	}
 	return err;
 }
 
-static int iconv_truncate(const char *path, off_t size)
+static int iconv_truncate(struct fuse_fsm* fsm __attribute__ ((unused)),  const char *path, off_t size)
 {
 	struct iconv *ic = iconv_get();
 	char *newpath;
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
-		err = fuse_fs_truncate(ic->next, newpath, size);
+		err = fuse_fs_truncate(fsm, ic->next, newpath, size);
 		free(newpath);
 	}
 	return err;
 }
 
-static int iconv_ftruncate(const char *path, off_t size,
+static int iconv_ftruncate(struct fuse_fsm* fsm __attribute__ ((unused)),  const char *path, off_t size,
 			   struct fuse_file_info *fi)
 {
 	struct iconv *ic = iconv_get();
 	char *newpath;
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
-		err = fuse_fs_ftruncate(ic->next, newpath, size, fi);
+		err = fuse_fs_ftruncate(fsm, ic->next, newpath, size, fi);
 		free(newpath);
 	}
 	return err;
 }
 
-static int iconv_utimens(const char *path, const struct timespec ts[2])
+static int iconv_utimens(struct fuse_fsm* fsm __attribute__ ((unused)),  const char *path, const struct timespec ts[2])
 {
 	struct iconv *ic = iconv_get();
 	char *newpath;
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
-		err = fuse_fs_utimens(ic->next, newpath, ts);
+		err = fuse_fs_utimens(fsm, ic->next, newpath, ts);
 		free(newpath);
 	}
 	return err;
 }
 
-static int iconv_create(const char *path, mode_t mode,
+static int iconv_create(struct fuse_fsm* fsm __attribute__ ((unused)),  const char *path, mode_t mode,
 			struct fuse_file_info *fi)
 {
 	struct iconv *ic = iconv_get();
 	char *newpath;
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
-		err = fuse_fs_create(ic->next, newpath, mode, fi);
+		err = fuse_fs_create(fsm, ic->next, newpath, mode, fi);
 		free(newpath);
 	}
 	return err;
 }
 
-static int iconv_open_file(const char *path, struct fuse_file_info *fi)
+static int iconv_open_file(struct fuse_fsm* fsm __attribute__ ((unused)),  const char *path, struct fuse_file_info *fi)
 {
 	struct iconv *ic = iconv_get();
 	char *newpath;
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
-		err = fuse_fs_open(ic->next, newpath, fi);
+		err = fuse_fs_open(fsm, ic->next, newpath, fi);
 		free(newpath);
 	}
 	return err;
 }
 
-static int iconv_read_buf(const char *path, struct fuse_bufvec **bufp,
+static int iconv_read_buf(struct fuse_fsm* fsm __attribute__ ((unused)),  const char *path, struct fuse_bufvec **bufp,
 			  size_t size, off_t offset, struct fuse_file_info *fi)
 {
 	struct iconv *ic = iconv_get();
 	char *newpath;
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
-		err = fuse_fs_read_buf(ic->next, newpath, bufp, size, offset, fi);
+		err = fuse_fs_read_buf(fsm, ic->next, newpath, bufp, size, offset, fi);
 		free(newpath);
 	}
 	return err;
 }
 
-static int iconv_write_buf(const char *path, struct fuse_bufvec *buf,
+static int iconv_write_buf(struct fuse_fsm* fsm __attribute__ ((unused)),  const char *path, struct fuse_bufvec *buf,
 			   off_t offset, struct fuse_file_info *fi)
 {
 	struct iconv *ic = iconv_get();
 	char *newpath;
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
-		err = fuse_fs_write_buf(ic->next, newpath, buf, offset, fi);
+		err = fuse_fs_write_buf(fsm, ic->next, newpath, buf, offset, fi);
 		free(newpath);
 	}
 	return err;
 }
 
-static int iconv_statfs(const char *path, struct statvfs *stbuf)
+static int iconv_statfs(struct fuse_fsm* fsm __attribute__ ((unused)),  const char *path, struct statvfs *stbuf)
 {
 	struct iconv *ic = iconv_get();
 	char *newpath;
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
-		err = fuse_fs_statfs(ic->next, newpath, stbuf);
+		err = fuse_fs_statfs(fsm, ic->next, newpath, stbuf);
 		free(newpath);
 	}
 	return err;
 }
 
-static int iconv_flush(const char *path, struct fuse_file_info *fi)
+static int iconv_flush(struct fuse_fsm* fsm __attribute__ ((unused)),  const char *path, struct fuse_file_info *fi)
 {
 	struct iconv *ic = iconv_get();
 	char *newpath;
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
-		err = fuse_fs_flush(ic->next, newpath, fi);
+		err = fuse_fs_flush(fsm, ic->next, newpath, fi);
 		free(newpath);
 	}
 	return err;
 }
 
-static int iconv_release(const char *path, struct fuse_file_info *fi)
+static int iconv_release(struct fuse_fsm* fsm __attribute__ ((unused)),  const char *path, struct fuse_file_info *fi)
 {
 	struct iconv *ic = iconv_get();
 	char *newpath;
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
-		err = fuse_fs_release(ic->next, newpath, fi);
+		err = fuse_fs_release(fsm, ic->next, newpath, fi);
 		free(newpath);
 	}
 	return err;
 }
 
-static int iconv_fsync(const char *path, int isdatasync,
+static int iconv_fsync(struct fuse_fsm* fsm __attribute__ ((unused)),  const char *path, int isdatasync,
 		       struct fuse_file_info *fi)
 {
 	struct iconv *ic = iconv_get();
 	char *newpath;
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
-		err = fuse_fs_fsync(ic->next, newpath, isdatasync, fi);
+		err = fuse_fs_fsync(fsm, ic->next, newpath, isdatasync, fi);
 		free(newpath);
 	}
 	return err;
 }
 
-static int iconv_fsyncdir(const char *path, int isdatasync,
+static int iconv_fsyncdir(struct fuse_fsm* fsm __attribute__ ((unused)),  const char *path, int isdatasync,
 			  struct fuse_file_info *fi)
 {
 	struct iconv *ic = iconv_get();
 	char *newpath;
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
-		err = fuse_fs_fsyncdir(ic->next, newpath, isdatasync, fi);
+		err = fuse_fs_fsyncdir(fsm, ic->next, newpath, isdatasync, fi);
 		free(newpath);
 	}
 	return err;
 }
 
-static int iconv_setxattr(const char *path, const char *name,
+static int iconv_setxattr(struct fuse_fsm* fsm __attribute__ ((unused)),  const char *path, const char *name,
 			  const char *value, size_t size, int flags)
 {
 	struct iconv *ic = iconv_get();
 	char *newpath;
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
-		err = fuse_fs_setxattr(ic->next, newpath, name, value, size,
+		err = fuse_fs_setxattr(fsm, ic->next, newpath, name, value, size,
 				       flags);
 		free(newpath);
 	}
 	return err;
 }
 
-static int iconv_getxattr(const char *path, const char *name, char *value,
+static int iconv_getxattr(struct fuse_fsm* fsm __attribute__ ((unused)),  const char *path, const char *name, char *value,
 			  size_t size)
 {
 	struct iconv *ic = iconv_get();
 	char *newpath;
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
-		err = fuse_fs_getxattr(ic->next, newpath, name, value, size);
+		err = fuse_fs_getxattr(fsm, ic->next, newpath, name, value, size);
 		free(newpath);
 	}
 	return err;
 }
 
-static int iconv_listxattr(const char *path, char *list, size_t size)
+static int iconv_listxattr(struct fuse_fsm* fsm __attribute__ ((unused)),  const char *path, char *list, size_t size)
 {
 	struct iconv *ic = iconv_get();
 	char *newpath;
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
-		err = fuse_fs_listxattr(ic->next, newpath, list, size);
+		err = fuse_fs_listxattr(fsm, ic->next, newpath, list, size);
 		free(newpath);
 	}
 	return err;
 }
 
-static int iconv_removexattr(const char *path, const char *name)
+static int iconv_removexattr(struct fuse_fsm* fsm __attribute__ ((unused)),  const char *path, const char *name)
 {
 	struct iconv *ic = iconv_get();
 	char *newpath;
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
-		err = fuse_fs_removexattr(ic->next, newpath, name);
+		err = fuse_fs_removexattr(fsm, ic->next, newpath, name);
 		free(newpath);
 	}
 	return err;
 }
 
-static int iconv_lock(const char *path, struct fuse_file_info *fi, int cmd,
+static int iconv_lock(struct fuse_fsm* fsm __attribute__ ((unused)),  const char *path, struct fuse_file_info *fi, int cmd,
 		      struct flock *lock)
 {
 	struct iconv *ic = iconv_get();
 	char *newpath;
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
-		err = fuse_fs_lock(ic->next, newpath, fi, cmd, lock);
+		err = fuse_fs_lock(fsm, ic->next, newpath, fi, cmd, lock);
 		free(newpath);
 	}
 	return err;
 }
 
-static int iconv_flock(const char *path, struct fuse_file_info *fi, int op)
+static int iconv_flock(struct fuse_fsm* fsm __attribute__ ((unused)),  const char *path, struct fuse_file_info *fi, int op)
 {
 	struct iconv *ic = iconv_get();
 	char *newpath;
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
-		err = fuse_fs_flock(ic->next, newpath, fi, op);
+		err = fuse_fs_flock(fsm, ic->next, newpath, fi, op);
 		free(newpath);
 	}
 	return err;
 }
 
-static int iconv_bmap(const char *path, size_t blocksize, uint64_t *idx)
+static int iconv_bmap(struct fuse_fsm* fsm __attribute__ ((unused)),  const char *path, size_t blocksize, uint64_t *idx)
 {
 	struct iconv *ic = iconv_get();
 	char *newpath;
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
-		err = fuse_fs_bmap(ic->next, newpath, blocksize, idx);
+		err = fuse_fs_bmap(fsm, ic->next, newpath, blocksize, idx);
 		free(newpath);
 	}
 	return err;
 }
 
-static void *iconv_init(struct fuse_conn_info *conn)
+static void *iconv_init( struct fuse_conn_info *conn)
 {
 	struct iconv *ic = iconv_get();
 	fuse_fs_init(ic->next, conn);

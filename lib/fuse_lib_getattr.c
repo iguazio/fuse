@@ -13,35 +13,34 @@ error           FAILED(f3)      FAILED(f3)          FAILED(f3)
 
 struct fsm_getattr_data{
     struct stat buf;
+    struct fuse_intr_data d;
     char *path;
     struct fuse * f;
-    struct fuse_file_info *fi;
+    struct fuse_file_info fi;
+    int has_fi;
     fuse_ino_t ino;
-    int err;
     fuse_req_t req;
 };
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
-static const char* f1(const char * from,const char * to,void *data){
+static const char* f1(struct fuse_fsm* fsm,const char * from,const char * to,void *data){
     struct fsm_getattr_data *dt = (struct fsm_getattr_data *)data;
-    struct fuse_intr_data d;
-    fuse_prepare_interrupt(dt->f, dt->req, &d);
-    dt->err = fuse_fs_fgetattr(dt->f->fs, dt->path, &dt->buf, dt->fi);
-    fuse_finish_interrupt(dt->f, dt->req, &d);
-	return NULL;
+    fuse_prepare_interrupt(dt->f, dt->req, &dt->d);
+    int err;
+    if (dt->has_fi)
+        err = fuse_fs_fgetattr(fsm, dt->f->fs, dt->path, &dt->buf, &dt->fi);
+    else
+        err = fuse_fs_getattr(fsm, dt->f->fs, dt->path, &dt->buf);
+
+    if (err == FUSE_LIB_ERROR_PENDING_REQ)
+        return NULL;
+    fuse_fsm_set_err(fsm,err);
+    return (err)?"error":"ok";
 }
 
-static const char* f2(const char * from,const char * to,void *data){
-    struct fsm_getattr_data *dt = (struct fsm_getattr_data *)data;
-    struct fuse_intr_data d;
-    fuse_prepare_interrupt(dt->f, dt->req, &d);
-    dt->err = fuse_fs_getattr(dt->f->fs, dt->path, &dt->buf);
-    fuse_finish_interrupt(dt->f, dt->req, &d);
-	return NULL;
-}
 
-static const char* f3(const char * from,const char * to,void *data){
+static const char* f3(struct fuse_fsm* fsm,const char * from,const char * to,void *data){
     struct fsm_getattr_data *dt = (struct fsm_getattr_data *)data;
     struct node *node;
 
@@ -52,25 +51,28 @@ static const char* f3(const char * from,const char * to,void *data){
     if (dt->f->conf.auto_cache)
         update_stat(node, &dt->buf);
     pthread_mutex_unlock(&dt->f->lock);
+
+    fuse_finish_interrupt(dt->f, dt->req, &dt->d);
     set_stat(dt->f, dt->ino, &dt->buf);
     fuse_reply_attr(dt->req, &dt->buf, dt->f->conf.attr_timeout);
+    free_path(dt->f, dt->ino, dt->path);
 	return NULL;
-
 }
 
 
-static const char* f4(const char * from,const char * to,void *data){
+static const char* f4(struct fuse_fsm* fsm,const char * from,const char * to,void *data){
     struct fsm_getattr_data *dt = (struct fsm_getattr_data *)data;
-    reply_err(dt->req, dt->err);
+    fuse_finish_interrupt(dt->f, dt->req, &dt->d);
+    int err = fuse_fsm_get_err(fsm);
+    reply_err(dt->req, err);
+    free_path(dt->f, dt->ino, dt->path);
 	return NULL;
 }
 
-FUSE_FSM_EVENTS(GETATTR,"send_fget","send_get","ok","error")
-FUSE_FSM_STATES(GETATTR,        "CREATED",   "FGETS",      "GETS"    ,"DONE")
-FUSE_FSM_ENTRY(/*"send_fget"*/ {"FGETS",f1}, NONE,         NONE      ,NONE)           
-FUSE_FSM_ENTRY(/*"send_get"*/  {"GETS",f2},  NONE,         NONE      ,NONE)           
-FUSE_FSM_ENTRY(/*"ok"*/        {"DONE",f3},  {"DONE",f3}, {"DONE",f3},NONE)           
-FUSE_FSM_LAST (/*"error"*/     {"DONE",f4},  {"DONE",f4}, {"DONE",f4},NONE)           
+FUSE_FSM_EVENTS(GETATTR,"ok","error")
+FUSE_FSM_STATES(GETATTR,        "CREATED",   "GETS"    ,"DONE")
+FUSE_FSM_ENTRY(/*"ok"*/         {"GETS",f1},  {"DONE",f3},NONE)           
+FUSE_FSM_LAST (/*"error"*/      {"DONE",f4},  {"DONE",f4},NONE)       
 
 
 
@@ -80,35 +82,24 @@ void fuse_lib_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi)
     struct fuse_fsm *new_fsm = NULL;
     FUSE_FSM_ALLOC(GETATTR,new_fsm,struct fsm_getattr_data);
     struct fsm_getattr_data *dt = (struct fsm_getattr_data*)new_fsm->data;
-
-    struct fuse *f = req_fuse_prepare(req);
-
-    dt->f = f;
-    dt->fi = fi;
-    dt->ino = ino;
-    dt->req = req;
-    
     int err;
+    struct fuse *f = req_fuse_prepare(req);
     
     if (fi != NULL && f->fs->op.fgetattr)
         err = get_path_nullok(f, ino, &dt->path);
     else
         err = get_path(f, ino, &dt->path);
-
-    if (err)
-        fuse_fsm_run(new_fsm, "error");
-    else{
-        fuse_fsm_run(new_fsm, (fi)? "send_fget" : "send_get");
-        err = dt->err;
-    }
     
-    free_path(f, ino, dt->path);
-
-    if (dt->err == FUSE_LIB_ERROR_PENDING_REQ)
-        fuse_async_add_pending(new_fsm);
-    else
-        fuse_fsm_run(new_fsm, dt->err ? "error" : "ok");
-
-    if (!strcmp(fuse_fsm_cur_state(new_fsm),"DONE"))
-        FUSE_FSM_FREE(new_fsm);
+    if (!err) {
+        dt->f = f;
+        dt->has_fi = (fi != NULL);
+        if (dt->has_fi)
+            dt->fi = *fi;
+        dt->ino = ino;
+        dt->req = req;
+        fuse_fsm_run(new_fsm, "ok");
+        if (!strcmp(fuse_fsm_cur_state(new_fsm),"DONE"))
+            FUSE_FSM_FREE(new_fsm);
+    }else
+        reply_err(req, err);
 }

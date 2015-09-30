@@ -18,9 +18,8 @@ struct fsm_readdir_data{
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
 /*Send request to the fs*/
-static const char* f1(const char * from,const char * to,void *data){
+static const char* f1(struct fuse_fsm* fsm,const char * from,const char * to,void *data){
     struct fsm_readdir_data *dt = (struct fsm_readdir_data *)data;
-    struct fuse_intr_data d;
     fuse_fill_dir_t filler = fill_dir;
 
     if (dt->flags & FUSE_READDIR_PLUS)
@@ -34,19 +33,21 @@ static const char* f1(const char * from,const char * to,void *data){
     dt->dh->needlen = dt->size;
     dt->dh->req = dt->req;
     dt->dh->filled = 1;
-    fuse_prepare_interrupt(dt->f, dt->req, &d);
-    dt->err = fuse_fs_readdir(dt->f->fs, dt->path, dt->dh, filler, dt->off, &dt->fi, dt->flags);
-    fuse_finish_interrupt(dt->f, dt->req, &d);
-	return NULL;
-
+//    fuse_prepare_interrupt(dt->f, dt->req, &d);
+    int err = fuse_fs_readdir(fsm, dt->f->fs, dt->path, dt->dh, filler, dt->off, &dt->fi, dt->flags);
+    if (err == FUSE_LIB_ERROR_PENDING_REQ)
+        return NULL;
+    fuse_fsm_set_err(fsm, err);
+    return (err)?"error":"ok";
 }
 /*There is correct data - send it back to the driver*/
-static const char* f2(const char * from,const char * to,void *data){
+static const char* f2(struct fuse_fsm* fsm,const char * from,const char * to,void *data){
     struct fsm_readdir_data *dt = (struct fsm_readdir_data *)data;
     dt->dh->req = NULL;
     dt->dh->filled = 1;
     if (dt->dh->error)
         dt->dh->filled = 0;
+    free_path(dt->f, dt->ino, dt->path);
     pthread_mutex_lock(&dt->dh->lock);
     dt->dh->needlen = dt->size;
     int err = readdir_fill_from_list(dt->req, dt->dh, dt->off, dt->flags);
@@ -56,13 +57,14 @@ static const char* f2(const char * from,const char * to,void *data){
         fuse_reply_buf(dt->req, dt->dh->contents, dt->dh->len);
     pthread_mutex_unlock(&dt->dh->lock);
 	return NULL;
-
 }
 
 /*Error - report driver*/
-static const char* f3(const char * from,const char * to,void *data){
+static const char* f3(struct fuse_fsm* fsm,const char * from,const char * to,void *data){
     struct fsm_readdir_data *dt = (struct fsm_readdir_data *)data;
-    reply_err(dt->req, dt->err);
+    int err = fuse_fsm_get_err(fsm);
+    free_path(dt->f, dt->ino, dt->path);
+    reply_err(dt->req, err);
 	return NULL;
 }
 
@@ -112,31 +114,19 @@ static int readdir_fill_from_list(fuse_req_t req, struct fuse_dh *dh,
     return 0;
 }
 
-FUSE_FSM_EVENTS(READDIR,"read","ok","error")
+FUSE_FSM_EVENTS(READDIR,"ok","error")
 FUSE_FSM_STATES(READDIR,  "CREATED",  "RDIR"      ,   "DONE")
-FUSE_FSM_ENTRY(/*read*/ {"RDIR",f1},  NONE        ,   NONE)           
-FUSE_FSM_ENTRY(/*ok*/   {"DONE",f2},  {"DONE",f2} ,   NONE)           
+FUSE_FSM_ENTRY(/*ok*/   {"RDIR",f1},  {"DONE",f2} ,   NONE)           
 FUSE_FSM_LAST (/*error*/{"DONE",f3},  {"DONE",f3} ,   NONE)           
 
 static void fuse_readdir_common(fuse_req_t req, fuse_ino_t ino, size_t size,
 				off_t off, struct fuse_file_info *llfi,
 				enum fuse_readdir_flags flags)
 {
-    struct fuse_fsm *new_fsm = NULL;
-    FUSE_FSM_ALLOC(READDIR,new_fsm,struct fsm_readdir_data);
-    struct fsm_readdir_data *dt = (struct fsm_readdir_data*)new_fsm->data;
-
-    
     struct fuse *f = req_fuse_prepare(req);
-	struct fuse_dh *dh = get_dirhandle(llfi, &dt->fi);
-
-    dt->dh = dh;
-    dt->off = off;
-    dt->size = size;
-    dt->flags = flags;
-    dt->req = req;
-    dt->ino = ino;
-    dt->f = f;
+    struct fuse_file_info fi;
+    struct fuse_dh *dh = get_dirhandle(llfi, &fi);
+    char *path;
 
 
 	pthread_mutex_lock(&dh->lock);
@@ -149,23 +139,32 @@ static void fuse_readdir_common(fuse_req_t req, fuse_ino_t ino, size_t size,
         int err;
 
         if (f->fs->op.readdir)
-            err = get_path_nullok(f, ino, &dt->path);
+            err = get_path_nullok(f, ino, &path);
         else
-            err = get_path(f, ino, &dt->path);
+            err = get_path(f, ino, &path);
 
-        if (!err)
-            fuse_fsm_run(new_fsm, "read");
-        free_path(f, ino, dt->path);
-    }
+        if (!err){
+            struct fuse_fsm *new_fsm = NULL;
+            FUSE_FSM_ALLOC(READDIR,new_fsm,struct fsm_readdir_data);
+            struct fsm_readdir_data *dt = (struct fsm_readdir_data*)new_fsm->data;
 
-    if (dt->err == FUSE_LIB_ERROR_PENDING_REQ)
-        fuse_async_add_pending(new_fsm);
-    else if (dh->filled)
-        fuse_fsm_run(new_fsm, dt->err ? "error" : "ok");
-    
-    if (!strcmp(fuse_fsm_cur_state(new_fsm),"DONE"))
-        FUSE_FSM_FREE(new_fsm);
+            dt->dh = dh;
+            dt->off = off;
+            dt->size = size;
+            dt->flags = flags;
+            dt->req = req;
+            dt->ino = ino;
+            dt->f = f;
+            dt->path = path;
+            dt->fi = fi;
+            fuse_fsm_run(new_fsm, "ok");
+            if (!strcmp(fuse_fsm_cur_state(new_fsm),"DONE"))
+                FUSE_FSM_FREE(new_fsm);
+        }else
+            reply_err(req,err);
 
+    }else
+        reply_err(req,0);
     pthread_mutex_unlock(&dh->lock);
 }
 

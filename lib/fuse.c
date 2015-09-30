@@ -588,8 +588,7 @@ int is_open(struct fuse *f, fuse_ino_t dir, const char *name)
 	return isopen;
 }
 
-char *hidden_name(struct fuse *f, fuse_ino_t dir, const char *oldname,
-			 char *newname, size_t bufsize)
+char * hidden_name( struct fuse_fsm* fsm, struct fuse *f, fuse_ino_t dir, const char *oldname, char *newname, size_t bufsize )
 {
 	struct stat buf;
 	struct node *node;
@@ -618,7 +617,7 @@ char *hidden_name(struct fuse *f, fuse_ino_t dir, const char *oldname,
 			break;
 
 		memset(&buf, 0, sizeof(buf));
-		res = fuse_fs_getattr(f->fs, newpath, &buf);
+		res = fuse_fs_getattr(fsm, f->fs, newpath, &buf);
 		if (res == -ENOENT)
 			break;
 		free(newpath);
@@ -628,16 +627,15 @@ char *hidden_name(struct fuse *f, fuse_ino_t dir, const char *oldname,
 	return newpath;
 }
 
-int hide_node(struct fuse *f, const char *oldpath,
-		     fuse_ino_t dir, const char *oldname)
+int hide_node( struct fuse_fsm* fsm, struct fuse *f, const char *oldpath, fuse_ino_t dir, const char *oldname )
 {
 	char newname[64];
 	char *newpath;
 	int err = -EBUSY;
 
-	newpath = hidden_name(f, dir, oldname, newname, sizeof(newname));
+	newpath = hidden_name(fsm, f, dir, oldname, newname, sizeof(newname));
 	if (newpath) {
-		err = fuse_fs_rename(f->fs, oldpath, newpath, 0);
+		err = fuse_fs_rename(fsm, f->fs, oldpath, newpath, 0);
 		if (!err)
 			err = rename_node(f, dir, oldname, dir, newname, 1);
 		free(newpath);
@@ -730,37 +728,6 @@ void reply_entry(fuse_req_t req, const struct fuse_entry_param *e,
 }
 
 
-void fuse_do_release(struct fuse *f, fuse_ino_t ino, const char *path,
-			    struct fuse_file_info *fi)
-{
-	struct node *node;
-	int unlink_hidden = 0;
-
-	fuse_fs_release(f->fs, path, fi);
-
-	pthread_mutex_lock(&f->lock);
-	node = get_node(f, ino);
-	assert(node->open_count > 0);
-	--node->open_count;
-	if (node->is_hidden && !node->open_count) {
-		unlink_hidden = 1;
-		node->is_hidden = 0;
-	}
-	pthread_mutex_unlock(&f->lock);
-
-	if(unlink_hidden) {
-		if (path) {
-			fuse_fs_unlink(f->fs, path);
-		} else if (f->conf.nopath) {
-			char *unlinkpath;
-
-			if (get_path(f, ino, &unlinkpath) == 0)
-				fuse_fs_unlink(f->fs, unlinkpath);
-
-			free_path(f, ino, unlinkpath);
-		}
-	}
-}
 
 double diff_timespec(const struct timespec *t1,
 			    const struct timespec *t2)
@@ -1544,7 +1511,7 @@ void fuse_destroy(struct fuse *f)
 				if (node->is_hidden) {
 					char *path;
 					if (try_get_path(f, node->nodeid, NULL, &path, NULL, false) == 0) {
-						fuse_fs_unlink(f->fs, path);
+						fuse_fs_unlink(NULL, f->fs, path);
 						free(path);
 					}
 				}
@@ -1573,29 +1540,8 @@ void fuse_destroy(struct fuse *f)
 	fuse_delete_context_key();
 }
 
-struct fuse_async_responce * fuse_async_responce_alloc(void *user_data)
-{
-	struct fuse_async_responce *res = malloc(sizeof(struct fuse_async_responce));
-	if (res){
-		memset(res,0,sizeof(*res));
-		res->cmd_req = user_data;
-	}
-	fuse_get_context()->async_request = res;
-	return res;
-}
 
-void fuse_async_session_process_responce(struct fuse_async_responce * responce) 
-{
-    fuse_fsm_run(responce->fsm,"ok");
-    if (!strcmp(fuse_fsm_cur_state(responce->fsm),"DONE"))
-        FUSE_FSM_FREE(responce->fsm);
-}
 
-void fuse_async_add_pending( struct fuse_fsm *fsm )
-{
-    struct fuse_async_responce* resp = (struct fuse_async_responce* )fuse_get_context()->async_request;
-    resp->fsm = fsm;
-}
 
 struct fuse_dh *get_dirhandle(const struct fuse_file_info *llfi,struct fuse_file_info *fi)
 {
