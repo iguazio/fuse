@@ -1,19 +1,9 @@
 #include "fuse_lib.h"
 #include "fuse_lib_lookup_path.h"
-/*/////////////////////////////////////////////////////////////////////////
-                states
-events          CREATED         FGETS_SENT          GETS_SENT         DESTROYED    
-                -------         ---------           ---------         ---------
-send_fget       FGETS_SENT(f1)  NONE                NONE            
-send_get        GETS_SENT(f2)   NONE                NONE            
-ok              SUCCEDED(f3)    SUCCEDED(f3)        SUCCEDED(f3)      
-error           FAILED(f3)      FAILED(f3)          FAILED(f3)        
-/////////////////////////////////////////////////////////////////////////*/
 
 
 struct fsm_lookup_path_data{
     struct fuse_fsm *parent;
-    struct fuse_fsm *i_am;
     struct fuse_entry_param *e;
     const char *path;
     const char *name;
@@ -21,12 +11,10 @@ struct fsm_lookup_path_data{
     struct fuse_file_info fi;
     int has_fi;
     fuse_ino_t nodeid;
-    int err;
 };
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 
-static const char* f1(struct fuse_fsm* fsm,const char * from,const char * to,void *data){
+static const char* f1(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_lookup_path_data *dt = (struct fsm_lookup_path_data *)data;
     int err;
     if(dt->has_fi)
@@ -40,7 +28,7 @@ static const char* f1(struct fuse_fsm* fsm,const char * from,const char * to,voi
 }
 
 
-static const char* f3(struct fuse_fsm* fsm,const char * from,const char * to,void *data){
+static const char* f3(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_lookup_path_data *dt = (struct fsm_lookup_path_data *)data;
 
     int res = do_lookup(dt->f, dt->nodeid, dt->name, dt->e);
@@ -53,7 +41,7 @@ static const char* f3(struct fuse_fsm* fsm,const char * from,const char * to,voi
 	return NULL;
 }
 
-static const char* f4(struct fuse_fsm* fsm,const char * from,const char * to,void *data){
+static const char* f4(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_lookup_path_data *dt = (struct fsm_lookup_path_data *)data;
     int err = fuse_fsm_get_err(fsm);
     if (dt->parent){
@@ -89,7 +77,6 @@ int lookup_path(struct fuse_fsm *parent,
     dt->parent = parent;
     dt->name = name;
     dt->path = path;
-    dt->i_am = new_fsm;
     dt->e = e;
     
     fuse_fsm_run(new_fsm, "ok");

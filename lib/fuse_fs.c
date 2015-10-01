@@ -8,7 +8,7 @@
 //From fuse.c
 void fuse_put_module(struct fuse_module *m);
 
-int fuse_fs_getattr( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, struct stat *buf )
+int fuse_fs_getattr( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, struct stat *buf )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.getattr) {
@@ -21,7 +21,7 @@ int fuse_fs_getattr( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path,
     }
 }
 
-int fuse_fs_fgetattr( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, struct stat *buf, struct fuse_file_info *fi )
+int fuse_fs_fgetattr( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, struct stat *buf, struct fuse_file_info *fi )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.fgetattr) {
@@ -40,7 +40,7 @@ int fuse_fs_fgetattr( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path
     }
 }
 
-int fuse_fs_rename( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *oldpath, const char *newpath, unsigned int flags )
+int fuse_fs_rename( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *oldpath, const char *newpath, unsigned int flags )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.rename) {
@@ -54,7 +54,7 @@ int fuse_fs_rename( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *oldpat
     }
 }
 
-int fuse_fs_unlink( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path )
+int fuse_fs_unlink( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.unlink) {
@@ -67,7 +67,7 @@ int fuse_fs_unlink( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path )
     }
 }
 
-int fuse_fs_rmdir( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path )
+int fuse_fs_rmdir( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.rmdir) {
@@ -80,7 +80,7 @@ int fuse_fs_rmdir( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path )
     }
 }
 
-int fuse_fs_symlink( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *linkname, const char *path )
+int fuse_fs_symlink( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *linkname, const char *path )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.symlink) {
@@ -93,7 +93,7 @@ int fuse_fs_symlink( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *linkn
     }
 }
 
-int fuse_fs_link( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *oldpath, const char *newpath )
+int fuse_fs_link( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *oldpath, const char *newpath )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.link) {
@@ -106,7 +106,7 @@ int fuse_fs_link( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *oldpath,
     }
 }
 
-int fuse_fs_release( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, struct fuse_file_info *fi )
+int fuse_fs_release( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, struct fuse_file_info *fi )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.release) {
@@ -121,7 +121,7 @@ int fuse_fs_release( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path,
     }
 }
 
-int fuse_fs_opendir( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, struct fuse_file_info *fi )
+int fuse_fs_opendir( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, struct fuse_file_info *fi )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.opendir) {
@@ -143,7 +143,7 @@ int fuse_fs_opendir( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path,
     }
 }
 
-int fuse_fs_open( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, struct fuse_file_info *fi )
+int fuse_fs_open( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, struct fuse_file_info *fi )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.open) {
@@ -165,7 +165,7 @@ int fuse_fs_open( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, st
     }
 }
 
-int fuse_fs_read_buf( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, struct fuse_bufvec **bufp, size_t size, off_t off, struct fuse_file_info *fi )
+int fuse_fs_read_buf( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, struct fuse_bufvec **bufp, size_t size, off_t off, struct fuse_file_info *fi )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.read || fs->op.read_buf) {
@@ -218,7 +218,7 @@ int fuse_fs_read_buf( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path
     }
 }
 
-int fuse_fs_read( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, char *mem, size_t size, off_t off, struct fuse_file_info *fi )
+int fuse_fs_read( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, char *mem, size_t size, off_t off, struct fuse_file_info *fi )
 {
     int res;
     struct fuse_bufvec *buf = NULL;
@@ -234,7 +234,7 @@ int fuse_fs_read( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, ch
 
     return res;}
 
-int fuse_fs_write_buf( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, struct fuse_bufvec *buf, off_t off, struct fuse_file_info *fi )
+int fuse_fs_write_buf( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, struct fuse_bufvec *buf, off_t off, struct fuse_file_info *fi )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.write_buf || fs->op.write) {
@@ -296,7 +296,7 @@ out:
     }
 }
 
-int fuse_fs_write( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, const char *mem, size_t size, off_t off, struct fuse_file_info *fi )
+int fuse_fs_write( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, const char *mem, size_t size, off_t off, struct fuse_file_info *fi )
 {
     struct fuse_bufvec bufv = FUSE_BUFVEC_INIT(size);
 
@@ -305,7 +305,7 @@ int fuse_fs_write( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, c
     return fuse_fs_write_buf(fsm, fs, path, &bufv, off, fi);
 }
 
-int fuse_fs_fsync( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, int datasync, struct fuse_file_info *fi )
+int fuse_fs_fsync( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, int datasync, struct fuse_file_info *fi )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.fsync) {
@@ -319,7 +319,7 @@ int fuse_fs_fsync( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, i
     }
 }
 
-int fuse_fs_fsyncdir( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, int datasync, struct fuse_file_info *fi )
+int fuse_fs_fsyncdir( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, int datasync, struct fuse_file_info *fi )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.fsyncdir) {
@@ -333,7 +333,7 @@ int fuse_fs_fsyncdir( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path
     }
 }
 
-int fuse_fs_flush( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, struct fuse_file_info *fi )
+int fuse_fs_flush( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, struct fuse_file_info *fi )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.flush) {
@@ -347,7 +347,7 @@ int fuse_fs_flush( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, s
     }
 }
 
-int fuse_fs_statfs( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, struct statvfs *buf )
+int fuse_fs_statfs( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, struct statvfs *buf )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.statfs) {
@@ -362,7 +362,7 @@ int fuse_fs_statfs( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, 
     }
 }
 
-int fuse_fs_releasedir( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, struct fuse_file_info *fi )
+int fuse_fs_releasedir( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, struct fuse_file_info *fi )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.releasedir) {
@@ -376,7 +376,7 @@ int fuse_fs_releasedir( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *pa
     }
 }
 
-int fuse_fs_readdir( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, void *buf, fuse_fill_dir_t filler, off_t off, struct fuse_file_info *fi, enum fuse_readdir_flags flags )
+int fuse_fs_readdir( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, void *buf, fuse_fill_dir_t filler, off_t off, struct fuse_file_info *fi, enum fuse_readdir_flags flags )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.readdir) {
@@ -393,7 +393,7 @@ int fuse_fs_readdir( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path,
     }
 }
 
-int fuse_fs_create( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, mode_t mode, struct fuse_file_info *fi )
+int fuse_fs_create( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, mode_t mode, struct fuse_file_info *fi )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.create) {
@@ -417,7 +417,7 @@ int fuse_fs_create( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, 
     }
 }
 
-int fuse_fs_lock( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, struct fuse_file_info *fi, int cmd, struct flock *lock )
+int fuse_fs_lock( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, struct fuse_file_info *fi, int cmd, struct flock *lock )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.lock) {
@@ -441,7 +441,7 @@ int fuse_fs_lock( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, st
     }
 }
 
-int fuse_fs_flock( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, struct fuse_file_info *fi, int op )
+int fuse_fs_flock( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, struct fuse_file_info *fi, int op )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.flock) {
@@ -461,7 +461,7 @@ int fuse_fs_flock( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, s
     }
 }
 
-int fuse_fs_chown( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, uid_t uid, gid_t gid )
+int fuse_fs_chown( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, uid_t uid, gid_t gid )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.chown) {
@@ -475,7 +475,7 @@ int fuse_fs_chown( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, u
     }
 }
 
-int fuse_fs_truncate( struct fuse_fsm* fsm,struct fuse_fs *fs, const char *path, off_t size )
+int fuse_fs_truncate( struct fuse_fsm* fsm __attribute__((unused)),struct fuse_fs *fs, const char *path, off_t size )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.truncate) {
@@ -489,7 +489,7 @@ int fuse_fs_truncate( struct fuse_fsm* fsm,struct fuse_fs *fs, const char *path,
     }
 }
 
-int fuse_fs_ftruncate(struct fuse_fsm* fsm,struct fuse_fs *fs, const char *path, off_t size, struct fuse_file_info *fi)
+int fuse_fs_ftruncate(struct fuse_fsm* fsm __attribute__((unused)),struct fuse_fs *fs, const char *path, off_t size, struct fuse_file_info *fi)
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.ftruncate) {
@@ -510,7 +510,7 @@ int fuse_fs_ftruncate(struct fuse_fsm* fsm,struct fuse_fs *fs, const char *path,
     }
 }
 
-int fuse_fs_utimens( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, const struct timespec tv[2] )
+int fuse_fs_utimens( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, const struct timespec tv[2] )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.utimens) {
@@ -525,7 +525,7 @@ int fuse_fs_utimens( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path,
     }
 }
 
-int fuse_fs_access( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, int mask )
+int fuse_fs_access( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, int mask )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.access) {
@@ -538,7 +538,7 @@ int fuse_fs_access( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, 
     }
 }
 
-int fuse_fs_readlink( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, char *buf, size_t len )
+int fuse_fs_readlink( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, char *buf, size_t len )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.readlink) {
@@ -552,7 +552,7 @@ int fuse_fs_readlink( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path
     }
 }
 
-int fuse_fs_mknod( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, mode_t mode, dev_t rdev )
+int fuse_fs_mknod( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, mode_t mode, dev_t rdev )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.mknod) {
@@ -567,7 +567,7 @@ int fuse_fs_mknod( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, m
     }
 }
 
-int fuse_fs_mkdir( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, mode_t mode )
+int fuse_fs_mkdir( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, mode_t mode )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.mkdir) {
@@ -581,7 +581,7 @@ int fuse_fs_mkdir( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, m
     }
 }
 
-int fuse_fs_setxattr( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, const char *name, const char *value, size_t size, int flags )
+int fuse_fs_setxattr( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, const char *name, const char *value, size_t size, int flags )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.setxattr) {
@@ -595,7 +595,7 @@ int fuse_fs_setxattr( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path
     }
 }
 
-int fuse_fs_getxattr( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, const char *name, char *value, size_t size )
+int fuse_fs_getxattr( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, const char *name, char *value, size_t size )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.getxattr) {
@@ -609,7 +609,7 @@ int fuse_fs_getxattr( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path
     }
 }
 
-int fuse_fs_listxattr( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, char *list, size_t size )
+int fuse_fs_listxattr( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, char *list, size_t size )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.listxattr) {
@@ -623,7 +623,7 @@ int fuse_fs_listxattr( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *pat
     }
 }
 
-int fuse_fs_bmap( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, size_t blocksize, uint64_t *idx )
+int fuse_fs_bmap( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, size_t blocksize, uint64_t *idx )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.bmap) {
@@ -638,7 +638,7 @@ int fuse_fs_bmap( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, si
     }
 }
 
-int fuse_fs_removexattr( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, const char *name )
+int fuse_fs_removexattr( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, const char *name )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.removexattr) {
@@ -651,7 +651,7 @@ int fuse_fs_removexattr( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *p
     }
 }
 
-int fuse_fs_ioctl( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, int cmd, void *arg, struct fuse_file_info *fi, unsigned int flags, void *data )
+int fuse_fs_ioctl( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, int cmd, void *arg, struct fuse_file_info *fi, unsigned int flags, void *data )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.ioctl) {
@@ -664,7 +664,7 @@ int fuse_fs_ioctl( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, i
         return -ENOSYS;
 }
 
-int fuse_fs_poll( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, struct fuse_file_info *fi, struct fuse_pollhandle *ph, unsigned *reventsp )
+int fuse_fs_poll( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, struct fuse_file_info *fi, struct fuse_pollhandle *ph, unsigned *reventsp )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.poll) {
@@ -686,7 +686,7 @@ int fuse_fs_poll( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, st
         return -ENOSYS;
 }
 
-int fuse_fs_fallocate( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, int mode, off_t offset, off_t length, struct fuse_file_info *fi )
+int fuse_fs_fallocate( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, int mode, off_t offset, off_t length, struct fuse_file_info *fi )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.fallocate) {
@@ -725,7 +725,7 @@ void fuse_fs_destroy(struct fuse_fs *fs)
         fuse_put_module(fs->m);
     free(fs);
 }
-int fuse_fs_chmod( struct fuse_fsm* fsm, struct fuse_fs *fs, const char *path, mode_t mode )
+int fuse_fs_chmod( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, mode_t mode )
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.chmod)

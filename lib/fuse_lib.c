@@ -147,87 +147,7 @@ static void fuse_lib_mknod(fuse_req_t req, fuse_ino_t parent, const char *name,
     reply_entry(req, &e, err);
 }
 
-static void fuse_lib_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name,
-                           mode_t mode)
-{
-    struct fuse *f = req_fuse_prepare(req);
-    struct fuse_entry_param e;
-    char *path;
-    int err;
 
-    err = get_path_name(f, parent, name, &path);
-    if (!err) {
-        struct fuse_intr_data d;
-
-        fuse_prepare_interrupt(f, req, &d);
-        err = fuse_fs_mkdir(NULL, f->fs, path, mode);
-        if (!err)
-            err = lookup_path(NULL, f, parent, name, path, &e, NULL);
-        fuse_finish_interrupt(f, req, &d);
-        free_path(f, parent, path);
-    }
-    // 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-    // 		fuse_async_add_pending(NULL,f, req, 0, FUSE_MKDIR);
-    //         return;
-    //     }
-
-    reply_entry(req, &e, err);
-}
-
-static void fuse_lib_unlink(fuse_req_t req, fuse_ino_t parent,
-                            const char *name)
-{
-    struct fuse *f = req_fuse_prepare(req);
-    struct node *wnode;
-    char *path;
-    int err;
-
-    err = get_path_wrlock(f, parent, name, &path, &wnode);
-    if (!err) {
-        struct fuse_intr_data d;
-
-        fuse_prepare_interrupt(f, req, &d);
-        if (!f->conf.hard_remove && is_open(f, parent, name)) {
-            err = hide_node(NULL, f, path, parent, name);
-        } else {
-            err = fuse_fs_unlink(NULL, f->fs, path);
-            if (!err && err != FUSE_LIB_ERROR_PENDING_REQ)
-                remove_node(f, parent, name);
-        }
-        fuse_finish_interrupt(f, req, &d);
-        free_path_wrlock(f, parent, wnode, path);
-    }
-    // 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-    // 		fuse_async_add_pending(NULL,f, req, 0, FUSE_UNLINK);
-    //         return;
-    //     }
-    reply_err(req, err);
-}
-
-static void fuse_lib_rmdir(fuse_req_t req, fuse_ino_t parent, const char *name)
-{
-    struct fuse *f = req_fuse_prepare(req);
-    struct node *wnode;
-    char *path;
-    int err;
-
-    err = get_path_wrlock(f, parent, name, &path, &wnode);
-    if (!err) {
-        struct fuse_intr_data d;
-
-        fuse_prepare_interrupt(f, req, &d);
-        err = fuse_fs_rmdir(NULL, f->fs, path);
-        fuse_finish_interrupt(f, req, &d);
-        if (!err && err != FUSE_LIB_ERROR_PENDING_REQ)
-            remove_node(f, parent, name);
-        free_path_wrlock(f, parent, wnode, path);
-    }
-    // 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-    // 		fuse_async_add_pending(NULL,f, req, 0, FUSE_RMDIR);
-    //         return;
-    //     }
-    reply_err(req, err);
-}
 
 static void fuse_lib_symlink(fuse_req_t req, const char *linkname,
                              fuse_ino_t parent, const char *name)
@@ -255,47 +175,6 @@ static void fuse_lib_symlink(fuse_req_t req, const char *linkname,
     reply_entry(req, &e, err);
 }
 
-static void fuse_lib_rename(fuse_req_t req, fuse_ino_t olddir,
-                            const char *oldname, fuse_ino_t newdir,
-                            const char *newname, unsigned int flags)
-{
-    struct fuse *f = req_fuse_prepare(req);
-    char *oldpath;
-    char *newpath;
-    struct node *wnode1;
-    struct node *wnode2;
-    int err;
-
-    err = get_path2(f, olddir, oldname, newdir, newname,
-        &oldpath, &newpath, &wnode1, &wnode2);
-    if (!err) {
-        struct fuse_intr_data d;
-        err = 0;
-        fuse_prepare_interrupt(f, req, &d);
-        if (!f->conf.hard_remove && !(flags & RENAME_EXCHANGE) &&
-            is_open(f, newdir, newname))
-            err = hide_node(NULL, f, newpath, newdir, newname);
-        if (!err) {
-            err = fuse_fs_rename(NULL, f->fs, oldpath, newpath, flags);
-            if (!err && err != FUSE_LIB_ERROR_PENDING_REQ) {
-                if (flags & RENAME_EXCHANGE) {
-                    err = exchange_node(f, olddir, oldname,
-                        newdir, newname);
-                } else {
-                    err = rename_node(f, olddir, oldname,
-                        newdir, newname, 0);
-                }
-            }
-        }
-        fuse_finish_interrupt(f, req, &d);
-        free_path2(f, olddir, newdir, wnode1, wnode2, oldpath, newpath);
-    }
-    // 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-    // 		fuse_async_add_pending(NULL,f, req, 0, FUSE_SYMLINK);
-    //         return;
-    //     }
-    reply_err(req, err);
-}
 
 static void fuse_lib_link(fuse_req_t req, fuse_ino_t ino, fuse_ino_t newparent,
                           const char *newname)

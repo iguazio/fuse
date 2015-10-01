@@ -52,7 +52,7 @@ static int subdir_addpath(struct subdir *d, const char *path, char **newpathp)
 	return 0;
 }
 
-static int subdir_getattr( struct fuse_fsm* fsm, const char *path, struct stat *stbuf)
+static int subdir_getattr( struct fuse_fsm* fsm __attribute__((unused)), const char *path, struct stat *stbuf)
 {
 	struct subdir *d = subdir_get();
 	char *newpath;
@@ -64,7 +64,7 @@ static int subdir_getattr( struct fuse_fsm* fsm, const char *path, struct stat *
 	return err;
 }
 
-static int subdir_fgetattr( struct fuse_fsm* fsm, const char *path, struct stat *stbuf, struct fuse_file_info *fi)
+static int subdir_fgetattr( struct fuse_fsm* fsm __attribute__((unused)), const char *path, struct stat *stbuf, struct fuse_file_info *fi)
 {
 	struct subdir *d = subdir_get();
 	char *newpath;
@@ -76,7 +76,7 @@ static int subdir_fgetattr( struct fuse_fsm* fsm, const char *path, struct stat 
 	return err;
 }
 
-static int subdir_access( struct fuse_fsm* fsm, const char *path, int mask)
+static int subdir_access( struct fuse_fsm* fsm __attribute__((unused)), const char *path, int mask)
 {
 	struct subdir *d = subdir_get();
 	char *newpath;
@@ -152,7 +152,7 @@ static void transform_symlink(struct subdir *d, const char *path,
 }
 
 
-static int subdir_readlink( struct fuse_fsm* fsm, const char *path, char *buf, size_t size)
+static int subdir_readlink( struct fuse_fsm* fsm __attribute__((unused)), const char *path, char *buf, size_t size)
 {
 	struct subdir *d = subdir_get();
 	char *newpath;
@@ -166,7 +166,7 @@ static int subdir_readlink( struct fuse_fsm* fsm, const char *path, char *buf, s
 	return err;
 }
 
-static int subdir_opendir( struct fuse_fsm* fsm, const char *path, struct fuse_file_info *fi)
+static int subdir_opendir( struct fuse_fsm* fsm __attribute__((unused)), const char *path, struct fuse_file_info *fi)
 {
 	struct subdir *d = subdir_get();
 	char *newpath;
@@ -178,7 +178,7 @@ static int subdir_opendir( struct fuse_fsm* fsm, const char *path, struct fuse_f
 	return err;
 }
 
-static int subdir_readdir( struct fuse_fsm* fsm, const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi, enum fuse_readdir_flags flags )
+static int subdir_readdir( struct fuse_fsm* fsm __attribute__((unused)), const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi, enum fuse_readdir_flags flags )
 {
 	struct subdir *d = subdir_get();
 	char *newpath;
@@ -191,7 +191,7 @@ static int subdir_readdir( struct fuse_fsm* fsm, const char *path, void *buf, fu
 	return err;
 }
 
-static int subdir_releasedir( struct fuse_fsm* fsm, const char *path, struct fuse_file_info *fi)
+static int subdir_releasedir( struct fuse_fsm* fsm __attribute__((unused)), const char *path, struct fuse_file_info *fi)
 {
 	struct subdir *d = subdir_get();
 	char *newpath;
@@ -203,7 +203,7 @@ static int subdir_releasedir( struct fuse_fsm* fsm, const char *path, struct fus
 	return err;
 }
 
-static int subdir_mknod( struct fuse_fsm* fsm,const char *path, mode_t mode, dev_t rdev)
+static int subdir_mknod( struct fuse_fsm* fsm __attribute__((unused)),const char *path, mode_t mode, dev_t rdev)
 {
 	struct subdir *d = subdir_get();
 	char *newpath;
@@ -215,7 +215,7 @@ static int subdir_mknod( struct fuse_fsm* fsm,const char *path, mode_t mode, dev
 	return err;
 }
 
-static int subdir_mkdir( struct fuse_fsm* fsm, const char *path, mode_t mode)
+static int subdir_mkdir( struct fuse_fsm* fsm __attribute__((unused)), const char *path, mode_t mode)
 {
 	struct subdir *d = subdir_get();
 	char *newpath;
@@ -227,7 +227,7 @@ static int subdir_mkdir( struct fuse_fsm* fsm, const char *path, mode_t mode)
 	return err;
 }
 
-static int subdir_unlink( struct fuse_fsm* fsm,const char *path)
+static int subdir_unlink( struct fuse_fsm* fsm __attribute__((unused)),const char *path)
 {
 	struct subdir *d = subdir_get();
 	char *newpath;
@@ -239,7 +239,7 @@ static int subdir_unlink( struct fuse_fsm* fsm,const char *path)
 	return err;
 }
 
-static int subdir_rmdir( struct fuse_fsm* fsm,const char *path)
+static int subdir_rmdir( struct fuse_fsm* fsm __attribute__((unused)),const char *path)
 {
 	struct subdir *d = subdir_get();
 	char *newpath;
@@ -251,7 +251,7 @@ static int subdir_rmdir( struct fuse_fsm* fsm,const char *path)
 	return err;
 }
 
-static int subdir_symlink( struct fuse_fsm* fsm,const char *from, const char *path)
+static int subdir_symlink( struct fuse_fsm* fsm __attribute__((unused)),const char *from, const char *path)
 {
 	struct subdir *d = subdir_get();
 	char *newpath;
@@ -263,7 +263,7 @@ static int subdir_symlink( struct fuse_fsm* fsm,const char *from, const char *pa
 	return err;
 }
 
-static int subdir_rename( struct fuse_fsm* fsm, const char *from, const char *to, unsigned int flags)
+static int subdir_rename( struct fuse_fsm* fsm __attribute__((unused)), const char *from, const char *to, unsigned int flags)
 {
 	struct subdir *d = subdir_get();
 	char *newfrom;
@@ -280,7 +280,7 @@ static int subdir_rename( struct fuse_fsm* fsm, const char *from, const char *to
 	return err;
 }
 
-static int subdir_link( struct fuse_fsm* fsm, const char *from, const char *to)
+static int subdir_link( struct fuse_fsm* fsm __attribute__((unused)), const char *from, const char *to)
 {
 	struct subdir *d = subdir_get();
 	char *newfrom;
@@ -297,7 +297,7 @@ static int subdir_link( struct fuse_fsm* fsm, const char *from, const char *to)
 	return err;
 }
 
-static int subdir_chmod( struct fuse_fsm* fsm, const char *path, mode_t mode)
+static int subdir_chmod( struct fuse_fsm* fsm __attribute__((unused)), const char *path, mode_t mode)
 {
 	struct subdir *d = subdir_get();
 	char *newpath;
@@ -309,7 +309,7 @@ static int subdir_chmod( struct fuse_fsm* fsm, const char *path, mode_t mode)
 	return err;
 }
 
-static int subdir_chown( struct fuse_fsm* fsm, const char *path, uid_t uid, gid_t gid)
+static int subdir_chown( struct fuse_fsm* fsm __attribute__((unused)), const char *path, uid_t uid, gid_t gid)
 {
 	struct subdir *d = subdir_get();
 	char *newpath;
@@ -321,7 +321,7 @@ static int subdir_chown( struct fuse_fsm* fsm, const char *path, uid_t uid, gid_
 	return err;
 }
 
-static int subdir_truncate( struct fuse_fsm* fsm, const char *path, off_t size)
+static int subdir_truncate( struct fuse_fsm* fsm __attribute__((unused)), const char *path, off_t size)
 {
 	struct subdir *d = subdir_get();
 	char *newpath;
@@ -333,7 +333,7 @@ static int subdir_truncate( struct fuse_fsm* fsm, const char *path, off_t size)
 	return err;
 }
 
-static int subdir_ftruncate(struct fuse_fsm* fsm, const char *path, off_t size,
+static int subdir_ftruncate(struct fuse_fsm* fsm __attribute__((unused)), const char *path, off_t size,
 			    struct fuse_file_info *fi)
 {
 	struct subdir *d = subdir_get();
@@ -346,7 +346,7 @@ static int subdir_ftruncate(struct fuse_fsm* fsm, const char *path, off_t size,
 	return err;
 }
 
-static int subdir_utimens( struct fuse_fsm* fsm, const char *path, const struct timespec ts[2])
+static int subdir_utimens( struct fuse_fsm* fsm __attribute__((unused)), const char *path, const struct timespec ts[2])
 {
 	struct subdir *d = subdir_get();
 	char *newpath;
@@ -358,7 +358,7 @@ static int subdir_utimens( struct fuse_fsm* fsm, const char *path, const struct 
 	return err;
 }
 
-static int subdir_create( struct fuse_fsm* fsm, const char *path, mode_t mode, struct fuse_file_info *fi)
+static int subdir_create( struct fuse_fsm* fsm __attribute__((unused)), const char *path, mode_t mode, struct fuse_file_info *fi)
 {
 	struct subdir *d = subdir_get();
 	char *newpath;
@@ -370,7 +370,7 @@ static int subdir_create( struct fuse_fsm* fsm, const char *path, mode_t mode, s
 	return err;
 }
 
-static int subdir_open( struct fuse_fsm* fsm, const char *path, struct fuse_file_info *fi)
+static int subdir_open( struct fuse_fsm* fsm __attribute__((unused)), const char *path, struct fuse_file_info *fi)
 {
 	struct subdir *d = subdir_get();
 	char *newpath;
@@ -382,7 +382,7 @@ static int subdir_open( struct fuse_fsm* fsm, const char *path, struct fuse_file
 	return err;
 }
 
-static int subdir_read_buf( struct fuse_fsm* fsm, const char *path, struct fuse_bufvec **bufp, size_t size, off_t offset, struct fuse_file_info *fi)
+static int subdir_read_buf( struct fuse_fsm* fsm __attribute__((unused)), const char *path, struct fuse_bufvec **bufp, size_t size, off_t offset, struct fuse_file_info *fi)
 {
 	struct subdir *d = subdir_get();
 	char *newpath;
@@ -394,7 +394,7 @@ static int subdir_read_buf( struct fuse_fsm* fsm, const char *path, struct fuse_
 	return err;
 }
 
-static int subdir_write_buf( struct fuse_fsm* fsm, const char *path, struct fuse_bufvec *buf, off_t offset, struct fuse_file_info *fi)
+static int subdir_write_buf( struct fuse_fsm* fsm __attribute__((unused)), const char *path, struct fuse_bufvec *buf, off_t offset, struct fuse_file_info *fi)
 {
 	struct subdir *d = subdir_get();
 	char *newpath;
@@ -406,7 +406,7 @@ static int subdir_write_buf( struct fuse_fsm* fsm, const char *path, struct fuse
 	return err;
 }
 
-static int subdir_statfs( struct fuse_fsm* fsm, const char *path, struct statvfs *stbuf)
+static int subdir_statfs( struct fuse_fsm* fsm __attribute__((unused)), const char *path, struct statvfs *stbuf)
 {
 	struct subdir *d = subdir_get();
 	char *newpath;
@@ -418,7 +418,7 @@ static int subdir_statfs( struct fuse_fsm* fsm, const char *path, struct statvfs
 	return err;
 }
 
-static int subdir_flush( struct fuse_fsm* fsm, const char *path, struct fuse_file_info *fi)
+static int subdir_flush( struct fuse_fsm* fsm __attribute__((unused)), const char *path, struct fuse_file_info *fi)
 {
 	struct subdir *d = subdir_get();
 	char *newpath;
@@ -430,7 +430,7 @@ static int subdir_flush( struct fuse_fsm* fsm, const char *path, struct fuse_fil
 	return err;
 }
 
-static int subdir_release( struct fuse_fsm* fsm, const char *path, struct fuse_file_info *fi)
+static int subdir_release( struct fuse_fsm* fsm __attribute__((unused)), const char *path, struct fuse_file_info *fi)
 {
 	struct subdir *d = subdir_get();
 	char *newpath;
@@ -442,7 +442,7 @@ static int subdir_release( struct fuse_fsm* fsm, const char *path, struct fuse_f
 	return err;
 }
 
-static int subdir_fsync( struct fuse_fsm* fsm, const char *path, int isdatasync, struct fuse_file_info *fi)
+static int subdir_fsync( struct fuse_fsm* fsm __attribute__((unused)), const char *path, int isdatasync, struct fuse_file_info *fi)
 {
 	struct subdir *d = subdir_get();
 	char *newpath;
@@ -454,7 +454,7 @@ static int subdir_fsync( struct fuse_fsm* fsm, const char *path, int isdatasync,
 	return err;
 }
 
-static int subdir_fsyncdir( struct fuse_fsm* fsm, const char *path, int isdatasync, struct fuse_file_info *fi)
+static int subdir_fsyncdir( struct fuse_fsm* fsm __attribute__((unused)), const char *path, int isdatasync, struct fuse_file_info *fi)
 {
 	struct subdir *d = subdir_get();
 	char *newpath;
@@ -466,7 +466,7 @@ static int subdir_fsyncdir( struct fuse_fsm* fsm, const char *path, int isdatasy
 	return err;
 }
 
-static int subdir_setxattr( struct fuse_fsm* fsm, const char *path, const char *name, const char *value, size_t size, int flags)
+static int subdir_setxattr( struct fuse_fsm* fsm __attribute__((unused)), const char *path, const char *name, const char *value, size_t size, int flags)
 {
 	struct subdir *d = subdir_get();
 	char *newpath;
@@ -479,7 +479,7 @@ static int subdir_setxattr( struct fuse_fsm* fsm, const char *path, const char *
 	return err;
 }
 
-static int subdir_getxattr( struct fuse_fsm* fsm, const char *path, const char *name, char *value, size_t size)
+static int subdir_getxattr( struct fuse_fsm* fsm __attribute__((unused)), const char *path, const char *name, char *value, size_t size)
 {
 	struct subdir *d = subdir_get();
 	char *newpath;
@@ -491,7 +491,7 @@ static int subdir_getxattr( struct fuse_fsm* fsm, const char *path, const char *
 	return err;
 }
 
-static int subdir_listxattr( struct fuse_fsm* fsm,const char *path, char *list, size_t size)
+static int subdir_listxattr( struct fuse_fsm* fsm __attribute__((unused)),const char *path, char *list, size_t size)
 {
 	struct subdir *d = subdir_get();
 	char *newpath;
@@ -503,7 +503,7 @@ static int subdir_listxattr( struct fuse_fsm* fsm,const char *path, char *list, 
 	return err;
 }
 
-static int subdir_removexattr( struct fuse_fsm* fsm, const char *path, const char *name)
+static int subdir_removexattr( struct fuse_fsm* fsm __attribute__((unused)), const char *path, const char *name)
 {
 	struct subdir *d = subdir_get();
 	char *newpath;
@@ -515,7 +515,7 @@ static int subdir_removexattr( struct fuse_fsm* fsm, const char *path, const cha
 	return err;
 }
 
-static int subdir_lock( struct fuse_fsm* fsm,const char *path, struct fuse_file_info *fi, int cmd, struct flock *lock)
+static int subdir_lock( struct fuse_fsm* fsm __attribute__((unused)),const char *path, struct fuse_file_info *fi, int cmd, struct flock *lock)
 {
 	struct subdir *d = subdir_get();
 	char *newpath;
@@ -527,7 +527,7 @@ static int subdir_lock( struct fuse_fsm* fsm,const char *path, struct fuse_file_
 	return err;
 }
 
-static int subdir_flock( struct fuse_fsm* fsm, const char *path, struct fuse_file_info *fi, int op)
+static int subdir_flock( struct fuse_fsm* fsm __attribute__((unused)), const char *path, struct fuse_file_info *fi, int op)
 {
 	struct subdir *d = subdir_get();
 	char *newpath;
@@ -539,7 +539,7 @@ static int subdir_flock( struct fuse_fsm* fsm, const char *path, struct fuse_fil
 	return err;
 }
 
-static int subdir_bmap(struct fuse_fsm* fsm, const char *path, size_t blocksize, uint64_t *idx)
+static int subdir_bmap(struct fuse_fsm* fsm __attribute__((unused)), const char *path, size_t blocksize, uint64_t *idx)
 {
 	struct subdir *d = subdir_get();
 	char *newpath;

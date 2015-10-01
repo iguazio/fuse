@@ -6,8 +6,8 @@
 #include "fuse_async_responce.h"
 struct fuse_fsm;
 
-typedef const char* (*fuse_lib_fsm_transition_function_t)(struct fuse_fsm* fsm,const char * from,const char * to,void *data);
-const char* fuse_lib_fsm_transition_function_null(struct fuse_fsm* fsm,const char * from,const char * to,void *data);
+typedef const char* (*fuse_lib_fsm_transition_function_t)(struct fuse_fsm* fsm __attribute__((unused)),void *data);
+const char* fuse_lib_fsm_transition_function_null(struct fuse_fsm* fsm __attribute__((unused)),void *data);
 
 struct fuse_fsm_entry{
     const char *next_state;
@@ -15,6 +15,7 @@ struct fuse_fsm_entry{
 };
 
 struct fuse_fsm{
+    const char *name;
     int err;
     int current_state;
     const char** events;
@@ -39,7 +40,7 @@ int fuse_fsm_get_err(struct fuse_fsm *fsm);
 #define FUSE_FSM_ENTRY(...) {__VA_ARGS__},
 #define FUSE_FSM_LAST(...) {__VA_ARGS__}};
 
-#define _FUSE_FSM_INIT(api_name) {0, 0, (const char**)fuse_fsm_events_##api_name,\
+#define _FUSE_FSM_INIT(api_name) {#api_name,0, 0, (const char**)fuse_fsm_events_##api_name,\
     (const char**)fuse_fsm_states_##api_name,\
    (const struct fuse_fsm_entry *)fuse_fsm_transition_table_##api_name,\
     sizeof(fuse_fsm_states_##api_name)/sizeof(fuse_fsm_states_##api_name[0]),\

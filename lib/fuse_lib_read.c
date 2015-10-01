@@ -11,10 +11,9 @@ struct fsm_read_data {
 	fuse_req_t req;
     struct fuse_intr_data d;
 };
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 
 /*Send request to the fs*/
-static const char* f1(struct fuse_fsm* fsm,const char * from, const char * to, void *data) {
+static const char* f1(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
 	struct fsm_read_data *dt = (struct fsm_read_data *)data;
     fuse_prepare_interrupt(dt->f, dt->req, &dt->d);
 	int err = fuse_fs_read_buf(fsm, dt->f->fs, dt->path, &dt->buf, dt->size, dt->off, &dt->fi);
@@ -24,7 +23,7 @@ static const char* f1(struct fuse_fsm* fsm,const char * from, const char * to, v
     return (err)?"error":"ok";
 }
 /*Send successfully read data*/
-static const char* f2(struct fuse_fsm* fsm,const char * from, const char * to, void *data) {
+static const char* f2(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
 	struct fsm_read_data *dt = (struct fsm_read_data *)data;
 	
 	dt->buf[0].buf->size = *((size_t*)(&dt->fi));
@@ -38,7 +37,7 @@ static const char* f2(struct fuse_fsm* fsm,const char * from, const char * to, v
 }
 
 /*Send error read data*/
-static const char* f3(struct fuse_fsm* fsm,const char * from, const char * to, void *data) {
+static const char* f3(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
 	struct fsm_read_data *dt = (struct fsm_read_data *)data;
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
     free_path(dt->f, dt->ino, dt->path);
@@ -54,7 +53,7 @@ FUSE_FSM_ENTRY(/*ok*/{ "READ",f1 }, { "DONE",f2 }, NONE)
 FUSE_FSM_LAST(/*error*/{ "DONE",f3 }, { "DONE",f3 }, NONE)
 
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
+
 
 void fuse_lib_read(fuse_req_t req, fuse_ino_t ino, size_t size,
 	off_t off, struct fuse_file_info *fi)

@@ -588,61 +588,6 @@ int is_open(struct fuse *f, fuse_ino_t dir, const char *name)
 	return isopen;
 }
 
-char * hidden_name( struct fuse_fsm* fsm, struct fuse *f, fuse_ino_t dir, const char *oldname, char *newname, size_t bufsize )
-{
-	struct stat buf;
-	struct node *node;
-	struct node *newnode;
-	char *newpath;
-	int res;
-	int failctr = 10;
-
-	do {
-		pthread_mutex_lock(&f->lock);
-		node = lookup_node(f, dir, oldname);
-		if (node == NULL) {
-			pthread_mutex_unlock(&f->lock);
-			return NULL;
-		}
-		do {
-			f->hidectr ++;
-			snprintf(newname, bufsize, ".fuse_hidden%08x%08x",
-				 (unsigned int) node->nodeid, f->hidectr);
-			newnode = lookup_node(f, dir, newname);
-		} while(newnode);
-
-		res = try_get_path(f, dir, newname, &newpath, NULL, false);
-		pthread_mutex_unlock(&f->lock);
-		if (res)
-			break;
-
-		memset(&buf, 0, sizeof(buf));
-		res = fuse_fs_getattr(fsm, f->fs, newpath, &buf);
-		if (res == -ENOENT)
-			break;
-		free(newpath);
-		newpath = NULL;
-	} while(res == 0 && --failctr);
-
-	return newpath;
-}
-
-int hide_node( struct fuse_fsm* fsm, struct fuse *f, const char *oldpath, fuse_ino_t dir, const char *oldname )
-{
-	char newname[64];
-	char *newpath;
-	int err = -EBUSY;
-
-	newpath = hidden_name(fsm, f, dir, oldname, newname, sizeof(newname));
-	if (newpath) {
-		err = fuse_fs_rename(fsm, f->fs, oldpath, newpath, 0);
-		if (!err)
-			err = rename_node(f, dir, oldname, dir, newname, 1);
-		free(newpath);
-	}
-	return err;
-}
-
 static int mtime_eq(const struct stat *stbuf, const struct timespec *ts)
 {
 	return stbuf->st_mtime == ts->tv_sec &&

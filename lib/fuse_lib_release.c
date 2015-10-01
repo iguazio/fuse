@@ -13,9 +13,8 @@ struct fsm_release_data{
     struct fuse_intr_data d;
 };
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 
-static const char* f1(struct fuse_fsm* fsm,const char * from,const char * to,void *data){
+static const char* f1(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_release_data *dt = (struct fsm_release_data *)data;
     fuse_prepare_interrupt(dt->f, dt->req, &dt->d);
     int err = fuse_fs_release(fsm, dt->f->fs, dt->path, &dt->fi);
@@ -26,7 +25,7 @@ static const char* f1(struct fuse_fsm* fsm,const char * from,const char * to,voi
 }
 
 //Release OK or ERROR - don't care
-static const char* f2(struct fuse_fsm* fsm,const char * from,const char * to,void *data){
+static const char* f2(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_release_data *dt = (struct fsm_release_data *)data;
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
     free_path(dt->f, dt->ino, (char*)dt->path);
@@ -39,7 +38,7 @@ static const char* f2(struct fuse_fsm* fsm,const char * from,const char * to,voi
 }
 
 //Send unlink
-static const char* f3(struct fuse_fsm* fsm,const char * from,const char * to,void *data){
+static const char* f3(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_release_data *dt = (struct fsm_release_data *)data;
     fuse_fs_unlink(fsm, dt->f->fs, dt->unlinkpath);
     return NULL;

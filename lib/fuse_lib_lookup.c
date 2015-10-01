@@ -1,7 +1,6 @@
 #include "fuse_lib.h"
 #include "fuse_lib_lookup_path.h"
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 
 struct fsm_lookup_data{
     struct fuse_fsm *owner;
@@ -16,7 +15,7 @@ struct fsm_lookup_data{
 
 };
 
-static const char* f1(struct fuse_fsm* fsm,const char * from,const char * to,void *data){
+static const char* f1(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_lookup_data *dt = (struct fsm_lookup_data *)data;
     fuse_prepare_interrupt(dt->f, dt->req, &dt->d);
     int err = lookup_path(dt->owner,dt->f, dt->parent, dt->name, dt->path, &dt->e, NULL);
@@ -26,7 +25,7 @@ static const char* f1(struct fuse_fsm* fsm,const char * from,const char * to,voi
     return (err)?"error":"ok";
 
 }
-static const char* f2(struct fuse_fsm* fsm,const char * from,const char * to,void *data){
+static const char* f2(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_lookup_data *dt = (struct fsm_lookup_data *)data;
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
     free_path(dt->f, dt->parent, (char*)dt->path);
@@ -39,7 +38,7 @@ static const char* f2(struct fuse_fsm* fsm,const char * from,const char * to,voi
 	return NULL;
 }
 
-static const char* f3(struct fuse_fsm* fsm,const char * from,const char * to,void *data){
+static const char* f3(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_lookup_data *dt = (struct fsm_lookup_data *)data;
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
     free_path(dt->f, dt->parent, (char*)dt->path);

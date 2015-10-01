@@ -16,7 +16,7 @@ struct fsm_open_data {
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
 //Send open request
-static const char * f1(struct fuse_fsm* fsm,const char * from, const char * to, void *data) {
+static const char * f1(struct fuse_fsm* fsm, void *data) {
 	LOG_CTX;
 	struct fsm_open_data *dt = (struct fsm_open_data *)data;
 	fuse_prepare_interrupt(dt->f, dt->req, &dt->d);
@@ -29,7 +29,7 @@ static const char * f1(struct fuse_fsm* fsm,const char * from, const char * to, 
 
 
 //Reply success to the driver
-static const char* f2(struct fuse_fsm* fsm,const char * from, const char * to, void *data) {
+static const char* f2(struct fuse_fsm* fsm, void *data) {
 	LOG_CTX;
 	struct fsm_open_data *dt = (struct fsm_open_data *)data;
 
@@ -54,7 +54,7 @@ static const char* f2(struct fuse_fsm* fsm,const char * from, const char * to, v
 }
 
 //Reply error to the driver
-static const char* f3(struct fuse_fsm* fsm,const char * from, const char * to, void *data) {
+static const char* f3(struct fuse_fsm* fsm, void *data) {
 	LOG_CTX;
 	struct fsm_open_data *dt = (struct fsm_open_data *)data;
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
@@ -68,7 +68,7 @@ static const char* f3(struct fuse_fsm* fsm,const char * from, const char * to, v
 
 
 //Send cache request
-static const char* f11(struct fuse_fsm* fsm,const char * from, const char * to, void *data) {
+static const char* f11(struct fuse_fsm* fsm, void *data) {
 	LOG_CTX;
 	struct fsm_open_data *dt = (struct fsm_open_data *)data;
 	int err = open_auto_cache(fsm, &dt->cache_fsm, dt->f, dt->ino, dt->path, &dt->fi);
@@ -125,7 +125,7 @@ struct fsm_open_cache_data {
 };
 
 /*Send getattrt*/
-static const char* fc1(struct fuse_fsm* fsm,const char * from, const char * to, void *data) {
+static const char* fc1(struct fuse_fsm* fsm, void *data) {
     struct fsm_open_cache_data *dt = (struct fsm_open_cache_data *)data;
     int err;
     err = fuse_fs_fgetattr(fsm, dt->f->fs, dt->path, &dt->stbuf, dt->fi);
@@ -136,7 +136,7 @@ static const char* fc1(struct fuse_fsm* fsm,const char * from, const char * to, 
 }
 
 /*Got getattrt OK*/
-static const char* fc2(struct fuse_fsm* fsm,const char * from, const char * to, void *data) {
+static const char* fc2(struct fuse_fsm* fsm, void *data) {
 	LOG_CTX;
 
     struct fsm_open_cache_data *dt = (struct fsm_open_cache_data *)data;
@@ -154,7 +154,7 @@ static const char* fc2(struct fuse_fsm* fsm,const char * from, const char * to, 
 }
 
 /*Got getattrt err*/
-static const char* fc3(struct fuse_fsm* fsm,const char * from, const char * to, void *data) {
+static const char* fc3(struct fuse_fsm* fsm, void *data) {
 	LOG_CTX;
 	struct fsm_open_cache_data *dt = (struct fsm_open_cache_data *)data;
 	pthread_mutex_lock(&dt->f->lock);

@@ -18,3 +18,12 @@ void fuse_lib_release(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi)
 void fuse_lib_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *att, int val, struct fuse_file_info *fi);
 void fuse_lib_create(fuse_req_t req, fuse_ino_t parent, const char *name, mode_t mode, struct fuse_file_info *fi);
 void fuse_lib_write_buf(fuse_req_t req, fuse_ino_t ino,struct fuse_bufvec *buf, off_t off, struct fuse_file_info *fi);
+void fuse_lib_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name, mode_t mode);
+void fuse_lib_rmdir(fuse_req_t req, fuse_ino_t parent, const char *name);
+void fuse_lib_unlink(fuse_req_t req, fuse_ino_t parent, const char *name);
+void fuse_lib_rename(fuse_req_t req, fuse_ino_t olddir,
+                     const char *oldname, fuse_ino_t newdir,
+                     const char *newname, unsigned int flags);
+
+
+

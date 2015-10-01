@@ -15,10 +15,9 @@ struct fsm_readdir_data{
     int err;
 };
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 
 /*Send request to the fs*/
-static const char* f1(struct fuse_fsm* fsm,const char * from,const char * to,void *data){
+static const char* f1(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_readdir_data *dt = (struct fsm_readdir_data *)data;
     fuse_fill_dir_t filler = fill_dir;
 
@@ -41,7 +40,7 @@ static const char* f1(struct fuse_fsm* fsm,const char * from,const char * to,voi
     return (err)?"error":"ok";
 }
 /*There is correct data - send it back to the driver*/
-static const char* f2(struct fuse_fsm* fsm,const char * from,const char * to,void *data){
+static const char* f2(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_readdir_data *dt = (struct fsm_readdir_data *)data;
     dt->dh->req = NULL;
     dt->dh->filled = 1;
@@ -60,7 +59,7 @@ static const char* f2(struct fuse_fsm* fsm,const char * from,const char * to,voi
 }
 
 /*Error - report driver*/
-static const char* f3(struct fuse_fsm* fsm,const char * from,const char * to,void *data){
+static const char* f3(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_readdir_data *dt = (struct fsm_readdir_data *)data;
     int err = fuse_fsm_get_err(fsm);
     free_path(dt->f, dt->ino, dt->path);

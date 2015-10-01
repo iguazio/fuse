@@ -24,7 +24,7 @@ void lock_to_flock( struct lock *lock, struct flock *flock )
     flock->l_pid = lock->pid;
 }
 
-int fuse_lock_common( struct fuse_fsm* fsm, fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi, struct flock *lock, int cmd )
+int fuse_lock_common( struct fuse_fsm* fsm __attribute__((unused)), fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi, struct flock *lock, int cmd )
 {
     struct fuse *f = req_fuse_prepare(req);
     char *path;

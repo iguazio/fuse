@@ -22,9 +22,8 @@ struct fsm_getattr_data{
     fuse_req_t req;
 };
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 
-static const char* f1(struct fuse_fsm* fsm,const char * from,const char * to,void *data){
+static const char* f1(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_getattr_data *dt = (struct fsm_getattr_data *)data;
     fuse_prepare_interrupt(dt->f, dt->req, &dt->d);
     int err;
@@ -40,7 +39,7 @@ static const char* f1(struct fuse_fsm* fsm,const char * from,const char * to,voi
 }
 
 
-static const char* f3(struct fuse_fsm* fsm,const char * from,const char * to,void *data){
+static const char* f3(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_getattr_data *dt = (struct fsm_getattr_data *)data;
     struct node *node;
 
@@ -60,7 +59,7 @@ static const char* f3(struct fuse_fsm* fsm,const char * from,const char * to,voi
 }
 
 
-static const char* f4(struct fuse_fsm* fsm,const char * from,const char * to,void *data){
+static const char* f4(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_getattr_data *dt = (struct fsm_getattr_data *)data;
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
     int err = fuse_fsm_get_err(fsm);

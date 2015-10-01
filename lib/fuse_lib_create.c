@@ -15,10 +15,9 @@ struct fsm_create_data {
 
 };
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 
 //Send create request
-static const char * f1(struct fuse_fsm* fsm,const char * from, const char * to, void *data) {
+static const char * f1(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
 	struct fsm_create_data *dt = (struct fsm_create_data *)data;
 	fuse_prepare_interrupt(dt->f, dt->req, &dt->d);
 	int err = fuse_fs_create(fsm, dt->f->fs, dt->path,dt->mode, &dt->fi);
@@ -30,7 +29,7 @@ static const char * f1(struct fuse_fsm* fsm,const char * from, const char * to, 
 
 
 //Send lookup
-static const char* f2(struct fuse_fsm* fsm,const char * from, const char * to, void *data) {
+static const char* f2(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
 	struct fsm_create_data *dt = (struct fsm_create_data *)data;
     int err = lookup_path(fsm, dt->f, dt->parent, dt->name, dt->path, &dt->e, &dt->fi);
     if (err == FUSE_LIB_ERROR_PENDING_REQ)
@@ -41,12 +40,12 @@ static const char* f2(struct fuse_fsm* fsm,const char * from, const char * to, v
 
 
 //Do nothing
-static const char* f4(struct fuse_fsm* fsm,const char * from, const char * to, void *data) {
+static const char* f4(struct fuse_fsm* fsm __attribute__((unused)), void *data __attribute__((unused))) {
     return NULL;
 }
 
 //send release request
-static const char* f5(struct fuse_fsm* fsm,const char * from, const char * to, void *data) {
+static const char* f5(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
     struct fsm_create_data *dt = (struct fsm_create_data *)data;
     int err = fuse_fs_release(fsm, dt->f->fs, dt->path, &dt->fi);
     if (err == FUSE_LIB_ERROR_PENDING_REQ)
@@ -55,7 +54,7 @@ static const char* f5(struct fuse_fsm* fsm,const char * from, const char * to, v
     return (err)?"error":"ok";
 }
 //Check lookup results
-static const char* f6(struct fuse_fsm* fsm,const char * from, const char * to, void *data) {
+static const char* f6(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
     struct fsm_create_data *dt = (struct fsm_create_data *)data;
     int err = 0;
     if (!S_ISREG(dt->e.attr.st_mode))
@@ -66,7 +65,7 @@ static const char* f6(struct fuse_fsm* fsm,const char * from, const char * to, v
 
 
 //Success.Send replay_create
-static const char* f10(struct fuse_fsm* fsm,const char * from, const char * to, void *data) {
+static const char* f10(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
     struct fsm_create_data *dt = (struct fsm_create_data *)data;
     if (dt->f->conf.direct_io)
         dt->fi.direct_io = 1;
@@ -85,7 +84,7 @@ static const char* f10(struct fuse_fsm* fsm,const char * from, const char * to, 
 }
 
 //reply error
-static const char* f13(struct fuse_fsm* fsm,const char * from, const char * to, void *data) {
+static const char* f13(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
     struct fsm_create_data *dt = (struct fsm_create_data *)data;
     if (dt->e.ino != 0)
         forget_node(dt->f, dt->e.ino, 1);
@@ -93,7 +92,7 @@ static const char* f13(struct fuse_fsm* fsm,const char * from, const char * to, 
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
     free_path(dt->f, dt->parent, dt->path);
     reply_err(dt->req, err);
-    return "ok";
+    return NULL;
 }
 
 

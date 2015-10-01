@@ -12,9 +12,8 @@ struct fsm_setattr_data{
     struct fuse_intr_data d;
 };
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 
-static const char* f1(struct fuse_fsm* fsm,const char * from,const char * to,void *data){
+static const char* f1(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_setattr_data *dt = (struct fsm_setattr_data *)data;
     int err = 0;
     if (dt->valid & FUSE_SET_ATTR_MODE)
@@ -26,7 +25,7 @@ static const char* f1(struct fuse_fsm* fsm,const char * from,const char * to,voi
     return (err)?"error":"ok";
 }
 
-static const char* f2(struct fuse_fsm* fsm,const char * from,const char * to,void *data){
+static const char* f2(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_setattr_data *dt = (struct fsm_setattr_data *)data;
     int err = 0;
     if ((dt->valid & (FUSE_SET_ATTR_UID | FUSE_SET_ATTR_GID))) {
@@ -42,7 +41,7 @@ static const char* f2(struct fuse_fsm* fsm,const char * from,const char * to,voi
     return (err)?"error":"ok";
 }
 
-static const char* f3(struct fuse_fsm* fsm,const char * from,const char * to,void *data){
+static const char* f3(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_setattr_data *dt = (struct fsm_setattr_data *)data;
     int err = 0;
     if (dt->valid & FUSE_SET_ATTR_SIZE) {
@@ -56,7 +55,7 @@ static const char* f3(struct fuse_fsm* fsm,const char * from,const char * to,voi
     fuse_fsm_set_err(fsm, err);
     return (err)?"error":"ok";
 }
-static const char* f4(struct fuse_fsm* fsm,const char * from,const char * to,void *data){
+static const char* f4(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_setattr_data *dt = (struct fsm_setattr_data *)data;
     int err = 0;
 
@@ -97,7 +96,7 @@ static const char* f4(struct fuse_fsm* fsm,const char * from,const char * to,voi
     fuse_fsm_set_err(fsm, err);
     return (err)?"error":"ok";
 }
-static const char* f5(struct fuse_fsm* fsm,const char * from,const char * to,void *data){
+static const char* f5(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_setattr_data *dt = (struct fsm_setattr_data *)data;
     int err = 0;
     if (dt->has_fi)
@@ -111,7 +110,7 @@ static const char* f5(struct fuse_fsm* fsm,const char * from,const char * to,voi
     return (err)?"error":"ok";
 }
 //OK
-static const char* f6(struct fuse_fsm* fsm,const char * from,const char * to,void *data){
+static const char* f6(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_setattr_data *dt = (struct fsm_setattr_data *)data;
     if (dt->f->conf.auto_cache) {
         pthread_mutex_lock(&dt->f->lock);
@@ -127,7 +126,7 @@ static const char* f6(struct fuse_fsm* fsm,const char * from,const char * to,voi
     return NULL;
 }
 //error
-static const char* f10(struct fuse_fsm* fsm,const char * from,const char * to,void *data){
+static const char* f10(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_setattr_data *dt = (struct fsm_setattr_data *)data;
     int err = fuse_fsm_get_err(fsm);
     reply_err(dt->req,err);

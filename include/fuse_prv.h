@@ -92,8 +92,8 @@ void update_stat(struct node *node, const struct stat *stbuf);
 void set_stat(struct fuse *f, fuse_ino_t nodeid, struct stat *stbuf);
 void reply_err(fuse_req_t req, int err);
 int is_open(struct fuse *f, fuse_ino_t dir, const char *name);
-char *hidden_name(struct fuse_fsm* fsm, struct fuse *f, fuse_ino_t dir, const char *oldname, char *newname, size_t bufsize);
-int hide_node( struct fuse_fsm* fsm, struct fuse *f, const char *oldpath, fuse_ino_t dir, const char *oldname);
+char *hidden_name(struct fuse_fsm* fsm __attribute__((unused)), struct fuse *f, fuse_ino_t dir, const char *oldname, char *newname, size_t bufsize);
+int hide_node( struct fuse_fsm* fsm __attribute__((unused)), struct fuse *f, const char *oldpath, fuse_ino_t dir, const char *oldname);
 
 int fill_dir(void *dh_, const char *name, const struct stat *statp,
              off_t off, enum fuse_fill_dir_flags flags);
