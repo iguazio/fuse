@@ -183,13 +183,13 @@ int fuse_fs_read_buf( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_
             struct fuse_bufvec *buf;
             void *mem;
 
-            buf = malloc(sizeof(struct fuse_bufvec));
+            buf = fuse_malloc(sizeof(struct fuse_bufvec));
             if (buf == NULL)
                 return -ENOMEM;
 
-            mem = malloc(size);
+            mem = fuse_malloc(size);
             if (mem == NULL) {
-                free(buf);
+                fuse_free(buf);
                 return -ENOMEM;
             }
             *buf = FUSE_BUFVEC_INIT(size);
@@ -263,7 +263,7 @@ int fuse_fs_write_buf( struct fuse_fsm* fsm __attribute__((unused)), struct fuse
                     flatbuf = &buf->buf[0];
             } else {
                 res = -ENOMEM;
-                mem = malloc(size);
+                mem = fuse_malloc(size);
                 if (mem == NULL)
                     goto out;
 
@@ -279,7 +279,7 @@ int fuse_fs_write_buf( struct fuse_fsm* fsm __attribute__((unused)), struct fuse
             res = fs->op.write(fsm, path, flatbuf->mem, flatbuf->size,
                 off, fi);
 out_free:
-            free(mem);
+            fuse_free(mem);
         }
 out:
         if (fs->debug && res >= 0)
@@ -723,7 +723,7 @@ void fuse_fs_destroy(struct fuse_fs *fs)
         fs->op.destroy(fs->user_data);
     if (fs->m)
         fuse_put_module(fs->m);
-    free(fs);
+    fuse_free(fs);
 }
 int fuse_fs_chmod( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, mode_t mode )
 {

@@ -114,13 +114,13 @@ static void free_node_mem(struct fuse *f, struct node *node)
 
 struct node * alloc_node( struct fuse_config *f )
 {
-    return (struct node *) calloc(1, get_node_size(f));
+    return (struct node *) fuse_calloc(1, get_node_size(f));
 }
 
 void free_node_mem( struct fuse *f, struct node *node )
 {
     (void) f;
-    free(node);
+    fuse_free(node);
 }
 
 #endif

@@ -323,7 +323,7 @@ void fuse_buf_free(struct fuse_bufvec *buf)
         size_t i;
 
         for (i = 0; i < buf->count; i++)
-            free(buf->buf[i].mem);
-        free(buf);
+            fuse_free(buf->buf[i].mem);
+        fuse_free(buf);
     }
 }

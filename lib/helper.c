@@ -128,14 +128,14 @@ static int add_default_subtype(const char *progname, struct fuse_args *args)
 	else if (basename[1] != '\0')
 		basename++;
 
-	subtype_opt = (char *) malloc(strlen(basename) + 64);
+	subtype_opt = (char *) fuse_malloc(strlen(basename) + 64);
 	if (subtype_opt == NULL) {
 		fprintf(stderr, "fuse: memory allocation failed\n");
 		return -1;
 	}
 	sprintf(subtype_opt, "-osubtype=%s", basename);
 	res = fuse_opt_add_arg(args, subtype_opt);
-	free(subtype_opt);
+	fuse_free(subtype_opt);
 	return res;
 }
 
@@ -159,7 +159,7 @@ int fuse_parse_cmdline(struct fuse_args *args, char **mountpoint,
 	if (mountpoint)
 		*mountpoint = hopts.mountpoint;
 	else
-		free(hopts.mountpoint);
+		fuse_free(hopts.mountpoint);
 
 	if (multithreaded)
 		*multithreaded = !hopts.singlethread;
@@ -168,7 +168,7 @@ int fuse_parse_cmdline(struct fuse_args *args, char **mountpoint,
 	return 0;
 
 err:
-	free(hopts.mountpoint);
+	fuse_free(hopts.mountpoint);
 	return -1;
 }
 
@@ -288,7 +288,7 @@ err_unmount:
 	if (fuse)
 		fuse_destroy(fuse);
 err_free:
-	free(*mountpoint);
+	fuse_free(*mountpoint);
 	return NULL;
 }
 
@@ -299,7 +299,7 @@ static void fuse_teardown(struct fuse *fuse, char *mountpoint)
 	fuse_remove_signal_handlers(se);
 	fuse_unmount(mountpoint, ch);
 	fuse_destroy(fuse);
-	free(mountpoint);
+	fuse_free(mountpoint);
 }
 
 int fuse_main_real(int argc, char *argv[], const struct fuse_operations *op,

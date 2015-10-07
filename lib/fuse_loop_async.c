@@ -56,12 +56,17 @@ int fuse_session_loop_async( struct fuse_session *se, int fd, fuse_async_get_msg
                 if (!callback_on_new_msg(callback_payload,&err,&fsm)){
                     fuse_fsm_set_err(fsm,err);
                     fuse_fsm_run(fsm,err?"error":"ok");
+                    if (!strcmp(fuse_fsm_cur_state(fsm),"DONE"))
+                        FUSE_FSM_FREE(fsm);
                 }
             }
         }
+        printf("fuse_mem cntr:%d\n",fuse_mem_cntr());
+        fuse_mem_dump();
+
     }
 
-    free(fbuf.mem);
+    fuse_free(fbuf.mem);
     fuse_session_reset(se);
     return res < 0 ? -1 : 0;
 }

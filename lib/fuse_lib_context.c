@@ -9,7 +9,7 @@ struct fuse_context_i * fuse_create_context( struct fuse *f )
     struct fuse_context_i *c = fuse_get_context_internal();
     if (c == NULL) {
         c = (struct fuse_context_i *)
-            calloc(1, sizeof(struct fuse_context_i));
+            fuse_calloc(1, sizeof(struct fuse_context_i));
         if (c == NULL) {
             /* This is hard to deal with properly, so just
             abort.  If memory is so low that the
@@ -34,7 +34,7 @@ struct fuse_context_i * fuse_get_context_internal( void )
 
 void fuse_freecontext( void *data )
 {
-    free(data);
+    fuse_free(data);
 }
 
 int fuse_create_context_key( void )
@@ -60,7 +60,7 @@ void fuse_delete_context_key( void )
     pthread_mutex_lock(&fuse_context_lock);
     fuse_context_ref--;
     if (!fuse_context_ref) {
-        free(pthread_getspecific(fuse_context_key));
+        fuse_free(pthread_getspecific(fuse_context_key));
         pthread_key_delete(fuse_context_key);
     }
     pthread_mutex_unlock(&fuse_context_lock);

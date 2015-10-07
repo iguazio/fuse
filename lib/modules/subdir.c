@@ -36,7 +36,7 @@ static int subdir_addpath(struct subdir *d, const char *path, char **newpathp)
 	if (path != NULL) {
 		unsigned newlen = d->baselen + strlen(path);
 
-		newpath = malloc(newlen + 2);
+		newpath = fuse_malloc(newlen + 2);
 		if (!newpath)
 			return -ENOMEM;
 
@@ -59,7 +59,7 @@ static int subdir_getattr( struct fuse_fsm* fsm __attribute__((unused)), const c
 	int err = subdir_addpath(d, path, &newpath);
 	if (!err) {
 		err = fuse_fs_getattr(fsm, d->next, newpath, stbuf);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -71,7 +71,7 @@ static int subdir_fgetattr( struct fuse_fsm* fsm __attribute__((unused)), const 
 	int err = subdir_addpath(d, path, &newpath);
 	if (!err) {
 		err = fuse_fs_fgetattr(fsm, d->next, newpath, stbuf, fi);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -83,7 +83,7 @@ static int subdir_access( struct fuse_fsm* fsm __attribute__((unused)), const ch
 	int err = subdir_addpath(d, path, &newpath);
 	if (!err) {
 		err = fuse_fs_access(fsm, d->next, newpath, mask);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -161,7 +161,7 @@ static int subdir_readlink( struct fuse_fsm* fsm __attribute__((unused)), const 
 		err = fuse_fs_readlink(fsm, d->next, newpath, buf, size);
 		if (!err && d->rellinks)
 			transform_symlink(d, newpath, buf, size);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -173,7 +173,7 @@ static int subdir_opendir( struct fuse_fsm* fsm __attribute__((unused)), const c
 	int err = subdir_addpath(d, path, &newpath);
 	if (!err) {
 		err = fuse_fs_opendir(fsm, d->next, newpath, fi);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -186,7 +186,7 @@ static int subdir_readdir( struct fuse_fsm* fsm __attribute__((unused)), const c
 	if (!err) {
 		err = fuse_fs_readdir(fsm, d->next, newpath, buf, filler, offset,
 				      fi, flags);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -198,7 +198,7 @@ static int subdir_releasedir( struct fuse_fsm* fsm __attribute__((unused)), cons
 	int err = subdir_addpath(d, path, &newpath);
 	if (!err) {
 		err = fuse_fs_releasedir(fsm, d->next, newpath, fi);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -210,7 +210,7 @@ static int subdir_mknod( struct fuse_fsm* fsm __attribute__((unused)),const char
 	int err = subdir_addpath(d, path, &newpath);
 	if (!err) {
 		err = fuse_fs_mknod(fsm, d->next, newpath, mode, rdev);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -222,7 +222,7 @@ static int subdir_mkdir( struct fuse_fsm* fsm __attribute__((unused)), const cha
 	int err = subdir_addpath(d, path, &newpath);
 	if (!err) {
 		err = fuse_fs_mkdir(fsm, d->next, newpath, mode);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -234,7 +234,7 @@ static int subdir_unlink( struct fuse_fsm* fsm __attribute__((unused)),const cha
 	int err = subdir_addpath(d, path, &newpath);
 	if (!err) {
 		err = fuse_fs_unlink(fsm, d->next, newpath);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -246,7 +246,7 @@ static int subdir_rmdir( struct fuse_fsm* fsm __attribute__((unused)),const char
 	int err = subdir_addpath(d, path, &newpath);
 	if (!err) {
 		err = fuse_fs_rmdir(fsm, d->next, newpath);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -258,7 +258,7 @@ static int subdir_symlink( struct fuse_fsm* fsm __attribute__((unused)),const ch
 	int err = subdir_addpath(d, path, &newpath);
 	if (!err) {
 		err = fuse_fs_symlink(fsm, d->next, from, newpath);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -273,9 +273,9 @@ static int subdir_rename( struct fuse_fsm* fsm __attribute__((unused)), const ch
 		err = subdir_addpath(d, to, &newto);
 		if (!err) {
 			err = fuse_fs_rename(fsm, d->next, newfrom, newto, flags);
-			free(newto);
+			fuse_free(newto);
 		}
-		free(newfrom);
+		fuse_free(newfrom);
 	}
 	return err;
 }
@@ -290,9 +290,9 @@ static int subdir_link( struct fuse_fsm* fsm __attribute__((unused)), const char
 		err = subdir_addpath(d, to, &newto);
 		if (!err) {
 			err = fuse_fs_link(fsm, d->next, newfrom, newto);
-			free(newto);
+			fuse_free(newto);
 		}
-		free(newfrom);
+		fuse_free(newfrom);
 	}
 	return err;
 }
@@ -304,7 +304,7 @@ static int subdir_chmod( struct fuse_fsm* fsm __attribute__((unused)), const cha
 	int err = subdir_addpath(d, path, &newpath);
 	if (!err) {
 		err = fuse_fs_chmod(fsm, d->next, newpath, mode);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -316,7 +316,7 @@ static int subdir_chown( struct fuse_fsm* fsm __attribute__((unused)), const cha
 	int err = subdir_addpath(d, path, &newpath);
 	if (!err) {
 		err = fuse_fs_chown(fsm, d->next, newpath, uid, gid);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -328,7 +328,7 @@ static int subdir_truncate( struct fuse_fsm* fsm __attribute__((unused)), const 
 	int err = subdir_addpath(d, path, &newpath);
 	if (!err) {
 		err = fuse_fs_truncate(fsm, d->next, newpath, size);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -341,7 +341,7 @@ static int subdir_ftruncate(struct fuse_fsm* fsm __attribute__((unused)), const 
 	int err = subdir_addpath(d, path, &newpath);
 	if (!err) {
 		err = fuse_fs_ftruncate(fsm, d->next, newpath, size, fi);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -353,7 +353,7 @@ static int subdir_utimens( struct fuse_fsm* fsm __attribute__((unused)), const c
 	int err = subdir_addpath(d, path, &newpath);
 	if (!err) {
 		err = fuse_fs_utimens(fsm, d->next, newpath, ts);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -365,7 +365,7 @@ static int subdir_create( struct fuse_fsm* fsm __attribute__((unused)), const ch
 	int err = subdir_addpath(d, path, &newpath);
 	if (!err) {
 		err = fuse_fs_create(fsm, d->next, newpath, mode, fi);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -377,7 +377,7 @@ static int subdir_open( struct fuse_fsm* fsm __attribute__((unused)), const char
 	int err = subdir_addpath(d, path, &newpath);
 	if (!err) {
 		err = fuse_fs_open(fsm, d->next, newpath, fi);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -389,7 +389,7 @@ static int subdir_read_buf( struct fuse_fsm* fsm __attribute__((unused)), const 
 	int err = subdir_addpath(d, path, &newpath);
 	if (!err) {
 		err = fuse_fs_read_buf(fsm, d->next, newpath, bufp, size, offset, fi);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -401,7 +401,7 @@ static int subdir_write_buf( struct fuse_fsm* fsm __attribute__((unused)), const
 	int err = subdir_addpath(d, path, &newpath);
 	if (!err) {
 		err = fuse_fs_write_buf(fsm, d->next, newpath, buf, offset, fi);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -413,7 +413,7 @@ static int subdir_statfs( struct fuse_fsm* fsm __attribute__((unused)), const ch
 	int err = subdir_addpath(d, path, &newpath);
 	if (!err) {
 		err = fuse_fs_statfs(fsm, d->next, newpath, stbuf);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -425,7 +425,7 @@ static int subdir_flush( struct fuse_fsm* fsm __attribute__((unused)), const cha
 	int err = subdir_addpath(d, path, &newpath);
 	if (!err) {
 		err = fuse_fs_flush(fsm, d->next, newpath, fi);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -437,7 +437,7 @@ static int subdir_release( struct fuse_fsm* fsm __attribute__((unused)), const c
 	int err = subdir_addpath(d, path, &newpath);
 	if (!err) {
 		err = fuse_fs_release(fsm, d->next, newpath, fi);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -449,7 +449,7 @@ static int subdir_fsync( struct fuse_fsm* fsm __attribute__((unused)), const cha
 	int err = subdir_addpath(d, path, &newpath);
 	if (!err) {
 		err = fuse_fs_fsync(fsm, d->next, newpath, isdatasync, fi);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -461,7 +461,7 @@ static int subdir_fsyncdir( struct fuse_fsm* fsm __attribute__((unused)), const 
 	int err = subdir_addpath(d, path, &newpath);
 	if (!err) {
 		err = fuse_fs_fsyncdir(fsm, d->next, newpath, isdatasync, fi);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -474,7 +474,7 @@ static int subdir_setxattr( struct fuse_fsm* fsm __attribute__((unused)), const 
 	if (!err) {
 		err = fuse_fs_setxattr(fsm, d->next, newpath, name, value, size,
 				       flags);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -486,7 +486,7 @@ static int subdir_getxattr( struct fuse_fsm* fsm __attribute__((unused)), const 
 	int err = subdir_addpath(d, path, &newpath);
 	if (!err) {
 		err = fuse_fs_getxattr(fsm, d->next, newpath, name, value, size);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -498,7 +498,7 @@ static int subdir_listxattr( struct fuse_fsm* fsm __attribute__((unused)),const 
 	int err = subdir_addpath(d, path, &newpath);
 	if (!err) {
 		err = fuse_fs_listxattr(fsm, d->next, newpath, list, size);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -510,7 +510,7 @@ static int subdir_removexattr( struct fuse_fsm* fsm __attribute__((unused)), con
 	int err = subdir_addpath(d, path, &newpath);
 	if (!err) {
 		err = fuse_fs_removexattr(fsm, d->next, newpath, name);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -522,7 +522,7 @@ static int subdir_lock( struct fuse_fsm* fsm __attribute__((unused)),const char 
 	int err = subdir_addpath(d, path, &newpath);
 	if (!err) {
 		err = fuse_fs_lock(fsm, d->next, newpath, fi, cmd, lock);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -534,7 +534,7 @@ static int subdir_flock( struct fuse_fsm* fsm __attribute__((unused)), const cha
 	int err = subdir_addpath(d, path, &newpath);
 	if (!err) {
 		err = fuse_fs_flock(fsm, d->next, newpath, fi, op);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -546,7 +546,7 @@ static int subdir_bmap(struct fuse_fsm* fsm __attribute__((unused)), const char 
 	int err = subdir_addpath(d, path, &newpath);
 	if (!err) {
 		err = fuse_fs_bmap(fsm, d->next, newpath, blocksize, idx);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -562,8 +562,8 @@ static void subdir_destroy(void *data)
 {
 	struct subdir *d = data;
 	fuse_fs_destroy(d->next);
-	free(d->base);
-	free(d);
+	fuse_free(d->base);
+	fuse_free(d);
 }
 
 static const struct fuse_operations subdir_oper = {
@@ -643,7 +643,7 @@ static struct fuse_fs *subdir_new(struct fuse_args *args,
 	struct fuse_fs *fs;
 	struct subdir *d;
 
-	d = calloc(1, sizeof(struct subdir));
+	d = fuse_calloc(1, sizeof(struct subdir));
 	if (d == NULL) {
 		fprintf(stderr, "fuse-subdir: memory allocation failed\n");
 		return NULL;
@@ -663,7 +663,7 @@ static struct fuse_fs *subdir_new(struct fuse_args *args,
 	}
 
 	if (d->base[0] && d->base[strlen(d->base)-1] != '/') {
-		char *tmp = realloc(d->base, strlen(d->base) + 2);
+		char *tmp = fuse_realloc(d->base, strlen(d->base) + 2);
 		if (!tmp) {
 			fprintf(stderr, "fuse-subdir: memory allocation failed\n");
 			goto out_free;
@@ -679,8 +679,8 @@ static struct fuse_fs *subdir_new(struct fuse_args *args,
 	return fs;
 
 out_free:
-	free(d->base);
-	free(d);
+	fuse_free(d->base);
+	fuse_free(d);
 	return NULL;
 }
 

@@ -51,7 +51,7 @@ void delete_lock( struct lock **lockp )
 {
     struct lock *l = *lockp;
     *lockp = l->next;
-    free(l);
+    fuse_free(l);
 }
 
 struct lock * locks_conflict( struct node *node, const struct lock *lock )
@@ -75,12 +75,12 @@ int locks_insert( struct node *node, struct lock *lock )
 
     if (lock->type != F_UNLCK || lock->start != 0 ||
         lock->end != OFFSET_MAX) {
-            newl1 = malloc(sizeof(struct lock));
-            newl2 = malloc(sizeof(struct lock));
+            newl1 = fuse_malloc(sizeof(struct lock));
+            newl2 = fuse_malloc(sizeof(struct lock));
 
             if (!newl1 || !newl2) {
-                free(newl1);
-                free(newl2);
+                fuse_free(newl1);
+                fuse_free(newl2);
                 return -ENOLCK;
             }
     }
@@ -136,7 +136,7 @@ skip:
         newl1 = NULL;
     }
 out:
-    free(newl1);
-    free(newl2);
+    fuse_free(newl1);
+    fuse_free(newl2);
     return 0;
 }

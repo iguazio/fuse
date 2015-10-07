@@ -15,6 +15,8 @@
 #define _FUSE_COMMON_H_
 
 #include "fuse_opt.h"
+#include "fuse_mem.h"
+
 #include <stdint.h>
 #include <sys/types.h>
 #include <sys/stat.h>

@@ -2,6 +2,7 @@
 #include <assert.h>
 #include "fuse_module.h"
 #include "fuse_i.h"
+#include "fuse_mem.h"
 
 fuse_module_factory_t fuse_module_subdir_factory;
 fuse_module_factory_t fuse_module_iconv_factory;
@@ -11,15 +12,15 @@ int fuse_register_module( const char *name, fuse_module_factory_t factory, struc
 {
     struct fuse_module *mod;
 
-    mod = calloc(1, sizeof(struct fuse_module));
+    mod = fuse_calloc(1, sizeof(struct fuse_module));
     if (!mod) {
         fprintf(stderr, "fuse: failed to allocate module\n");
         return -1;
     }
-    mod->name = strdup(name);
+    mod->name = fuse_strdup(name);
     if (!mod->name) {
         fprintf(stderr, "fuse: failed to allocate module name\n");
-        free(mod);
+        fuse_free(mod);
         return -1;
     }
     mod->factory = factory;
@@ -40,13 +41,13 @@ int fuse_load_so_module( const char *module )
     struct fusemod_so *so;
     fuse_module_factory_t factory;
 
-    tmp = malloc(strlen(module) + 64);
+    tmp = fuse_malloc(strlen(module) + 64);
     if (!tmp) {
         fprintf(stderr, "fuse: memory allocation failed\n");
         return -1;
     }
     sprintf(tmp, "libfusemod_%s.so", module);
-    so = calloc(1, sizeof(struct fusemod_so));
+    so = fuse_calloc(1, sizeof(struct fusemod_so));
     if (!so) {
         fprintf(stderr, "fuse: failed to allocate module so\n");
         goto out;
@@ -71,13 +72,13 @@ int fuse_load_so_module( const char *module )
         goto out_dlclose;
 
 out:
-    free(tmp);
+    fuse_free(tmp);
     return ret;
 
 out_dlclose:
     dlclose(so->handle);
 out_free_so:
-    free(so);
+    fuse_free(so);
     goto out;
 }
 
@@ -114,7 +115,7 @@ void fuse_put_module( struct fuse_module *m )
                     mp = &(*mp)->next;
             }
             dlclose(so->handle);
-            free(so);
+            fuse_free(so);
         }
     }
     pthread_mutex_unlock(&fuse_context_lock);

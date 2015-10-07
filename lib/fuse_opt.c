@@ -9,6 +9,7 @@
 #include "config.h"
 #include "fuse_opt.h"
 #include "fuse_misc.h"
+#include "fuse_mem.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,8 +34,8 @@ void fuse_opt_free_args(struct fuse_args *args)
 		if (args->argv && args->allocated) {
 			int i;
 			for (i = 0; i < args->argc; i++)
-				free(args->argv[i]);
-			free(args->argv);
+				fuse_free(args->argv[i]);
+			fuse_free(args->argv);
 		}
 		args->argc = 0;
 		args->argv = NULL;
@@ -55,13 +56,13 @@ int fuse_opt_add_arg(struct fuse_args *args, const char *arg)
 
 	assert(!args->argv || args->allocated);
 
-	newarg = strdup(arg);
+	newarg = fuse_strdup(arg);
 	if (!newarg)
 		return alloc_failed();
 
-	newargv = realloc(args->argv, (args->argc + 2) * sizeof(char *));
+	newargv = fuse_realloc(args->argv, (args->argc + 2) * sizeof(char *));
 	if (!newargv) {
-		free(newarg);
+		fuse_free(newarg);
 		return alloc_failed();
 	}
 
@@ -111,7 +112,7 @@ static int add_arg(struct fuse_opt_context *ctx, const char *arg)
 static int add_opt_common(char **opts, const char *opt, int esc)
 {
 	unsigned oldlen = *opts ? strlen(*opts) : 0;
-	char *d = realloc(*opts, oldlen + 1 + strlen(opt) * 2 + 1);
+	char *d = fuse_realloc(*opts, oldlen + 1 + strlen(opt) * 2 + 1);
 
 	if (!d)
 		return alloc_failed();
@@ -206,11 +207,11 @@ static int process_opt_param(void *var, const char *format, const char *param,
 	assert(format[0] == '%');
 	if (format[1] == 's') {
 		char **s = var;
-		char *copy = strdup(param);
+		char *copy = fuse_strdup(param);
 		if (!copy)
 			return alloc_failed();
 
-		free(*s);
+		fuse_free(*s);
 		*s = copy;
 	} else {
 		if (sscanf(param, format, var) != 1) {
@@ -255,14 +256,14 @@ static int process_opt_sep_arg(struct fuse_opt_context *ctx,
 		return -1;
 
 	param = ctx->argv[ctx->argctr];
-	newarg = malloc(sep + strlen(param) + 1);
+	newarg = fuse_malloc(sep + strlen(param) + 1);
 	if (!newarg)
 		return alloc_failed();
 
 	memcpy(newarg, arg, sep);
 	strcpy(newarg + sep, param);
 	res = process_opt(ctx, opt, sep, newarg, iso);
-	free(newarg);
+	fuse_free(newarg);
 
 	return res;
 }
@@ -330,14 +331,14 @@ static int process_real_option_group(struct fuse_opt_context *ctx, char *opts)
 static int process_option_group(struct fuse_opt_context *ctx, const char *opts)
 {
 	int res;
-	char *copy = strdup(opts);
+	char *copy = fuse_strdup(opts);
 
 	if (!copy) {
 		fprintf(stderr, "fuse: memory allocation failed\n");
 		return -1;
 	}
 	res = process_real_option_group(ctx, copy);
-	free(copy);
+	fuse_free(copy);
 	return res;
 }
 
@@ -384,7 +385,7 @@ static int opt_parse(struct fuse_opt_context *ctx)
 	/* If option separator ("--") is the last argument, remove it */
 	if (ctx->nonopt && ctx->nonopt == ctx->outargs.argc &&
 	    strcmp(ctx->outargs.argv[ctx->outargs.argc - 1], "--") == 0) {
-		free(ctx->outargs.argv[ctx->outargs.argc - 1]);
+		fuse_free(ctx->outargs.argv[ctx->outargs.argc - 1]);
 		ctx->outargs.argv[--ctx->outargs.argc] = NULL;
 	}
 
@@ -413,7 +414,7 @@ int fuse_opt_parse(struct fuse_args *args, void *data,
 		*args = ctx.outargs;
 		ctx.outargs = tmp;
 	}
-	free(ctx.opts);
+	fuse_free(ctx.opts);
 	fuse_opt_free_args(&ctx.outargs);
 	return res;
 }

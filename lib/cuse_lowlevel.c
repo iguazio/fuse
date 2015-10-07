@@ -127,7 +127,7 @@ static struct cuse_data *cuse_prep_data(const struct cuse_info *ci,
 		return NULL;
 	}
 
-	cd = calloc(1, sizeof(*cd) + dev_info_len);
+	cd = fuse_calloc(1, sizeof(*cd) + dev_info_len);
 	if (!cd) {
 		fprintf(stderr, "cuse: failed to allocate cuse_data\n");
 		return NULL;
@@ -172,7 +172,7 @@ struct fuse_session *cuse_lowlevel_new(struct fuse_args *args,
 
 	se = fuse_lowlevel_new(args, &lop, sizeof(lop), userdata);
 	if (!se) {
-		free(cd);
+		fuse_free(cd);
 		return NULL;
 	}
 	ll = se->f;

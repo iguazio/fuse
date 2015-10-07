@@ -19,8 +19,10 @@ static const char* f1(struct fuse_fsm* fsm,void *data){
     int err;
 
     err = fuse_fs_getattr(fsm, dt->f->fs, dt->newpath, &dt->buf);
-    if (err == FUSE_LIB_ERROR_PENDING_REQ)
+    if (err == FUSE_LIB_ERROR_PENDING_REQ){
+        fuse_fsm_cleanup_on_done(dt->parent,1);
         return NULL;
+    }
     fuse_fsm_set_err(fsm, err);
     return (err)?"error":"ok";
 }
@@ -46,7 +48,7 @@ static const char* f2(struct fuse_fsm* fsm __attribute__((unused)),void *data){
 
     err = rename_node(dt->f, dt->dir, dt->oldname, dt->dir, dt->newname, 1);
     if(dt->newpath)
-        free(dt->newpath);
+        fuse_free(dt->newpath);
     fuse_fsm_run(dt->parent,(err)?"error":"ok");
     return NULL;
 }
@@ -54,7 +56,7 @@ static const char* f2(struct fuse_fsm* fsm __attribute__((unused)),void *data){
 static const char* f3(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_hide_node_data *dt = (struct fsm_hide_node_data *)data;
     if(dt->newpath)
-        free(dt->newpath);
+        fuse_free(dt->newpath);
     fuse_fsm_run(dt->parent,"error");
     return NULL;
 }
@@ -104,7 +106,7 @@ static char * hidden_name( struct fuse_fsm* parent , struct fuse *f, fuse_ino_t 
         res = fuse_fs_getattr(fsm, f->fs, newpath, &buf);
         if (res == -ENOENT)
             break;
-        free(newpath);
+        fuse_free(newpath);
         newpath = NULL;
     } while(res == 0 && --failctr);
 

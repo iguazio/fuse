@@ -20,6 +20,7 @@
 #include "fuse_node.h"
 #include "fuse_list.h"
 #include "fuse_config.h"
+#include "fuse_mem.h"
 
 struct fuse {
     struct fuse_session *se;

@@ -95,7 +95,7 @@ static void set_forget_time(struct fuse *f, struct node *node)
 static void free_node(struct fuse *f, struct node *node)
 {
 	if (node->name != node->inline_name)
-		free(node->name);
+		fuse_free(node->name);
 	free_node_mem(f, node);
 }
 
@@ -107,7 +107,7 @@ static void node_table_reduce(struct node_table *t)
 	if (newsize < NODE_TABLE_MIN_SIZE)
 		return;
 
-	newarray = realloc(t->array, sizeof(struct node *) * newsize);
+	newarray = fuse_realloc(t->array, sizeof(struct node *) * newsize);
 	if (newarray != NULL)
 		t->array = newarray;
 
@@ -161,7 +161,7 @@ static int node_table_resize(struct node_table *t)
 	size_t newsize = t->size * 2;
 	void *newarray;
 
-	newarray = realloc(t->array, sizeof(struct node *) * newsize);
+	newarray = fuse_realloc(t->array, sizeof(struct node *) * newsize);
 	if (newarray == NULL)
 		return -1;
 
@@ -269,7 +269,7 @@ static void unhash_name(struct fuse *f, struct node *node)
 				node->name_next = NULL;
 				unref_node(f, node->parent);
 				if (node->name != node->inline_name)
-					free(node->name);
+					fuse_free(node->name);
 				node->name = NULL;
 				node->parent = NULL;
 				f->name_table.use--;
@@ -323,7 +323,7 @@ static int hash_name(struct fuse *f, struct node *node, fuse_ino_t parentid,
 		strcpy(node->inline_name, name);
 		node->name = node->inline_name;
 	} else {
-		node->name = strdup(name);
+		node->name = fuse_strdup(name);
 		if (node->name == NULL)
 			return -1;
 	}
@@ -696,7 +696,7 @@ int extend_contents(struct fuse_dh *dh, unsigned minsize)
 				newsize *= 2;
 		}
 
-		newptr = (char *) realloc(dh->contents, newsize);
+		newptr = (char *) fuse_realloc(dh->contents, newsize);
 		if (!newptr) {
 			dh->error = -ENOMEM;
 			return -1;
@@ -712,15 +712,15 @@ static int fuse_add_direntry_to_dh(struct fuse_dh *dh, const char *name,
 {
 	struct fuse_direntry *de;
 
-	de = malloc(sizeof(struct fuse_direntry));
+	de = fuse_malloc(sizeof(struct fuse_direntry));
 	if (!de) {
 		dh->error = -ENOMEM;
 		return -1;
 	}
-	de->name = strdup(name);
+	de->name = fuse_strdup(name);
 	if (!de->name) {
 		dh->error = -ENOMEM;
-		free(de);
+		fuse_free(de);
 		return -1;
 	}
 	de->stat = *st;
@@ -878,8 +878,8 @@ void free_direntries(struct fuse_direntry *de)
 {
 	while (de) {
 		struct fuse_direntry *next = de->next;
-		free(de->name);
-		free(de);
+		fuse_free(de->name);
+		fuse_free(de);
 		de = next;
 	}
 }
@@ -1002,7 +1002,7 @@ static int fuse_session_loop_remember(struct fuse *f)
 		}
 	}
 
-	free(fbuf.mem);
+	fuse_free(fbuf.mem);
 	fuse_session_reset(se);
 	return res < 0 ? -1 : 0;
 }
@@ -1228,7 +1228,7 @@ struct fuse_fs *fuse_fs_new(const struct fuse_operations *op, size_t op_size,
 		op_size = sizeof(struct fuse_operations);
 	}
 
-	fs = (struct fuse_fs *) calloc(1, sizeof(struct fuse_fs));
+	fs = (struct fuse_fs *) fuse_calloc(1, sizeof(struct fuse_fs));
 	if (!fs) {
 		fprintf(stderr, "fuse: failed to allocate fuse_fs object\n");
 		return NULL;
@@ -1243,7 +1243,7 @@ struct fuse_fs *fuse_fs_new(const struct fuse_operations *op, size_t op_size,
 static int node_table_init(struct node_table *t)
 {
 	t->size = NODE_TABLE_MIN_SIZE;
-	t->array = (struct node **) calloc(1, sizeof(struct node *) * t->size);
+	t->array = (struct node **) fuse_calloc(1, sizeof(struct node *) * t->size);
 	if (t->array == NULL) {
 		fprintf(stderr, "fuse: memory allocation failed\n");
 		return -1;
@@ -1308,7 +1308,7 @@ struct fuse *fuse_new(struct fuse_chan *ch, struct fuse_args *args,
 	if (fuse_create_context_key() == -1)
 		goto out;
 
-	f = (struct fuse *) calloc(1, sizeof(struct fuse));
+	f = (struct fuse *) fuse_calloc(1, sizeof(struct fuse));
 	if (f == NULL) {
 		fprintf(stderr, "fuse: failed to allocate fuse object\n");
 		goto out_delete_context_key;
@@ -1418,20 +1418,20 @@ struct fuse *fuse_new(struct fuse_chan *ch, struct fuse_args *args,
 	return f;
 
 out_free_root:
-	free(root);
+	fuse_free(root);
 out_free_id_table:
-	free(f->id_table.array);
+	fuse_free(f->id_table.array);
 out_free_name_table:
-	free(f->name_table.array);
+	fuse_free(f->name_table.array);
 out_free_session:
 	fuse_session_destroy(f->se);
 out_free_fs:
 	if (f->fs->m)
 		fuse_put_module(f->fs->m);
-	free(f->fs);
-	free(f->conf.modules);
+	fuse_free(f->fs);
+	fuse_free(f->conf.modules);
 out_free:
-	free(f);
+	fuse_free(f);
 out_delete_context_key:
 	fuse_delete_context_key();
 out:
@@ -1457,7 +1457,7 @@ void fuse_destroy(struct fuse *f)
 					char *path;
 					if (try_get_path(f, node->nodeid, NULL, &path, NULL, false) == 0) {
 						fuse_fs_unlink(NULL, f->fs, path);
-						free(path);
+						fuse_free(path);
 					}
 				}
 			}
@@ -1476,12 +1476,12 @@ void fuse_destroy(struct fuse *f)
 	assert(list_empty(&f->partial_slabs));
 	assert(list_empty(&f->full_slabs));
 
-	free(f->id_table.array);
-	free(f->name_table.array);
+	fuse_free(f->id_table.array);
+	fuse_free(f->name_table.array);
 	pthread_mutex_destroy(&f->lock);
 	fuse_session_destroy(f->se);
-	free(f->conf.modules);
-	free(f);
+	fuse_free(f->conf.modules);
+	fuse_free(f);
 	fuse_delete_context_key();
 }
 

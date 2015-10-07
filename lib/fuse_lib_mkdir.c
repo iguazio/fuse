@@ -26,10 +26,11 @@ static const char* f1(struct fuse_fsm* fsm __attribute__((unused)), void *data) 
 static const char* f2(struct fuse_fsm* fsm, void *data) {
     struct fsm_mkdir_data *dt = (struct fsm_mkdir_data *)data;
     int err = lookup_path(fsm, dt->f, dt->parent, dt->name, dt->path, &dt->e, NULL);
-    if (err == FUSE_LIB_ERROR_PENDING_REQ)
+    if (err == FUSE_LIB_ERROR_PENDING_REQ){
         return NULL;
+    }
     fuse_fsm_set_err(fsm, err);
-    return (err)?"error":"ok";
+    return NULL;//lookup_path() triggers "ok" or "error" events , so no need to return event ID
 }
 
 static const char* f10(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
@@ -39,7 +40,6 @@ static const char* f10(struct fuse_fsm* fsm __attribute__((unused)), void *data)
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
     free_path(dt->f, dt->parent, (char*)dt->path);
     reply_entry(dt->req, &dt->e, err);
-    
     return NULL;
 }
 

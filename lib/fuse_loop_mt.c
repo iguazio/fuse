@@ -126,8 +126,8 @@ static void *fuse_do_work(void *data)
 			pthread_mutex_unlock(&mt->lock);
 
 			pthread_detach(w->thread_id);
-			free(w->fbuf.mem);
-			free(w);
+			fuse_free(w->fbuf.mem);
+			fuse_free(w);
 			return NULL;
 		}
 		pthread_mutex_unlock(&mt->lock);
@@ -174,7 +174,7 @@ int fuse_start_thread(pthread_t *thread_id, void *(*func)(void *), void *arg)
 static int fuse_loop_start_thread(struct fuse_mt *mt)
 {
 	int res;
-	struct fuse_worker *w = malloc(sizeof(struct fuse_worker));
+	struct fuse_worker *w = fuse_malloc(sizeof(struct fuse_worker));
 	if (!w) {
 		fprintf(stderr, "fuse: failed to allocate worker structure\n");
 		return -1;
@@ -185,7 +185,7 @@ static int fuse_loop_start_thread(struct fuse_mt *mt)
 
 	res = fuse_start_thread(&w->thread_id, fuse_do_work, w);
 	if (res == -1) {
-		free(w);
+		fuse_free(w);
 		return -1;
 	}
 	list_add_worker(w, &mt->main);
@@ -201,8 +201,8 @@ static void fuse_join_worker(struct fuse_mt *mt, struct fuse_worker *w)
 	pthread_mutex_lock(&mt->lock);
 	list_del_worker(w);
 	pthread_mutex_unlock(&mt->lock);
-	free(w->fbuf.mem);
-	free(w);
+	fuse_free(w->fbuf.mem);
+	fuse_free(w);
 }
 
 int fuse_session_loop_mt(struct fuse_session *se)

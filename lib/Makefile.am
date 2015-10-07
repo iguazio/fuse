@@ -18,12 +18,13 @@ iconv_source =
 endif
 
 libfuse3_la_SOURCES = 		\
-	hide_node.c\
-	fuse_lib_rename.c\
-	fuse_lib_unlink.c\
-	fuse_lib_rmdir.c\
-	fuse_lib_mkdir.c\
-	fuse_lib_write_buf.c\
+	fuse_mem.c \
+  hide_node.c \
+	fuse_lib_rename.c \
+	fuse_lib_unlink.c \
+	fuse_lib_rmdir.c \
+	fuse_lib_mkdir.c \
+	fuse_lib_write_buf.c \
   fuse_lib_create.c \
 	fuse_lib_setattr.c \
 	fuse_lib_release.c \

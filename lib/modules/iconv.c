@@ -59,7 +59,7 @@ static int iconv_convpath(struct iconv *ic, const char *path, char **newpathp,
 
 	pathlen = strlen(path);
 	newpathlen = pathlen * 4;
-	newpath = malloc(newpathlen + 1);
+	newpath = fuse_malloc(newpathlen + 1);
 	if (!newpath)
 		return -ENOMEM;
 
@@ -79,7 +79,7 @@ static int iconv_convpath(struct iconv *ic, const char *path, char **newpathp,
 
 			inc = (pathlen + 1) * 4;
 			newpathlen += inc;
-			tmp = realloc(newpath, newpathlen + 1);
+			tmp = fuse_realloc(newpath, newpathlen + 1);
 			err = -ENOMEM;
 			if (!tmp)
 				goto err;
@@ -97,7 +97,7 @@ static int iconv_convpath(struct iconv *ic, const char *path, char **newpathp,
 err:
 	iconv(fromfs ? ic->fromfs : ic->tofs, NULL, NULL, NULL, NULL);
 	pthread_mutex_unlock(&ic->lock);
-	free(newpath);
+	fuse_free(newpath);
 	return err;
 }
 
@@ -108,7 +108,7 @@ static int iconv_getattr(struct fuse_fsm* fsm __attribute__ ((unused)),  const c
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
 		err = fuse_fs_getattr(fsm, ic->next, newpath, stbuf);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -121,7 +121,7 @@ static int iconv_fgetattr(struct fuse_fsm* fsm __attribute__ ((unused)),  const 
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
 		err = fuse_fs_fgetattr(fsm, ic->next, newpath, stbuf, fi);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -133,7 +133,7 @@ static int iconv_access(struct fuse_fsm* fsm __attribute__ ((unused)),  const ch
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
 		err = fuse_fs_access(fsm, ic->next, newpath, mask);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -151,10 +151,10 @@ static int iconv_readlink(struct fuse_fsm* fsm __attribute__ ((unused)),  const 
 			if (!err) {
 				strncpy(buf, newlink, size - 1);
 				buf[size - 1] = '\0';
-				free(newlink);
+				fuse_free(newlink);
 			}
 		}
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -166,7 +166,7 @@ static int iconv_opendir(struct fuse_fsm* fsm __attribute__ ((unused)),  const c
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
 		err = fuse_fs_opendir(fsm, ic->next, newpath, fi);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -180,7 +180,7 @@ static int iconv_dir_fill(void *buf, const char *name,
 	int res = 0;
 	if (iconv_convpath(dh->ic, name, &newname, 1) == 0) {
 		res = dh->prev_filler(dh->prev_buf, newname, stbuf, off, flags);
-		free(newname);
+		fuse_free(newname);
 	}
 	return res;
 }
@@ -199,7 +199,7 @@ static int iconv_readdir(struct fuse_fsm* fsm __attribute__ ((unused)),  const c
 		dh.prev_filler = iconv_dir_fill;
 		err = fuse_fs_readdir(fsm, ic->next, newpath, &dh, filler,
 				      offset, fi, flags);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -211,7 +211,7 @@ static int iconv_releasedir(struct fuse_fsm* fsm __attribute__ ((unused)),  cons
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
 		err = fuse_fs_releasedir(fsm, ic->next, newpath, fi);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -223,7 +223,7 @@ static int iconv_mknod(struct fuse_fsm* fsm __attribute__ ((unused)),  const cha
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
 		err = fuse_fs_mknod(fsm, ic->next, newpath, mode, rdev);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -235,7 +235,7 @@ static int iconv_mkdir(struct fuse_fsm* fsm __attribute__ ((unused)),  const cha
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
 		err = fuse_fs_mkdir(fsm, ic->next, newpath, mode);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -247,7 +247,7 @@ static int iconv_unlink(struct fuse_fsm* fsm __attribute__ ((unused)),  const ch
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
 		err = fuse_fs_unlink(fsm, ic->next, newpath);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -259,7 +259,7 @@ static int iconv_rmdir(struct fuse_fsm* fsm __attribute__ ((unused)),  const cha
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
 		err = fuse_fs_rmdir(fsm, ic->next, newpath);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -274,9 +274,9 @@ static int iconv_symlink(struct fuse_fsm* fsm __attribute__ ((unused)),  const c
 		err = iconv_convpath(ic, to, &newto, 0);
 		if (!err) {
 			err = fuse_fs_symlink(fsm, ic->next, newfrom, newto);
-			free(newto);
+			fuse_free(newto);
 		}
-		free(newfrom);
+		fuse_free(newfrom);
 	}
 	return err;
 }
@@ -291,9 +291,9 @@ static int iconv_rename(struct fuse_fsm* fsm __attribute__ ((unused)),  const ch
 		err = iconv_convpath(ic, to, &newto, 0);
 		if (!err) {
 			err = fuse_fs_rename(fsm, ic->next, newfrom, newto, flags);
-			free(newto);
+			fuse_free(newto);
 		}
-		free(newfrom);
+		fuse_free(newfrom);
 	}
 	return err;
 }
@@ -308,9 +308,9 @@ static int iconv_link(struct fuse_fsm* fsm __attribute__ ((unused)),  const char
 		err = iconv_convpath(ic, to, &newto, 0);
 		if (!err) {
 			err = fuse_fs_link(fsm, ic->next, newfrom, newto);
-			free(newto);
+			fuse_free(newto);
 		}
-		free(newfrom);
+		fuse_free(newfrom);
 	}
 	return err;
 }
@@ -322,7 +322,7 @@ static int iconv_chmod(struct fuse_fsm* fsm __attribute__ ((unused)),  const cha
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
 		err = fuse_fs_chmod(fsm, ic->next, newpath, mode);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -334,7 +334,7 @@ static int iconv_chown(struct fuse_fsm* fsm __attribute__ ((unused)),  const cha
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
 		err = fuse_fs_chown(fsm, ic->next, newpath, uid, gid);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -346,7 +346,7 @@ static int iconv_truncate(struct fuse_fsm* fsm __attribute__ ((unused)),  const 
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
 		err = fuse_fs_truncate(fsm, ic->next, newpath, size);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -359,7 +359,7 @@ static int iconv_ftruncate(struct fuse_fsm* fsm __attribute__ ((unused)),  const
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
 		err = fuse_fs_ftruncate(fsm, ic->next, newpath, size, fi);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -371,7 +371,7 @@ static int iconv_utimens(struct fuse_fsm* fsm __attribute__ ((unused)),  const c
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
 		err = fuse_fs_utimens(fsm, ic->next, newpath, ts);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -384,7 +384,7 @@ static int iconv_create(struct fuse_fsm* fsm __attribute__ ((unused)),  const ch
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
 		err = fuse_fs_create(fsm, ic->next, newpath, mode, fi);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -396,7 +396,7 @@ static int iconv_open_file(struct fuse_fsm* fsm __attribute__ ((unused)),  const
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
 		err = fuse_fs_open(fsm, ic->next, newpath, fi);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -409,7 +409,7 @@ static int iconv_read_buf(struct fuse_fsm* fsm __attribute__ ((unused)),  const 
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
 		err = fuse_fs_read_buf(fsm, ic->next, newpath, bufp, size, offset, fi);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -422,7 +422,7 @@ static int iconv_write_buf(struct fuse_fsm* fsm __attribute__ ((unused)),  const
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
 		err = fuse_fs_write_buf(fsm, ic->next, newpath, buf, offset, fi);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -434,7 +434,7 @@ static int iconv_statfs(struct fuse_fsm* fsm __attribute__ ((unused)),  const ch
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
 		err = fuse_fs_statfs(fsm, ic->next, newpath, stbuf);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -446,7 +446,7 @@ static int iconv_flush(struct fuse_fsm* fsm __attribute__ ((unused)),  const cha
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
 		err = fuse_fs_flush(fsm, ic->next, newpath, fi);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -458,7 +458,7 @@ static int iconv_release(struct fuse_fsm* fsm __attribute__ ((unused)),  const c
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
 		err = fuse_fs_release(fsm, ic->next, newpath, fi);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -471,7 +471,7 @@ static int iconv_fsync(struct fuse_fsm* fsm __attribute__ ((unused)),  const cha
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
 		err = fuse_fs_fsync(fsm, ic->next, newpath, isdatasync, fi);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -484,7 +484,7 @@ static int iconv_fsyncdir(struct fuse_fsm* fsm __attribute__ ((unused)),  const 
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
 		err = fuse_fs_fsyncdir(fsm, ic->next, newpath, isdatasync, fi);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -498,7 +498,7 @@ static int iconv_setxattr(struct fuse_fsm* fsm __attribute__ ((unused)),  const 
 	if (!err) {
 		err = fuse_fs_setxattr(fsm, ic->next, newpath, name, value, size,
 				       flags);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -511,7 +511,7 @@ static int iconv_getxattr(struct fuse_fsm* fsm __attribute__ ((unused)),  const 
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
 		err = fuse_fs_getxattr(fsm, ic->next, newpath, name, value, size);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -523,7 +523,7 @@ static int iconv_listxattr(struct fuse_fsm* fsm __attribute__ ((unused)),  const
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
 		err = fuse_fs_listxattr(fsm, ic->next, newpath, list, size);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -535,7 +535,7 @@ static int iconv_removexattr(struct fuse_fsm* fsm __attribute__ ((unused)),  con
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
 		err = fuse_fs_removexattr(fsm, ic->next, newpath, name);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -548,7 +548,7 @@ static int iconv_lock(struct fuse_fsm* fsm __attribute__ ((unused)),  const char
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
 		err = fuse_fs_lock(fsm, ic->next, newpath, fi, cmd, lock);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -560,7 +560,7 @@ static int iconv_flock(struct fuse_fsm* fsm __attribute__ ((unused)),  const cha
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
 		err = fuse_fs_flock(fsm, ic->next, newpath, fi, op);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -572,7 +572,7 @@ static int iconv_bmap(struct fuse_fsm* fsm __attribute__ ((unused)),  const char
 	int err = iconv_convpath(ic, path, &newpath, 0);
 	if (!err) {
 		err = fuse_fs_bmap(fsm, ic->next, newpath, blocksize, idx);
-		free(newpath);
+		fuse_free(newpath);
 	}
 	return err;
 }
@@ -591,9 +591,9 @@ static void iconv_destroy(void *data)
 	iconv_close(ic->tofs);
 	iconv_close(ic->fromfs);
 	pthread_mutex_destroy(&ic->lock);
-	free(ic->from_code);
-	free(ic->to_code);
-	free(ic);
+	fuse_free(ic->from_code);
+	fuse_free(ic->to_code);
+	fuse_free(ic);
 }
 
 static const struct fuse_operations iconv_oper = {
@@ -648,15 +648,15 @@ static const struct fuse_opt iconv_opts[] = {
 
 static void iconv_help(void)
 {
-	char *old = strdup(setlocale(LC_CTYPE, ""));
-	char *charmap = strdup(nl_langinfo(CODESET));
+	char *old = fuse_strdup(setlocale(LC_CTYPE, ""));
+	char *charmap = fuse_strdup(nl_langinfo(CODESET));
 	setlocale(LC_CTYPE, old);
-	free(old);
+	fuse_free(old);
 	printf(
 "    -o from_code=CHARSET   original encoding of file names (default: UTF-8)\n"
 "    -o to_code=CHARSET	    new encoding of the file names (default: %s)\n",
 		charmap);
-	free(charmap);
+	fuse_free(charmap);
 }
 
 static int iconv_opt_proc(void *data, const char *arg, int key,
@@ -681,7 +681,7 @@ static struct fuse_fs *iconv_new(struct fuse_args *args,
 	const char *from;
 	const char *to;
 
-	ic = calloc(1, sizeof(struct iconv));
+	ic = fuse_calloc(1, sizeof(struct iconv));
 	if (ic == NULL) {
 		fprintf(stderr, "fuse-iconv: memory allocation failed\n");
 		return NULL;
@@ -699,7 +699,7 @@ static struct fuse_fs *iconv_new(struct fuse_args *args,
 	to = ic->to_code ? ic->to_code : "";
 	/* FIXME: detect charset equivalence? */
 	if (!to[0])
-		old = strdup(setlocale(LC_CTYPE, ""));
+		old = fuse_strdup(setlocale(LC_CTYPE, ""));
 	ic->tofs = iconv_open(from, to);
 	if (ic->tofs == (iconv_t) -1) {
 		fprintf(stderr, "fuse-iconv: cannot convert from %s to %s\n",
@@ -714,7 +714,7 @@ static struct fuse_fs *iconv_new(struct fuse_args *args,
 	}
 	if (old) {
 		setlocale(LC_CTYPE, old);
-		free(old);
+		fuse_free(old);
 	}
 
 	ic->next = next[0];
@@ -729,12 +729,12 @@ out_iconv_close_from:
 out_iconv_close_to:
 	iconv_close(ic->tofs);
 out_free:
-	free(ic->from_code);
-	free(ic->to_code);
-	free(ic);
+	fuse_free(ic->from_code);
+	fuse_free(ic->to_code);
+	fuse_free(ic);
 	if (old) {
 		setlocale(LC_CTYPE, old);
-		free(old);
+		fuse_free(old);
 	}
 	return NULL;
 }

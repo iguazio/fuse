@@ -19,10 +19,12 @@ static const char* f1(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_lookup_data *dt = (struct fsm_lookup_data *)data;
     fuse_prepare_interrupt(dt->f, dt->req, &dt->d);
     int err = lookup_path(dt->owner,dt->f, dt->parent, dt->name, dt->path, &dt->e, NULL);
-    if (err == FUSE_LIB_ERROR_PENDING_REQ)
+    if (err == FUSE_LIB_ERROR_PENDING_REQ){
+        fuse_fsm_cleanup_on_done(dt->owner,1);
         return NULL;
+    }
     fuse_fsm_set_err(fsm, err);
-    return (err)?"error":"ok";
+    return NULL;//lookup_path() triggers "ok" or "error" events , so no need to return event ID
 
 }
 static const char* f2(struct fuse_fsm* fsm __attribute__((unused)),void *data){

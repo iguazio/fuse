@@ -17,7 +17,7 @@ int try_get_path( struct fuse *f, fuse_ino_t nodeid, const char *name, char **pa
     *path = NULL;
 
     err = -ENOMEM;
-    buf = malloc(bufsize);
+    buf = fuse_malloc(bufsize);
     if (buf == NULL)
         goto out_err;
 
@@ -80,7 +80,7 @@ out_unlock:
     if (need_lock)
         unlock_path(f, nodeid, wnode, node);
 out_free:
-    free(buf);
+    fuse_free(buf);
 
 out_err:
     return err;
@@ -102,7 +102,7 @@ char * add_name( char **buf, unsigned *bufsize, char *s, const char *name )
                 newbufsize *= 2;
         }
 
-        newbuf = realloc(*buf, newbufsize);
+        newbuf = fuse_realloc(*buf, newbufsize);
         if (newbuf == NULL)
             return NULL;
 
@@ -146,8 +146,8 @@ void free_path2( struct fuse *f, fuse_ino_t nodeid1, fuse_ino_t nodeid2, struct 
     unlock_path(f, nodeid2, wnode2, NULL);
     wake_up_queued(f);
     pthread_mutex_unlock(&f->lock);
-    free(path1);
-    free(path2);
+    fuse_free(path1);
+    fuse_free(path2);
 }
 
 void free_path( struct fuse *f, fuse_ino_t nodeid, char *path )
@@ -163,7 +163,7 @@ void free_path_wrlock( struct fuse *f, fuse_ino_t nodeid, struct node *wnode, ch
     if (f->lockq)
         wake_up_queued(f);
     pthread_mutex_unlock(&f->lock);
-    free(path);
+    fuse_free(path);
 }
 
 void wake_up_queued( struct fuse *f )
@@ -216,7 +216,7 @@ int try_get_path2( struct fuse *f, fuse_ino_t nodeid1, const char *name1, fuse_i
             struct node *wn1 = wnode1 ? *wnode1 : NULL;
 
             unlock_path(f, nodeid1, wn1, NULL);
-            free(*path1);
+            fuse_free(*path1);
         }
     }
     return err;

@@ -21,8 +21,10 @@ static const char* f1(struct fuse_fsm* fsm __attribute__((unused)),void *data){
         err = fuse_fs_fgetattr(fsm, dt->f->fs, dt->path, &dt->e->attr, &dt->fi);
     else
         err = fuse_fs_getattr(fsm, dt->f->fs, dt->path, &dt->e->attr);
-    if (err == FUSE_LIB_ERROR_PENDING_REQ)
+    if (err == FUSE_LIB_ERROR_PENDING_REQ){
+        fuse_fsm_cleanup_on_done(dt->parent,1);
         return NULL;
+    }
     fuse_fsm_set_err(fsm, err);
     return (err)?"error":"ok";
 }
@@ -81,8 +83,9 @@ int lookup_path(struct fuse_fsm *parent,
     
     fuse_fsm_run(new_fsm, "ok");
     if (!strcmp(fuse_fsm_cur_state(new_fsm),"DONE")){
+        int res = fuse_fsm_get_err(new_fsm);
         FUSE_FSM_FREE(new_fsm);
-        return 0;
+        return res;
     }
     return FUSE_LIB_ERROR_PENDING_REQ;
 }

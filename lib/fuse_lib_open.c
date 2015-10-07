@@ -129,8 +129,10 @@ static const char* fc1(struct fuse_fsm* fsm, void *data) {
     struct fsm_open_cache_data *dt = (struct fsm_open_cache_data *)data;
     int err;
     err = fuse_fs_fgetattr(fsm, dt->f->fs, dt->path, &dt->stbuf, dt->fi);
-    if (err == FUSE_LIB_ERROR_PENDING_REQ)
+    if (err == FUSE_LIB_ERROR_PENDING_REQ){
+        fuse_fsm_cleanup_on_done(dt->parent,1);
         return NULL;
+    }
     fuse_fsm_set_err(fsm, err);
     return (err)?"error":"ok";
 }

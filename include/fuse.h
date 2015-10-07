@@ -534,7 +534,7 @@ struct fuse_operations {
 	 *
 	 * The buffer must be allocated dynamically and stored at the
 	 * location pointed to by bufp.  If the buffer contains memory
-	 * regions, they too must be allocated using malloc().  The
+	 * regions, they too must be allocated using fuse_malloc().  The
 	 * allocated memory will be freed by the caller.
 	 *
 	 * Introduced in version 2.9
@@ -835,12 +835,12 @@ int fuse_fs_flush(struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *
 int fuse_fs_statfs(struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, struct statvfs *buf);
 int fuse_fs_opendir(struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, struct fuse_file_info *fi);
 int fuse_fs_readdir(struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, void *buf, fuse_fill_dir_t filler, off_t off, struct fuse_file_info *fi, enum fuse_readdir_flags flags);
-            int fuse_fs_fsyncdir(struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, int datasync, struct fuse_file_info *fi);
-            int fuse_fs_releasedir(struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, struct fuse_file_info *fi);
-            int fuse_fs_create(struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, mode_t mode, struct fuse_file_info *fi);
-            int fuse_fs_lock(struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, struct fuse_file_info *fi, int cmd, struct flock *lock);
-            int fuse_fs_flock(struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, struct fuse_file_info *fi, int op);
-            int fuse_fs_chmod(struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, mode_t mode);
+int fuse_fs_fsyncdir(struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, int datasync, struct fuse_file_info *fi);
+int fuse_fs_releasedir(struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, struct fuse_file_info *fi);
+int fuse_fs_create(struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, mode_t mode, struct fuse_file_info *fi);
+int fuse_fs_lock(struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, struct fuse_file_info *fi, int cmd, struct flock *lock);
+int fuse_fs_flock(struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, struct fuse_file_info *fi, int op);
+int fuse_fs_chmod(struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, mode_t mode);
 int fuse_fs_chown(struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, uid_t uid, gid_t gid);
 int fuse_fs_truncate(struct fuse_fsm* fsm __attribute__((unused)),struct fuse_fs *fs, const char *path, off_t size);
 int fuse_fs_ftruncate(struct fuse_fsm* fsm __attribute__((unused)),struct fuse_fs *fs, const char *path, off_t size,struct fuse_file_info *fi);

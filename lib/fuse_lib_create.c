@@ -32,10 +32,11 @@ static const char * f1(struct fuse_fsm* fsm __attribute__((unused)), void *data)
 static const char* f2(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
 	struct fsm_create_data *dt = (struct fsm_create_data *)data;
     int err = lookup_path(fsm, dt->f, dt->parent, dt->name, dt->path, &dt->e, &dt->fi);
-    if (err == FUSE_LIB_ERROR_PENDING_REQ)
+    if (err == FUSE_LIB_ERROR_PENDING_REQ){
         return NULL;
+    }
     fuse_fsm_set_err(fsm, err);
-    return (err)?"error":"ok";
+    return NULL;//lookup_path() triggers "ok" or "error" events , so no need to return event ID
 }
 
 
@@ -104,8 +105,8 @@ static const char* f13(struct fuse_fsm* fsm __attribute__((unused)), void *data)
 //f10 - Replay to the driver - create_success
 //f13 - Replay to the driver - "error"
 
-FUSE_FSM_EVENTS(OPEN, "ok", "error")
-FUSE_FSM_STATES(OPEN,   "START",         "CRT"      ,     "LKP"    ,"LKP_OK"       ,"RPLY_OK"       ,"RLS"       , "RPLY_ERR"  ,"DONE")
+FUSE_FSM_EVENTS(CREATE, "ok", "error")
+FUSE_FSM_STATES(CREATE,   "START",         "CRT"      ,     "LKP"    ,"LKP_OK"       ,"RPLY_OK"       ,"RLS"       , "RPLY_ERR"  ,"DONE")
 FUSE_FSM_ENTRY(/*ok*/	{"CRT",f1}     ,{"LKP",f2}  ,{"LKP_OK",f6} ,{"RPLY_OK",f10},{"DONE",f4}     ,{"DONE",f13}, {"DONE",f4}, NONE)
 FUSE_FSM_LAST(/*error*/{"RPLY_ERR",f13},{"DONE",f13},{"RLS",f5}    ,{"RLS",f5}     ,{"RPLY_ERR",f5} ,{"DONE",f13}, {"DONE",f4},NONE)
 
@@ -124,7 +125,7 @@ void fuse_lib_create(fuse_req_t req, fuse_ino_t parent,
 	err = get_path_name(f, parent, name, &path);
 	if (!err) {
         struct fuse_fsm *new_fsm = NULL;
-        FUSE_FSM_ALLOC(OPEN, new_fsm, struct fsm_create_data);
+        FUSE_FSM_ALLOC(CREATE, new_fsm, struct fsm_create_data);
         struct fsm_create_data *dt = (struct fsm_create_data*)new_fsm->data;
 
         dt->f = f;
