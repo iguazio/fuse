@@ -1,7 +1,5 @@
 #include "fuse_mem.h"
 
-//#define PRINTOUT  printf
-#define PRINTOUT(...)  
 
 struct mem_descriptor{
     int line;
@@ -19,7 +17,6 @@ void* _fuse_malloc( size_t size,int line,const char* file )
     ptr->line = line;
     ptr->file = file;
     list_add_head( &ptr->node, &mem_allocs);
-    PRINTOUT("+%p\n",ptr->data);
     ref_cntr++;
     return (void*)ptr->data;
 }
@@ -31,7 +28,6 @@ void* _fuse_calloc( size_t nmenb,size_t size,int line,const char* file )
     ptr->file = file;
     list_add_head( &ptr->node, &mem_allocs);
     ref_cntr++;
-    PRINTOUT("+%p\n",ptr->data);
     return (void*)ptr->data;
 }
 
@@ -44,12 +40,9 @@ void* _fuse_realloc( void *oldptr, size_t newsize,int line,const char* file )
         old_mptr--;
         list_del(&old_mptr->node);
         ptr = (struct mem_descriptor*)realloc(old_mptr , newsize + sizeof(struct mem_descriptor));
-        PRINTOUT("=%p->%p\n",old_mptr->data,ptr->data);
-
     }else{
         ref_cntr++;
         ptr = (struct mem_descriptor*)realloc(oldptr , newsize + sizeof(struct mem_descriptor));
-        PRINTOUT("+%p\n",ptr->data);
     }
     ptr->line = line;
     ptr->file = file;
@@ -67,7 +60,6 @@ void _fuse_free( void *oldptr ,int line,const char* file )
         old_mptr--;
         list_del(&old_mptr->node);
         ref_cntr--;
-        PRINTOUT("-%p\n",old_mptr->data);
         free(old_mptr);
     }
 }
@@ -83,7 +75,7 @@ char* _fuse_strdup( const char *str,int line,const char* file )
     return (char*)ptr->data;
 }
 
-void fuse_mem_dump( void )
+static void fuse_mem_dump( void )
 {
     struct mem_descriptor *desc;
     struct list_head *curr, *next;
@@ -92,11 +84,11 @@ void fuse_mem_dump( void )
     for (curr = mem_allocs.next; curr != &mem_allocs; curr = next) {
         next = curr->next;
         desc = list_entry(curr, struct mem_descriptor, node);
-        PRINTOUT("%p %s(%d)\n",desc->data,desc->file,desc->line);
+        printf("%p %s(%d)\n",desc->data,desc->file,desc->line);
     }
 }
 
-int fuse_mem_cntr( void )
+static int fuse_mem_cntr( void )
 {
     struct list_head *curr, *next;
     int i = 0;
@@ -105,4 +97,14 @@ int fuse_mem_cntr( void )
         i++;
     }
     return i;
+}
+
+void fuse_mem_verify(void){
+    static int max_blocks_allowed = 50;
+    int i = fuse_mem_cntr();
+    if (i > max_blocks_allowed){
+        printf("Number of mallocs is %d\n",max_blocks_allowed);
+        fuse_mem_dump();
+        max_blocks_allowed = i * 1.5;
+    }
 }

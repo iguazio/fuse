@@ -13,8 +13,7 @@ void* _fuse_realloc(void *oldptr, size_t newsize,int line,const char* file);
 void  _fuse_free(void *oldptr,int line,const char* file );
 char* _fuse_strdup(const char *str,int line,const char* file);
 
-void  fuse_mem_dump(void);
-int   fuse_mem_cntr(void);
+void  fuse_mem_verify(void);
 
 #ifdef DEBUG_MALLOC
     #define fuse_malloc(size) _fuse_malloc(size,__LINE__,__FILE__)

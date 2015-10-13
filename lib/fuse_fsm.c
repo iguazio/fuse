@@ -1,6 +1,9 @@
 #include "fuse_fsm.h"
 #include <assert.h>
 
+static int debug = 0;
+
+
 static int evnt_str_to_id(struct fuse_fsm * fsm, const char *event){
     int i;
     for (i=0; i<fsm->num_of_events; i++){
@@ -26,8 +29,8 @@ static  const char* fsm_process_event( struct fuse_fsm * fsm, const char* event 
 
     const struct fuse_fsm_entry *entry = &fsm->fuse_fsm_transition_table[fsm->num_of_states*event_id + curr_s];
 
-    //Debug
-    printf("FSM %p %s %s %s->%s\n",fsm, fsm->name, event, fsm->states[curr_s],entry->next_state);
+    if (debug)
+        printf("FSM %p %s %s %s->%s\n",fsm, fsm->name, event, fsm->states[curr_s],entry->next_state);
 
     fsm->current_state = state_str_to_id(fsm,entry->next_state);
     const char* next_event = entry->f(fsm, fsm->data);
@@ -39,7 +42,7 @@ void fuse_fsm_run( struct fuse_fsm * fsm, const char* event )
     while (event != NULL)
         event = fsm_process_event(fsm,event);
 
-    if (fsm->do_cleanup_on_done && !strcmp(fuse_fsm_cur_state(fsm),"DONE"))
+    if (fsm->do_free_on_done && !strcmp(fuse_fsm_cur_state(fsm),"DONE"))
         FUSE_FSM_FREE(fsm);
 }
 
@@ -63,7 +66,11 @@ int fuse_fsm_get_err( struct fuse_fsm *fsm )
     return fsm->err;
 }
 
-void fuse_fsm_cleanup_on_done( struct fuse_fsm *fsm, int do_cleanup )
+void fuse_fsm_free_on_done( struct fuse_fsm *fsm, int do_cleanup )
 {
-    fsm->do_cleanup_on_done = do_cleanup;
+    fsm->do_free_on_done = do_cleanup;
+}
+
+void fuse_fsm_set_debug(int d){
+    debug = d;
 }

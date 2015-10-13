@@ -1380,6 +1380,8 @@ struct fuse *fuse_new(struct fuse_chan *ch, struct fuse_args *args,
 		fprintf(stderr, "nopath: %i\n", f->conf.nopath);
 	}
 
+    fuse_fsm_set_debug(f->conf.debug);
+
 	/* Trace topmost layer by default */
 	f->fs->debug = f->conf.debug;
 	f->ctr = 0;

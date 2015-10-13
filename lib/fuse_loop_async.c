@@ -61,9 +61,7 @@ int fuse_session_loop_async( struct fuse_session *se, int fd, fuse_async_get_msg
                 }
             }
         }
-        printf("fuse_mem cntr:%d\n",fuse_mem_cntr());
-        fuse_mem_dump();
-
+        fuse_mem_verify();
     }
 
     fuse_free(fbuf.mem);

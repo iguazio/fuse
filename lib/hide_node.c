@@ -20,7 +20,7 @@ static const char* f1(struct fuse_fsm* fsm,void *data){
 
     err = fuse_fs_getattr(fsm, dt->f->fs, dt->newpath, &dt->buf);
     if (err == FUSE_LIB_ERROR_PENDING_REQ){
-        fuse_fsm_cleanup_on_done(dt->parent,1);
+        fuse_fsm_free_on_done(dt->parent,1);
         return NULL;
     }
     fuse_fsm_set_err(fsm, err);

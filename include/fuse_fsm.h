@@ -26,17 +26,21 @@ FUSE_FSM_STATES(UNLINK,   "START",         "RM"      ,"DONE")
 FUSE_FSM_ENTRY(      	 {"RM",f1}     ,{"DONE",f10} , NONE)
 FUSE_FSM_LAST(        {"DONE",f13},    {"DONE",f13}  , NONE)
 
-go(){
+void go(){
     ...
     struct fuse_fsm *new_fsm = NULL;
     FUSE_FSM_ALLOC(UNLINK, new_fsm, struct fsm_unlink_data);
     struct fsm_unlink_data *dt = (struct fsm_unlink_data*)new_fsm->data;
     ...
     fuse_fsm_run(new_fsm, "ok");
-    ...
+    if (!strcmp(fuse_fsm_cur_state(new_fsm),"DONE")){
+        int res = fuse_fsm_get_err(new_fsm);
+        FUSE_FSM_FREE(new_fsm);
+        return res;
+    }
+    return FUSE_LIB_ERROR_PENDING_REQ;
+
 }
-
-
 */
 #include "fuse_async_responce.h"
 struct fuse_fsm;
@@ -50,7 +54,7 @@ struct fuse_fsm_entry{
 };
 
 struct fuse_fsm{
-    int do_cleanup_on_done;
+    int do_free_on_done;
     const char *name;
     int err;
     int current_state;
@@ -64,7 +68,7 @@ struct fuse_fsm{
 
 void    fuse_fsm_set_err(struct fuse_fsm *fsm, int err);
 int     fuse_fsm_get_err(struct fuse_fsm *fsm);
-void    fuse_fsm_cleanup_on_done(struct fuse_fsm *fsm, int do_cleanup);
+void    fuse_fsm_free_on_done(struct fuse_fsm *fsm, int do_cleanup);
 
 #define NONE {NULL,fuse_lib_fsm_transition_function_null}
 
@@ -92,3 +96,4 @@ void    fuse_fsm_cleanup_on_done(struct fuse_fsm *fsm, int do_cleanup);
 
 void fuse_fsm_run( struct fuse_fsm * fsm, const char* event ); 
 const char* fuse_fsm_cur_state( struct fuse_fsm * fsm ) ;
+void fuse_fsm_set_debug(int d);

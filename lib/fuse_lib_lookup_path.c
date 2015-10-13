@@ -22,7 +22,7 @@ static const char* f1(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     else
         err = fuse_fs_getattr(fsm, dt->f->fs, dt->path, &dt->e->attr);
     if (err == FUSE_LIB_ERROR_PENDING_REQ){
-        fuse_fsm_cleanup_on_done(dt->parent,1);
+        fuse_fsm_free_on_done(dt->parent,1);
         return NULL;
     }
     fuse_fsm_set_err(fsm, err);

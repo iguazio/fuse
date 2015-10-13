@@ -130,7 +130,7 @@ static const char* fc1(struct fuse_fsm* fsm, void *data) {
     int err;
     err = fuse_fs_fgetattr(fsm, dt->f->fs, dt->path, &dt->stbuf, dt->fi);
     if (err == FUSE_LIB_ERROR_PENDING_REQ){
-        fuse_fsm_cleanup_on_done(dt->parent,1);
+        fuse_fsm_free_on_done(dt->parent,1);
         return NULL;
     }
     fuse_fsm_set_err(fsm, err);
