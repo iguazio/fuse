@@ -50,9 +50,9 @@ static const char* f13(struct fuse_fsm* fsm __attribute__((unused)), void *data)
 
 
 FUSE_FSM_EVENTS(RMDIR, "ok", "error")
-FUSE_FSM_STATES(RMDIR,   "START",         "RMDIR"     ,"DONE")
-FUSE_FSM_ENTRY(/*ok*/	 {"RMDIR",f1}     ,{"DONE",f10} , NONE)
-FUSE_FSM_LAST(/*error*/{"DONE",f13},    {"DONE",f13}  , NONE)
+FUSE_FSM_STATES(RMDIR,           "START",         "RMDIR"     ,"DONE")
+FUSE_FSM_ENTRY(RMDIR,/*ok*/	 {"RMDIR",f1}     ,{"DONE",f10} , FUSE_FSM_BAD)
+FUSE_FSM_LAST(RMDIR,/*error*/{"DONE",f13},    {"DONE",f13}  , FUSE_FSM_BAD)
 
 
 

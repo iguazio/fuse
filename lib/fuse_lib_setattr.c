@@ -137,9 +137,9 @@ static const char* f10(struct fuse_fsm* fsm __attribute__((unused)),void *data){
 }
 
 FUSE_FSM_EVENTS(SETATTR,"ok","error")
-FUSE_FSM_STATES(SETATTR,        "CREATED",   "CHMOD",      "CHOWN"    ,      "TRUNC"    ,      "UTIME"    ,      "GETATTR"    ,"DONE")
-FUSE_FSM_ENTRY(/*"ok"*/         {"CHMOD",f1},{"CHOWN",f2}, {"TRUNC",f3},    {"UTIME",f4} ,   {"GETATTR",f5},     {"DONE",f6}   ,NONE  )
-FUSE_FSM_LAST (/*"error"*/      {"DONE",f10},{"DONE",f10},{"DONE",f10},     {"DONE",f10},     {"DONE",f10},      {"DONE",f10} ,NONE  )
+FUSE_FSM_STATES(SETATTR,                  "CREATED",   "CHMOD",      "CHOWN"    ,      "TRUNC"    ,      "UTIME"    ,      "GETATTR"    ,"DONE")
+FUSE_FSM_ENTRY(SETATTR, /*"ok"*/         {"CHMOD",f1},{"CHOWN",f2}, {"TRUNC",f3},    {"UTIME",f4} ,   {"GETATTR",f5},     {"DONE",f6}   ,FUSE_FSM_BAD  )
+FUSE_FSM_LAST (SETATTR, /*"error"*/      {"DONE",f10},{"DONE",f10},{"DONE",f10},     {"DONE",f10},     {"DONE",f10},      {"DONE",f10} ,FUSE_FSM_BAD  )
 
 
 /*FixMe: should be added as a separate user callback*/

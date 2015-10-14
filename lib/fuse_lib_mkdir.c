@@ -48,10 +48,10 @@ static const char* f10(struct fuse_fsm* fsm __attribute__((unused)), void *data)
 //f10 - Replay to the driver - either success or error
 
 
-FUSE_FSM_EVENTS(MKDIR, "ok", "error")
-FUSE_FSM_STATES(MKDIR,   "START",         "MKDIR"    ,"LKP"         ,"DONE")
-FUSE_FSM_ENTRY(/*ok*/	 {"MKDIR",f1}     ,{"LKP",f2}  , {"DONE",f10} , NONE)
-FUSE_FSM_LAST(/*error*/{"DONE",f10},    {"DONE",f10} , {"DONE",f10} , NONE)
+FUSE_FSM_EVENTS(MKDIR,"ok", "error")
+FUSE_FSM_STATES(MKDIR,          "START",         "MKDIR"    ,"LKP"         ,"DONE")
+FUSE_FSM_ENTRY(MKDIR,/*ok*/	    {"MKDIR",f1}     ,{"LKP",f2}  , {"DONE",f10} , FUSE_FSM_BAD)
+FUSE_FSM_LAST(MKDIR,/*error*/   {"DONE",f10},    {"DONE",f10} , {"DONE",f10} , FUSE_FSM_BAD)
 
 void fuse_lib_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name,
                            mode_t mode)

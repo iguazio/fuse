@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include "fuse_list.h"
 
-#define DEBUG_MALLOC
+//#define DEBUG_MALLOC
 
 void* _fuse_malloc(size_t size,int line,const char* file);
 void* _fuse_calloc(size_t nmenb,size_t size,int line,const char* file);

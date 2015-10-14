@@ -60,9 +60,9 @@ static const char* f3(struct fuse_fsm* fsm __attribute__((unused)),void *data){
 }
 
 FUSE_FSM_EVENTS(LOOKUP, "ok","error")
-FUSE_FSM_STATES(LOOKUP,  "CREATED",         "LOOK_PATH" , "DONE")
-FUSE_FSM_ENTRY(/*ok*/    {"LOOK_PATH",f1},  {"DONE",f2} , NONE)           
-FUSE_FSM_LAST (/*error*/ {"DONE",f3},       {"DONE",f3} , NONE)
+FUSE_FSM_STATES(LOOKUP,         "CREATED",         "LOOK_PATH" , "DONE")
+FUSE_FSM_ENTRY(LOOKUP,/*ok*/    {"LOOK_PATH",f1},  {"DONE",f2} , FUSE_FSM_BAD)           
+FUSE_FSM_LAST (LOOKUP,/*error*/ {"DONE",f3},       {"DONE",f3} , FUSE_FSM_BAD)
 
 
 void fuse_lib_lookup(fuse_req_t req, fuse_ino_t parent,

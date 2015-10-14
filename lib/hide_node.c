@@ -67,9 +67,9 @@ static const char* f3(struct fuse_fsm* fsm __attribute__((unused)),void *data){
 //f3 - rename succeeded - feed parent fsm with "error" event
 
 FUSE_FSM_EVENTS(HIDE_NODE,"ok","error")
-FUSE_FSM_STATES(HIDE_NODE, "CREATED",       "CHK_EXST"     ,"REN"      ,"DONE")
-FUSE_FSM_ENTRY(/*"ok"*/    {"CHK_EXST",f1}, {"REN",f11}    ,{"DONE",f2},NONE)           
-FUSE_FSM_LAST (/*"error"*/ {"DONE",f3},     {"REN",f11}    ,{"DONE",f3},NONE)           
+FUSE_FSM_STATES(HIDE_NODE,          "CREATED",       "CHK_EXST"     ,"REN"      ,"DONE")
+FUSE_FSM_ENTRY(HIDE_NODE,/*"ok"*/  {"CHK_EXST",f1}, {"REN",f11}    ,{"DONE",f2},FUSE_FSM_BAD)           
+FUSE_FSM_LAST(HIDE_NODE,/*"error"*/ {"DONE",f3},     {"REN",f11}    ,{"DONE",f3},FUSE_FSM_BAD)           
 
 
 

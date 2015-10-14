@@ -62,10 +62,25 @@ static const char* f13(struct fuse_fsm* fsm __attribute__((unused)), void *data)
 //f13 - Replay to the driver - error
 
 
-FUSE_FSM_EVENTS(RENAME, "ok", "error")
-FUSE_FSM_STATES(RENAME,   "START",         "REN"     ,"DONE")
-FUSE_FSM_ENTRY(/*ok*/	 {"REN",f1}     ,{"DONE",f10} , NONE)
-FUSE_FSM_LAST(/*error*/{"DONE",f13},    {"DONE",f13}  , NONE)
+FUSE_FSM_EVENTS(RENAME,   "ok", "error")
+FUSE_FSM_STATES(RENAME,    "START",         "REN"     ,"DONE")
+FUSE_FSM_ENTRY(RENAME,  /*ok*/	    {"REN",f1}     ,{"DONE",f10} , FUSE_FSM_BAD)
+FUSE_FSM_LAST(RENAME,   /*error*/{"DONE",f13},    {"DONE",f13}  , FUSE_FSM_BAD)
+/*
+__attribute__((constructor)) static void fuse_fsm_init_RENAME(void) {
+    int i;
+    int j;
+    int num_of_states = sizeof(fuse_fsm_states_RENAME)/sizeof(char*);
+    for (i = 0;i<sizeof(fuse_fsm_transition_table_RENAME)/sizeof(struct fuse_fsm_entry);i++){
+        struct fuse_fsm_entry* p = ((struct fuse_fsm_entry*)fuse_fsm_transition_table_RENAME);
+        const char *state = ((struct fuse_fsm_entry*)fuse_fsm_transition_table_RENAME)[i].next_state;
+        for (j=0; j<num_of_states; j++){
+            if (!strcmp(fuse_fsm_states_RENAME[j],state))
+                p[i].next_state_id = j;
+        }
+    }
+}
+*/
 
 void fuse_lib_rename(fuse_req_t req, fuse_ino_t olddir,
                             const char *oldname, fuse_ino_t newdir,

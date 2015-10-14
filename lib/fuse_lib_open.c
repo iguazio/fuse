@@ -81,8 +81,8 @@ static const char* f11(struct fuse_fsm* fsm, void *data) {
 
 FUSE_FSM_EVENTS(OPEN, "ok", "error")
 FUSE_FSM_STATES(OPEN,		"CREATED"	  , "OPEN"		    , "CACHE"       ,   "DONE")
-FUSE_FSM_ENTRY(/*ok*/		 { "OPEN",f1 }, { "CACHE",f11 } , { "DONE",f2 } ,	NONE)
-FUSE_FSM_LAST(/*error*/		 NONE		  , { "DONE",f3 }	, { "DONE",f3 } ,	NONE)
+FUSE_FSM_ENTRY(OPEN, /*ok*/  { "OPEN",f1 }, { "CACHE",f11 } , { "DONE",f2 } ,	FUSE_FSM_BAD)
+FUSE_FSM_LAST(OPEN, /*error*/ FUSE_FSM_BAD , { "DONE",f3 }	, { "DONE",f3 } ,	FUSE_FSM_BAD)
 
 
 
@@ -171,9 +171,9 @@ static const char* fc3(struct fuse_fsm* fsm, void *data) {
 
 
 FUSE_FSM_EVENTS(OPEN_CACHE, "ok", "error")
-FUSE_FSM_STATES(OPEN_CACHE, "CREATED", "GETA", "DONE")
-FUSE_FSM_ENTRY(/*ok*/{ "GETA",fc1 }, { "DONE",fc2 }, NONE)
-FUSE_FSM_LAST(/*error*/{ "DONE",fc3 }, { "DONE",fc3 }, NONE)
+FUSE_FSM_STATES(OPEN_CACHE,         "CREATED",      "GETA",     "DONE")
+FUSE_FSM_ENTRY(OPEN_CACHE,/*ok*/{ "GETA",fc1 }, { "DONE",fc2 }, FUSE_FSM_BAD)
+FUSE_FSM_LAST(OPEN_CACHE,/*error*/{ "DONE",fc3 }, { "DONE",fc3 }, FUSE_FSM_BAD)
 
 static int open_auto_cache(struct fuse_fsm* parent,struct fuse_fsm** cache_fsm, struct fuse *f, fuse_ino_t ino, const char *path, struct fuse_file_info *fi)
 {

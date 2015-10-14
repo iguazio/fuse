@@ -54,9 +54,9 @@ static const char* f4(struct fuse_fsm* fsm __attribute__((unused)),void *data){
 }
 
 FUSE_FSM_EVENTS(LOOKUP_PATH,"ok","error")
-FUSE_FSM_STATES(LOOKUP_PATH,        "CREATED",    "GETS"     ,"DONE")
-FUSE_FSM_ENTRY(/*"ok"*/             {"GETS",f1},  {"DONE",f3},NONE)           
-FUSE_FSM_LAST (/*"error"*/          {"DONE",f4},  {"DONE",f4},NONE)           
+FUSE_FSM_STATES(LOOKUP_PATH,            "CREATED",    "GETS"     ,"DONE")
+FUSE_FSM_ENTRY(LOOKUP_PATH, /*"ok"*/  {"GETS",f1},  {"DONE",f3},FUSE_FSM_BAD)           
+FUSE_FSM_LAST (LOOKUP_PATH,/*"error"*/{"DONE",f4},  {"DONE",f4},FUSE_FSM_BAD)           
 
 
 

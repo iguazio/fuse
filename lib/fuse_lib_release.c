@@ -48,15 +48,15 @@ static const char* f3(struct fuse_fsm* fsm __attribute__((unused)),void *data){
 
 
 FUSE_FSM_EVENTS(RELEASE, "ok","error")
-FUSE_FSM_STATES(RELEASE, "CREATED",         "RELEASE"  , "DONE")
-FUSE_FSM_ENTRY(/*ok*/    {"RELEASE",f1},    {"DONE",f2} , NONE)           
-FUSE_FSM_LAST (/*error*/ {"DONE",f2},       {"DONE",f2} , NONE)
+FUSE_FSM_STATES(RELEASE,           "CREATED",         "RELEASE"  , "DONE")
+FUSE_FSM_ENTRY(RELEASE, /*ok*/    {"RELEASE",f1},    {"DONE",f2} , FUSE_FSM_BAD)           
+FUSE_FSM_LAST (RELEASE, /*error*/ {"DONE",f2},       {"DONE",f2} , FUSE_FSM_BAD)
 
 
 FUSE_FSM_EVENTS(RELEASE_UNLINK, "ok","error")
 FUSE_FSM_STATES(RELEASE_UNLINK, "CREATED",         "RELEASE"        , "UNLINK"    , "DONE")
-FUSE_FSM_ENTRY(/*ok*/           {"RELEASE",f1},    {"UNLINK",f3}    , {"DONE",f2} , NONE)           
-FUSE_FSM_LAST (/*error*/        {"UNLINK",f3},       {"UNLINK",f3}  , {"DONE",f2} , NONE)
+FUSE_FSM_ENTRY(RELEASE_UNLINK,  /*ok*/           {"RELEASE",f1},    {"UNLINK",f3}    , {"DONE",f2} , FUSE_FSM_BAD)           
+FUSE_FSM_LAST (RELEASE_UNLINK, /*error*/        {"UNLINK",f3},       {"UNLINK",f3}  , {"DONE",f2} , FUSE_FSM_BAD)
 
 
 int fuse_do_release(fuse_req_t req, struct fuse *f, fuse_ino_t ino, const char *path, struct fuse_file_info *fi)

@@ -50,9 +50,9 @@ static const char* f3(struct fuse_fsm* fsm __attribute__((unused)), void *data) 
 }
 
 FUSE_FSM_EVENTS(WRITE, "ok", "error")
-FUSE_FSM_STATES(WRITE, "CREATED", "WRT", "DONE")
-FUSE_FSM_ENTRY(/*ok*/{ "WRT",f1 }, { "DONE",f2 }, NONE)
-FUSE_FSM_LAST(/*error*/{ "DONE",f3 }, { "DONE",f3 }, NONE)
+FUSE_FSM_STATES(WRITE,       "CREATED",     "WRT",         "DONE")
+FUSE_FSM_ENTRY(WRITE,/*ok*/{ "WRT",f1 },    { "DONE",f2 }, FUSE_FSM_BAD)
+FUSE_FSM_LAST(WRITE, /*error*/{ "DONE",f3 },{ "DONE",f3 }, FUSE_FSM_BAD)
 
 
 

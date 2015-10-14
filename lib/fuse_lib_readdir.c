@@ -114,9 +114,9 @@ static int readdir_fill_from_list(fuse_req_t req, struct fuse_dh *dh,
 }
 
 FUSE_FSM_EVENTS(READDIR,"ok","error")
-FUSE_FSM_STATES(READDIR,  "CREATED",  "RDIR"      ,   "DONE")
-FUSE_FSM_ENTRY(/*ok*/   {"RDIR",f1},  {"DONE",f2} ,   NONE)           
-FUSE_FSM_LAST (/*error*/{"DONE",f3},  {"DONE",f3} ,   NONE)           
+FUSE_FSM_STATES(READDIR,          "CREATED",  "RDIR"      ,   "DONE")
+FUSE_FSM_ENTRY(READDIR,/*ok*/   {"RDIR",f1},  {"DONE",f2} ,   FUSE_FSM_BAD)           
+FUSE_FSM_LAST (READDIR,/*error*/{"DONE",f3},  {"DONE",f3} ,   FUSE_FSM_BAD)           
 
 static void fuse_readdir_common(fuse_req_t req, fuse_ino_t ino, size_t size,
 				off_t off, struct fuse_file_info *llfi,
@@ -126,7 +126,6 @@ static void fuse_readdir_common(fuse_req_t req, fuse_ino_t ino, size_t size,
     struct fuse_file_info fi;
     struct fuse_dh *dh = get_dirhandle(llfi, &fi);
     char *path;
-
 
 	pthread_mutex_lock(&dh->lock);
 	/* According to SUS, directory contents need to be refreshed on

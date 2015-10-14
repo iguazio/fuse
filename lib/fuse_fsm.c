@@ -13,15 +13,6 @@ static int evnt_str_to_id(struct fuse_fsm * fsm, const char *event){
     return -1;
 }
 
-static int state_str_to_id(struct fuse_fsm * fsm, const char *state){
-    int i;
-    for (i=0; i<fsm->num_of_states; i++){
-        if (!strcmp(fsm->states[i],state))
-            return i;
-    }
-    return -1;
-}
-
 static  const char* fsm_process_event( struct fuse_fsm * fsm, const char* event ){
     int curr_s = fsm->current_state;
     int event_id = evnt_str_to_id(fsm,event);
@@ -32,7 +23,7 @@ static  const char* fsm_process_event( struct fuse_fsm * fsm, const char* event 
     if (debug)
         printf("FSM %p %s %s %s->%s\n",fsm, fsm->name, event, fsm->states[curr_s],entry->next_state);
 
-    fsm->current_state = state_str_to_id(fsm,entry->next_state);
+    fsm->current_state = entry->next_state_id;
     const char* next_event = entry->f(fsm, fsm->data);
 
     return next_event;
@@ -73,4 +64,16 @@ void fuse_fsm_free_on_done( struct fuse_fsm *fsm, int do_cleanup )
 
 void fuse_fsm_set_debug(int d){
     debug = d;
+}
+
+int _fuse_fsm_state_str_to_id( int num_of_states,const char** states,const char *state )
+{
+    int i;
+    if (state == NULL)
+        return -1;
+    for (i=0; i<num_of_states; i++){
+        if (!strcmp(states[i],state))
+            return i;
+    }
+    return -1;
 }
