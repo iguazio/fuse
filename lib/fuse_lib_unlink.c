@@ -11,18 +11,18 @@ struct fsm_unlink_data {
 };
 
 /*Send request to the fs*/
-static const char* f1(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
+static struct fuse_fsm_event f1(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
     struct fsm_unlink_data *dt = (struct fsm_unlink_data *)data;
     fuse_prepare_interrupt(dt->f, dt->req, &dt->d);
     int err = fuse_fs_unlink(fsm, dt->f->fs, dt->path);
     if (err == FUSE_LIB_ERROR_PENDING_REQ)
-        return NULL;
+        return FUSE_FSM_EVENT_NONE;
     fuse_fsm_set_err(fsm, err);
-    return (err)?"error":"ok";
+    return (err)?FUSE_FSM_EVENT_ERROR:FUSE_FSM_EVENT_OK;
 }
 
 
-static const char* f10(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
+static struct fuse_fsm_event f10(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
     struct fsm_unlink_data *dt = (struct fsm_unlink_data *)data;
 
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
@@ -30,18 +30,18 @@ static const char* f10(struct fuse_fsm* fsm __attribute__((unused)), void *data)
     free_path_wrlock(dt->f, dt->parent, dt->wnode, (char*)dt->path);
     reply_err(dt->req, 0);
 
-    return NULL;
+    return FUSE_FSM_EVENT_NONE;
 }
 
 
-static const char* f13(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
+static struct fuse_fsm_event f13(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
     struct fsm_unlink_data *dt = (struct fsm_unlink_data *)data;
     int err = fuse_fsm_get_err(fsm);
 
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
     free_path_wrlock(dt->f, dt->parent, dt->wnode, (char*)dt->path);
     reply_err(dt->req, err);
-    return NULL;
+    return FUSE_FSM_EVENT_NONE;
 }
 
 //f1 - send fuse_fs_unlink
@@ -49,7 +49,7 @@ static const char* f13(struct fuse_fsm* fsm __attribute__((unused)), void *data)
 //f13 - Replay to the driver - error
 
 
-FUSE_FSM_EVENTS(UNLINK,  "ok", "error")
+FUSE_FSM_EVENTS(UNLINK,  FUSE_FSM_EVENT_OK, FUSE_FSM_EVENT_ERROR)
 FUSE_FSM_STATES(UNLINK,         "START",         "RM"     ,"DONE")
 FUSE_FSM_ENTRY(UNLINK,/*ok*/	 {"RM",f1}     ,{"DONE",f10} , FUSE_FSM_BAD)
 FUSE_FSM_LAST(UNLINK,/*error*/{"DONE",f13},    {"DONE",f13}  , FUSE_FSM_BAD)
@@ -77,8 +77,8 @@ void fuse_lib_unlink(fuse_req_t req, fuse_ino_t parent, const char *name)
         dt->name = name;
         dt->wnode = wnode;
 
-        fuse_fsm_run(new_fsm, "ok");
-        if (!strcmp(fuse_fsm_cur_state(new_fsm),"DONE"))
+        fuse_fsm_run(new_fsm, FUSE_FSM_EVENT_OK);
+        if (fuse_fsm_is_done(new_fsm))
             FUSE_FSM_FREE(new_fsm);
     }else
         reply_err(req, err);

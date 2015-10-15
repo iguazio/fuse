@@ -13,19 +13,19 @@ struct fsm_setattr_data{
 };
 
 
-static const char* f1(struct fuse_fsm* fsm __attribute__((unused)),void *data){
+static struct fuse_fsm_event f1(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_setattr_data *dt = (struct fsm_setattr_data *)data;
     int err = 0;
     if (dt->valid & FUSE_SET_ATTR_MODE)
         err = fuse_fs_chmod(fsm, dt->f->fs, dt->path, dt->attr.st_mode);
 
     if (err == FUSE_LIB_ERROR_PENDING_REQ)
-        return NULL;
+        return FUSE_FSM_EVENT_NONE;
     fuse_fsm_set_err(fsm, err);
-    return (err)?"error":"ok";
+    return (err)?FUSE_FSM_EVENT_ERROR:FUSE_FSM_EVENT_OK;
 }
 
-static const char* f2(struct fuse_fsm* fsm __attribute__((unused)),void *data){
+static struct fuse_fsm_event f2(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_setattr_data *dt = (struct fsm_setattr_data *)data;
     int err = 0;
     if ((dt->valid & (FUSE_SET_ATTR_UID | FUSE_SET_ATTR_GID))) {
@@ -36,12 +36,12 @@ static const char* f2(struct fuse_fsm* fsm __attribute__((unused)),void *data){
         err = fuse_fs_chown(fsm, dt->f->fs, dt->path, uid, gid);
     }
     if (err == FUSE_LIB_ERROR_PENDING_REQ)
-        return NULL;
+        return FUSE_FSM_EVENT_NONE;
     fuse_fsm_set_err(fsm, err);
-    return (err)?"error":"ok";
+    return (err)?FUSE_FSM_EVENT_ERROR:FUSE_FSM_EVENT_OK;
 }
 
-static const char* f3(struct fuse_fsm* fsm __attribute__((unused)),void *data){
+static struct fuse_fsm_event f3(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_setattr_data *dt = (struct fsm_setattr_data *)data;
     int err = 0;
     if (dt->valid & FUSE_SET_ATTR_SIZE) {
@@ -51,11 +51,11 @@ static const char* f3(struct fuse_fsm* fsm __attribute__((unused)),void *data){
             err = fuse_fs_truncate(fsm,dt->f->fs, dt->path, dt->attr.st_size);
     }
     if (err == FUSE_LIB_ERROR_PENDING_REQ)
-        return NULL;
+        return FUSE_FSM_EVENT_NONE;
     fuse_fsm_set_err(fsm, err);
-    return (err)?"error":"ok";
+    return (err)?FUSE_FSM_EVENT_ERROR:FUSE_FSM_EVENT_OK;
 }
-static const char* f4(struct fuse_fsm* fsm __attribute__((unused)),void *data){
+static struct fuse_fsm_event f4(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_setattr_data *dt = (struct fsm_setattr_data *)data;
     int err = 0;
 
@@ -92,11 +92,11 @@ static const char* f4(struct fuse_fsm* fsm __attribute__((unused)),void *data){
             err = fuse_fs_utimens(fsm, dt->f->fs, dt->path, tv);
     }
     if (err == FUSE_LIB_ERROR_PENDING_REQ)
-        return NULL;
+        return FUSE_FSM_EVENT_NONE;
     fuse_fsm_set_err(fsm, err);
-    return (err)?"error":"ok";
+    return (err)?FUSE_FSM_EVENT_ERROR:FUSE_FSM_EVENT_OK;
 }
-static const char* f5(struct fuse_fsm* fsm __attribute__((unused)),void *data){
+static struct fuse_fsm_event f5(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_setattr_data *dt = (struct fsm_setattr_data *)data;
     int err = 0;
     if (dt->has_fi)
@@ -105,12 +105,12 @@ static const char* f5(struct fuse_fsm* fsm __attribute__((unused)),void *data){
         err = fuse_fs_getattr(fsm, dt->f->fs, dt->path, &dt->attr);
 
     if (err == FUSE_LIB_ERROR_PENDING_REQ)
-        return NULL;
+        return FUSE_FSM_EVENT_NONE;
     fuse_fsm_set_err(fsm, err);
-    return (err)?"error":"ok";
+    return (err)?FUSE_FSM_EVENT_ERROR:FUSE_FSM_EVENT_OK;
 }
 //OK
-static const char* f6(struct fuse_fsm* fsm __attribute__((unused)),void *data){
+static struct fuse_fsm_event f6(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_setattr_data *dt = (struct fsm_setattr_data *)data;
     if (dt->f->conf.auto_cache) {
         pthread_mutex_lock(&dt->f->lock);
@@ -123,23 +123,23 @@ static const char* f6(struct fuse_fsm* fsm __attribute__((unused)),void *data){
 
     fuse_reply_attr(dt->req, &dt->attr, dt->f->conf.attr_timeout);
 
-    return NULL;
+    return FUSE_FSM_EVENT_NONE;
 }
 //error
-static const char* f10(struct fuse_fsm* fsm __attribute__((unused)),void *data){
+static struct fuse_fsm_event f10(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_setattr_data *dt = (struct fsm_setattr_data *)data;
     int err = fuse_fsm_get_err(fsm);
     reply_err(dt->req,err);
 
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
     free_path(dt->f, dt->ino, dt->path);
-    return NULL;
+    return FUSE_FSM_EVENT_NONE;
 }
 
-FUSE_FSM_EVENTS(SETATTR,"ok","error")
+FUSE_FSM_EVENTS(SETATTR,FUSE_FSM_EVENT_OK,FUSE_FSM_EVENT_ERROR)
 FUSE_FSM_STATES(SETATTR,                  "CREATED",   "CHMOD",      "CHOWN"    ,      "TRUNC"    ,      "UTIME"    ,      "GETATTR"    ,"DONE")
-FUSE_FSM_ENTRY(SETATTR, /*"ok"*/         {"CHMOD",f1},{"CHOWN",f2}, {"TRUNC",f3},    {"UTIME",f4} ,   {"GETATTR",f5},     {"DONE",f6}   ,FUSE_FSM_BAD  )
-FUSE_FSM_LAST (SETATTR, /*"error"*/      {"DONE",f10},{"DONE",f10},{"DONE",f10},     {"DONE",f10},     {"DONE",f10},      {"DONE",f10} ,FUSE_FSM_BAD  )
+FUSE_FSM_ENTRY(SETATTR, /*FUSE_FSM_EVENT_OK*/         {"CHMOD",f1},{"CHOWN",f2}, {"TRUNC",f3},    {"UTIME",f4} ,   {"GETATTR",f5},     {"DONE",f6}   ,FUSE_FSM_BAD  )
+FUSE_FSM_LAST (SETATTR, /*FUSE_FSM_EVENT_ERROR*/      {"DONE",f10},{"DONE",f10},{"DONE",f10},     {"DONE",f10},     {"DONE",f10},      {"DONE",f10} ,FUSE_FSM_BAD  )
 
 
 /*FixMe: should be added as a separate user callback*/
@@ -171,8 +171,8 @@ void fuse_lib_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *att,
             dt->fi = *fi;
         dt->path = path;
 
-        fuse_fsm_run(new_fsm, "ok");
-        if (!strcmp(fuse_fsm_cur_state(new_fsm),"DONE"))
+        fuse_fsm_run(new_fsm, FUSE_FSM_EVENT_OK);
+        if (fuse_fsm_is_done(new_fsm))
             FUSE_FSM_FREE(new_fsm);
     }else
         reply_err(req,err);

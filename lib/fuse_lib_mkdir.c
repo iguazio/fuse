@@ -12,35 +12,35 @@ struct fsm_mkdir_data {
 };
 
 /*Send request to the fs*/
-static const char* f1(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
+static struct fuse_fsm_event f1(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
     struct fsm_mkdir_data *dt = (struct fsm_mkdir_data *)data;
     fuse_prepare_interrupt(dt->f, dt->req, &dt->d);
     int err = fuse_fs_mkdir(fsm, dt->f->fs, dt->path, dt->mode);
     if (err == FUSE_LIB_ERROR_PENDING_REQ)
-        return NULL;
+        return FUSE_FSM_EVENT_NONE;
     fuse_fsm_set_err(fsm, err);
-    return (err)?"error":"ok";
+    return (err)?FUSE_FSM_EVENT_ERROR:FUSE_FSM_EVENT_OK;
 }
 
 //Send lookup
-static const char* f2(struct fuse_fsm* fsm, void *data) {
+static struct fuse_fsm_event f2(struct fuse_fsm* fsm, void *data) {
     struct fsm_mkdir_data *dt = (struct fsm_mkdir_data *)data;
     int err = lookup_path(fsm, dt->f, dt->parent, dt->name, dt->path, &dt->e, NULL);
     if (err == FUSE_LIB_ERROR_PENDING_REQ){
-        return NULL;
+        return FUSE_FSM_EVENT_NONE;
     }
     fuse_fsm_set_err(fsm, err);
-    return NULL;//lookup_path() triggers "ok" or "error" events , so no need to return event ID
+    return FUSE_FSM_EVENT_NONE;//lookup_path() triggers FUSE_FSM_EVENT_OK or FUSE_FSM_EVENT_ERROR events , so no need to return event ID
 }
 
-static const char* f10(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
+static struct fuse_fsm_event f10(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
     struct fsm_mkdir_data *dt = (struct fsm_mkdir_data *)data;
     int err = fuse_fsm_get_err(fsm);
 
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
     free_path(dt->f, dt->parent, (char*)dt->path);
     reply_entry(dt->req, &dt->e, err);
-    return NULL;
+    return FUSE_FSM_EVENT_NONE;
 }
 
 //f1 - send fuse_fs_mkdir
@@ -48,7 +48,7 @@ static const char* f10(struct fuse_fsm* fsm __attribute__((unused)), void *data)
 //f10 - Replay to the driver - either success or error
 
 
-FUSE_FSM_EVENTS(MKDIR,"ok", "error")
+FUSE_FSM_EVENTS(MKDIR,FUSE_FSM_EVENT_OK, FUSE_FSM_EVENT_ERROR)
 FUSE_FSM_STATES(MKDIR,          "START",         "MKDIR"    ,"LKP"         ,"DONE")
 FUSE_FSM_ENTRY(MKDIR,/*ok*/	    {"MKDIR",f1}     ,{"LKP",f2}  , {"DONE",f10} , FUSE_FSM_BAD)
 FUSE_FSM_LAST(MKDIR,/*error*/   {"DONE",f10},    {"DONE",f10} , {"DONE",f10} , FUSE_FSM_BAD)
@@ -73,8 +73,8 @@ void fuse_lib_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name,
         dt->name = name;
         dt->mode = mode;
 
-        fuse_fsm_run(new_fsm, "ok");
-        if (!strcmp(fuse_fsm_cur_state(new_fsm),"DONE"))
+        fuse_fsm_run(new_fsm, FUSE_FSM_EVENT_OK);
+        if (fuse_fsm_is_done(new_fsm))
             FUSE_FSM_FREE(new_fsm);
     }else
         reply_err(req, err);

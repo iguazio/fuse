@@ -14,62 +14,63 @@ struct fsm_hide_node_data{
 };
 
 
-static const char* f1(struct fuse_fsm* fsm,void *data){
+static struct fuse_fsm_event f1(struct fuse_fsm* fsm,void *data){
     struct fsm_hide_node_data *dt = (struct fsm_hide_node_data *)data;
     int err;
 
     err = fuse_fs_getattr(fsm, dt->f->fs, dt->newpath, &dt->buf);
     if (err == FUSE_LIB_ERROR_PENDING_REQ){
         fuse_fsm_free_on_done(dt->parent,1);
-        return NULL;
+        return FUSE_FSM_EVENT_NONE;
     }
     fuse_fsm_set_err(fsm, err);
-    return (err)?"error":"ok";
+    return (err)?FUSE_FSM_EVENT_ERROR: FUSE_FSM_EVENT_OK;
 }
  
-static const char* f11(struct fuse_fsm* fsm,void *data){
+static struct fuse_fsm_event f11(struct fuse_fsm* fsm,void *data){
     struct fsm_hide_node_data *dt = (struct fsm_hide_node_data *)data;
     int err = fuse_fsm_get_err(fsm);
     if (err == -ENOENT){
         err = fuse_fs_rename(fsm, dt->f->fs, dt->oldpath, dt->newpath, 0);
         if (err == FUSE_LIB_ERROR_PENDING_REQ)
-            return NULL;
+            return FUSE_FSM_EVENT_NONE;
         fuse_fsm_set_err(fsm, 0);
     }else
         err = -EBUSY;
         
     fuse_fsm_set_err(fsm, err);
-    return (err)?"error":"ok";
+    return (err)? FUSE_FSM_EVENT_ERROR : FUSE_FSM_EVENT_OK;
 }
 
-static const char* f2(struct fuse_fsm* fsm __attribute__((unused)),void *data){
+static struct fuse_fsm_event f2(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_hide_node_data *dt = (struct fsm_hide_node_data *)data;
     int err;
 
     err = rename_node(dt->f, dt->dir, dt->oldname, dt->dir, dt->newname, 1);
     if(dt->newpath)
         fuse_free(dt->newpath);
-    fuse_fsm_run(dt->parent,(err)?"error":"ok");
-    return NULL;
+    fuse_fsm_run(dt->parent,(err)? FUSE_FSM_EVENT_ERROR : FUSE_FSM_EVENT_OK);
+    return FUSE_FSM_EVENT_NONE;
 }
 
-static const char* f3(struct fuse_fsm* fsm __attribute__((unused)),void *data){
+static struct fuse_fsm_event f3(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_hide_node_data *dt = (struct fsm_hide_node_data *)data;
     if(dt->newpath)
         fuse_free(dt->newpath);
-    fuse_fsm_run(dt->parent,"error");
-    return NULL;
+    fuse_fsm_run(dt->parent, FUSE_FSM_EVENT_ERROR);
+    return FUSE_FSM_EVENT_NONE;
 }
 
 //f1 - try to make a new filename by checking it does not exists
 //f11 - in case does not exists - rename it
-//f2 - rename succeeded - feed parent fsm with "ok" event
-//f3 - rename succeeded - feed parent fsm with "error" event
+//f2 - rename succeeded - feed parent fsm with FUSE_FSM_EVENT_OK event
+//f3 - rename succeeded - feed parent fsm with FUSE_FSM_EVENT_ERROR event
 
-FUSE_FSM_EVENTS(HIDE_NODE,"ok","error")
+
+FUSE_FSM_EVENTS(HIDE_NODE,FUSE_FSM_EVENT_OK,FUSE_FSM_EVENT_ERROR)
 FUSE_FSM_STATES(HIDE_NODE,          "CREATED",       "CHK_EXST"     ,"REN"      ,"DONE")
-FUSE_FSM_ENTRY(HIDE_NODE,/*"ok"*/  {"CHK_EXST",f1}, {"REN",f11}    ,{"DONE",f2},FUSE_FSM_BAD)           
-FUSE_FSM_LAST(HIDE_NODE,/*"error"*/ {"DONE",f3},     {"REN",f11}    ,{"DONE",f3},FUSE_FSM_BAD)           
+FUSE_FSM_ENTRY(HIDE_NODE,/*FUSE_FSM_EVENT_OK*/  {"CHK_EXST",f1}, {"REN",f11}    ,{"DONE",f2},FUSE_FSM_BAD)           
+FUSE_FSM_LAST(HIDE_NODE,/*FUSE_FSM_EVENT_ERROR*/ {"DONE",f3},     {"REN",f11}    ,{"DONE",f3},FUSE_FSM_BAD)           
 
 
 
@@ -135,7 +136,7 @@ int hide_node( struct fuse_fsm* parent , struct fuse *f, const char *oldpath, fu
         pthread_mutex_unlock(&f->lock);
         FUSE_FSM_FREE(new_fsm);
         fuse_fsm_set_err(parent,-EBUSY);
-        fuse_fsm_run(parent,"error");
+        fuse_fsm_run(parent,FUSE_FSM_EVENT_ERROR);
         return -EBUSY;
     }
     do {
@@ -151,7 +152,7 @@ int hide_node( struct fuse_fsm* parent , struct fuse *f, const char *oldpath, fu
         pthread_mutex_unlock(&f->lock);
         FUSE_FSM_FREE(new_fsm);
         fuse_fsm_set_err(parent,-EBUSY);
-        fuse_fsm_run(parent,"error");
+        fuse_fsm_run(parent,FUSE_FSM_EVENT_ERROR);
         return err;
     }
 
@@ -166,8 +167,8 @@ int hide_node( struct fuse_fsm* parent , struct fuse *f, const char *oldpath, fu
 
 
 
-    fuse_fsm_run(new_fsm, "ok");
-    if (!strcmp(fuse_fsm_cur_state(new_fsm),"DONE")){
+    fuse_fsm_run(new_fsm, FUSE_FSM_EVENT_OK);
+    if (fuse_fsm_is_done(new_fsm)){
         FUSE_FSM_FREE(new_fsm);
         return 0;
     }

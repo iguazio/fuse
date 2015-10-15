@@ -15,19 +15,19 @@ struct fsm_lookup_data{
 
 };
 
-static const char* f1(struct fuse_fsm* fsm __attribute__((unused)),void *data){
+static struct fuse_fsm_event f1(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_lookup_data *dt = (struct fsm_lookup_data *)data;
     fuse_prepare_interrupt(dt->f, dt->req, &dt->d);
     int err = lookup_path(dt->owner,dt->f, dt->parent, dt->name, dt->path, &dt->e, NULL);
     if (err == FUSE_LIB_ERROR_PENDING_REQ){
         fuse_fsm_free_on_done(dt->owner,1);
-        return NULL;
+        return FUSE_FSM_EVENT_NONE;
     }
     fuse_fsm_set_err(fsm, err);
-    return NULL;//lookup_path() triggers "ok" or "error" events , so no need to return event ID
+    return FUSE_FSM_EVENT_NONE;//lookup_path() triggers FUSE_FSM_EVENT_OK or FUSE_FSM_EVENT_ERROR events , so no need to return event ID
 
 }
-static const char* f2(struct fuse_fsm* fsm __attribute__((unused)),void *data){
+static struct fuse_fsm_event f2(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_lookup_data *dt = (struct fsm_lookup_data *)data;
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
     free_path(dt->f, dt->parent, (char*)dt->path);
@@ -37,10 +37,10 @@ static const char* f2(struct fuse_fsm* fsm __attribute__((unused)),void *data){
         unref_node(dt->f, dt->dot);
         pthread_mutex_unlock(&dt->f->lock);
     }
-	return NULL;
+	return FUSE_FSM_EVENT_NONE;
 }
 
-static const char* f3(struct fuse_fsm* fsm __attribute__((unused)),void *data){
+static struct fuse_fsm_event f3(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_lookup_data *dt = (struct fsm_lookup_data *)data;
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
     free_path(dt->f, dt->parent, (char*)dt->path);
@@ -56,10 +56,10 @@ static const char* f3(struct fuse_fsm* fsm __attribute__((unused)),void *data){
         unref_node(dt->f, dt->dot);
         pthread_mutex_unlock(&dt->f->lock);
     }
-	return NULL;
+	return FUSE_FSM_EVENT_NONE;
 }
 
-FUSE_FSM_EVENTS(LOOKUP, "ok","error")
+FUSE_FSM_EVENTS(LOOKUP, FUSE_FSM_EVENT_OK,FUSE_FSM_EVENT_ERROR)
 FUSE_FSM_STATES(LOOKUP,         "CREATED",         "LOOK_PATH" , "DONE")
 FUSE_FSM_ENTRY(LOOKUP,/*ok*/    {"LOOK_PATH",f1},  {"DONE",f2} , FUSE_FSM_BAD)           
 FUSE_FSM_LAST (LOOKUP,/*error*/ {"DONE",f3},       {"DONE",f3} , FUSE_FSM_BAD)
@@ -117,8 +117,8 @@ void fuse_lib_lookup(fuse_req_t req, fuse_ino_t parent,
         if (f->conf.debug)
             fprintf(stderr, "LOOKUP %s\n", path);
         
-        fuse_fsm_run(new_fsm, "ok");
-        if (!strcmp(fuse_fsm_cur_state(new_fsm),"DONE"))
+        fuse_fsm_run(new_fsm, FUSE_FSM_EVENT_OK);
+        if (fuse_fsm_is_done(new_fsm))
             FUSE_FSM_FREE(new_fsm);
     }else{
         reply_err(req,err);

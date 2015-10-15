@@ -17,56 +17,56 @@ struct fsm_create_data {
 
 
 //Send create request
-static const char * f1(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
+static struct fuse_fsm_event f1(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
 	struct fsm_create_data *dt = (struct fsm_create_data *)data;
 	fuse_prepare_interrupt(dt->f, dt->req, &dt->d);
 	int err = fuse_fs_create(fsm, dt->f->fs, dt->path,dt->mode, &dt->fi);
     if (err == FUSE_LIB_ERROR_PENDING_REQ)
-        return NULL;
+        return FUSE_FSM_EVENT_NONE;
     fuse_fsm_set_err(fsm, err);
-    return (err)?"error":"ok";
+    return (err)?FUSE_FSM_EVENT_ERROR:FUSE_FSM_EVENT_OK;
 }
 
 
 //Send lookup
-static const char* f2(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
+static struct fuse_fsm_event f2(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
 	struct fsm_create_data *dt = (struct fsm_create_data *)data;
     int err = lookup_path(fsm, dt->f, dt->parent, dt->name, dt->path, &dt->e, &dt->fi);
     if (err == FUSE_LIB_ERROR_PENDING_REQ){
-        return NULL;
+        return FUSE_FSM_EVENT_NONE;
     }
     fuse_fsm_set_err(fsm, err);
-    return NULL;//lookup_path() triggers "ok" or "error" events , so no need to return event ID
+    return FUSE_FSM_EVENT_NONE;//lookup_path() triggers FUSE_FSM_EVENT_OK or FUSE_FSM_EVENT_ERROR events , so no need to return event ID
 }
 
 
 //Do nothing
-static const char* f4(struct fuse_fsm* fsm __attribute__((unused)), void *data __attribute__((unused))) {
-    return NULL;
+static struct fuse_fsm_event f4(struct fuse_fsm* fsm __attribute__((unused)), void *data __attribute__((unused))) {
+    return FUSE_FSM_EVENT_NONE;
 }
 
 //send release request
-static const char* f5(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
+static struct fuse_fsm_event f5(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
     struct fsm_create_data *dt = (struct fsm_create_data *)data;
     int err = fuse_fs_release(fsm, dt->f->fs, dt->path, &dt->fi);
     if (err == FUSE_LIB_ERROR_PENDING_REQ)
-        return NULL;
+        return FUSE_FSM_EVENT_NONE;
     fuse_fsm_set_err(fsm, err);
-    return (err)?"error":"ok";
+    return (err)?FUSE_FSM_EVENT_ERROR:FUSE_FSM_EVENT_OK;
 }
 //Check lookup results
-static const char* f6(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
+static struct fuse_fsm_event f6(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
     struct fsm_create_data *dt = (struct fsm_create_data *)data;
     int err = 0;
     if (!S_ISREG(dt->e.attr.st_mode))
         err = -EIO;
     fuse_fsm_set_err(fsm, err);
-    return (err)?"error":"ok";
+    return (err)?FUSE_FSM_EVENT_ERROR:FUSE_FSM_EVENT_OK;
 }
 
 
 //Success.Send replay_create
-static const char* f10(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
+static struct fuse_fsm_event f10(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
     struct fsm_create_data *dt = (struct fsm_create_data *)data;
     if (dt->f->conf.direct_io)
         dt->fi.direct_io = 1;
@@ -80,12 +80,12 @@ static const char* f10(struct fuse_fsm* fsm __attribute__((unused)), void *data)
 	pthread_mutex_unlock(&dt->f->lock);
     free_path(dt->f, dt->parent, dt->path);
 	if (fuse_reply_create(dt->req, &dt->e, &dt->fi) == -ENOENT)
-        return "error";
-    return "ok";
+        return FUSE_FSM_EVENT_ERROR;
+    return FUSE_FSM_EVENT_OK;
 }
 
 //reply error
-static const char* f13(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
+static struct fuse_fsm_event f13(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
     struct fsm_create_data *dt = (struct fsm_create_data *)data;
     if (dt->e.ino != 0)
         forget_node(dt->f, dt->e.ino, 1);
@@ -93,7 +93,7 @@ static const char* f13(struct fuse_fsm* fsm __attribute__((unused)), void *data)
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
     free_path(dt->f, dt->parent, dt->path);
     reply_err(dt->req, err);
-    return NULL;
+    return FUSE_FSM_EVENT_NONE;
 }
 
 
@@ -103,9 +103,9 @@ static const char* f13(struct fuse_fsm* fsm __attribute__((unused)), void *data)
 //f5 - send release request
 //f6 - check lookup results
 //f10 - Replay to the driver - create_success
-//f13 - Replay to the driver - "error"
+//f13 - Replay to the driver - FUSE_FSM_EVENT_ERROR
 
-FUSE_FSM_EVENTS(CREATE, "ok", "error")
+FUSE_FSM_EVENTS(CREATE, FUSE_FSM_EVENT_OK, FUSE_FSM_EVENT_ERROR)
 FUSE_FSM_STATES(CREATE,         "START",         "CRT"      ,     "LKP"    ,"LKP_OK"       ,"RPLY_OK"       ,"RLS"       , "RPLY_ERR"  ,"DONE")
 FUSE_FSM_ENTRY(CREATE,/*ok*/	 {"CRT",f1}     ,{"LKP",f2}  ,{"LKP_OK",f6} ,{"RPLY_OK",f10},{"DONE",f4}     ,{"DONE",f13}, {"DONE",f4}, FUSE_FSM_BAD)
 FUSE_FSM_LAST(CREATE,/*error*/  {"RPLY_ERR",f13},{"DONE",f13},{"RLS",f5}    ,{"RLS",f5}     ,{"RPLY_ERR",f5} ,{"DONE",f13}, {"DONE",f4},FUSE_FSM_BAD)
@@ -136,8 +136,8 @@ void fuse_lib_create(fuse_req_t req, fuse_ino_t parent,
         dt->name = name;
         dt->mode = mode;
 
-        fuse_fsm_run(new_fsm, "ok");
-        if (!strcmp(fuse_fsm_cur_state(new_fsm),"DONE"))
+        fuse_fsm_run(new_fsm, FUSE_FSM_EVENT_OK);
+        if (fuse_fsm_is_done(new_fsm))
             FUSE_FSM_FREE(new_fsm);
     }else
         reply_err(req, err);

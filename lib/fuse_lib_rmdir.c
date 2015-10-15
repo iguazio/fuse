@@ -11,18 +11,18 @@ struct fsm_rmdir_data {
 };
 
 /*Send request to the fs*/
-static const char* f1(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
+static struct fuse_fsm_event f1(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
     struct fsm_rmdir_data *dt = (struct fsm_rmdir_data *)data;
     fuse_prepare_interrupt(dt->f, dt->req, &dt->d);
     int err = fuse_fs_rmdir(fsm, dt->f->fs, dt->path);
     if (err == FUSE_LIB_ERROR_PENDING_REQ)
-        return NULL;
+        return FUSE_FSM_EVENT_NONE;
     fuse_fsm_set_err(fsm, err);
-    return (err)?"error":"ok";
+    return (err)?FUSE_FSM_EVENT_ERROR:FUSE_FSM_EVENT_OK;
 }
 
 
-static const char* f10(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
+static struct fuse_fsm_event f10(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
     struct fsm_rmdir_data *dt = (struct fsm_rmdir_data *)data;
 
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
@@ -30,18 +30,18 @@ static const char* f10(struct fuse_fsm* fsm __attribute__((unused)), void *data)
     free_path_wrlock(dt->f, dt->parent, dt->wnode, (char*)dt->path);
     reply_err(dt->req, 0);
 
-    return NULL;
+    return FUSE_FSM_EVENT_NONE;
 }
 
 
-static const char* f13(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
+static struct fuse_fsm_event f13(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
     struct fsm_rmdir_data *dt = (struct fsm_rmdir_data *)data;
     int err = fuse_fsm_get_err(fsm);
 
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
     free_path_wrlock(dt->f, dt->parent, dt->wnode, (char*)dt->path);
     reply_err(dt->req, err);
-    return NULL;
+    return FUSE_FSM_EVENT_NONE;
 }
 
 //f1 - send fuse_fs_rmdir
@@ -49,7 +49,7 @@ static const char* f13(struct fuse_fsm* fsm __attribute__((unused)), void *data)
 //f13 - Replay to the driver - error
 
 
-FUSE_FSM_EVENTS(RMDIR, "ok", "error")
+FUSE_FSM_EVENTS(RMDIR, FUSE_FSM_EVENT_OK, FUSE_FSM_EVENT_ERROR)
 FUSE_FSM_STATES(RMDIR,           "START",         "RMDIR"     ,"DONE")
 FUSE_FSM_ENTRY(RMDIR,/*ok*/	 {"RMDIR",f1}     ,{"DONE",f10} , FUSE_FSM_BAD)
 FUSE_FSM_LAST(RMDIR,/*error*/{"DONE",f13},    {"DONE",f13}  , FUSE_FSM_BAD)
@@ -77,8 +77,8 @@ void fuse_lib_rmdir(fuse_req_t req, fuse_ino_t parent, const char *name)
         dt->name = name;
         dt->wnode = wnode;
 
-        fuse_fsm_run(new_fsm, "ok");
-        if (!strcmp(fuse_fsm_cur_state(new_fsm),"DONE"))
+        fuse_fsm_run(new_fsm, FUSE_FSM_EVENT_OK);
+        if (fuse_fsm_is_done(new_fsm))
             FUSE_FSM_FREE(new_fsm);
     }else
         reply_err(req, err);

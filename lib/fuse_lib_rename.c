@@ -16,18 +16,18 @@ struct fsm_rename_data{
 };
 
 /*Send request to the fs*/
-static const char* f1(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
+static struct fuse_fsm_event f1(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
     struct fsm_rename_data *dt = (struct fsm_rename_data *)data;
     fuse_prepare_interrupt(dt->f, dt->req, &dt->d);
     int err = fuse_fs_rename(fsm, dt->f->fs, dt->oldpath, dt->newpath, dt->flags);
     if (err == FUSE_LIB_ERROR_PENDING_REQ)
-        return NULL;
+        return FUSE_FSM_EVENT_NONE;
     fuse_fsm_set_err(fsm, err);
-    return (err)?"error":"ok";
+    return (err)?FUSE_FSM_EVENT_ERROR:FUSE_FSM_EVENT_OK;
 }
 
 
-static const char* f10(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
+static struct fuse_fsm_event f10(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
     struct fsm_rename_data *dt = (struct fsm_rename_data *)data;
 
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
@@ -41,18 +41,18 @@ static const char* f10(struct fuse_fsm* fsm __attribute__((unused)), void *data)
     }
     free_path2(dt->f, dt->olddir, dt->newdir, dt->wnode1, dt->wnode2,(char*) dt->oldpath, (char*)dt->newpath);
     reply_err(dt->req, err);
-    return NULL;
+    return FUSE_FSM_EVENT_NONE;
 }
 
 
-static const char* f13(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
+static struct fuse_fsm_event f13(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
     struct fsm_rename_data *dt = (struct fsm_rename_data *)data;
     int err = fuse_fsm_get_err(fsm);
 
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
     free_path2(dt->f, dt->olddir, dt->newdir, dt->wnode1, dt->wnode2,(char*) dt->oldpath, (char*)dt->newpath);
     reply_err(dt->req, err);
-    return NULL;
+    return FUSE_FSM_EVENT_NONE;
 }
 
 
@@ -62,7 +62,7 @@ static const char* f13(struct fuse_fsm* fsm __attribute__((unused)), void *data)
 //f13 - Replay to the driver - error
 
 
-FUSE_FSM_EVENTS(RENAME,   "ok", "error")
+FUSE_FSM_EVENTS(RENAME,   FUSE_FSM_EVENT_OK, FUSE_FSM_EVENT_ERROR)
 FUSE_FSM_STATES(RENAME,    "START",         "REN"     ,"DONE")
 FUSE_FSM_ENTRY(RENAME,  /*ok*/	    {"REN",f1}     ,{"DONE",f10} , FUSE_FSM_BAD)
 FUSE_FSM_LAST(RENAME,   /*error*/{"DONE",f13},    {"DONE",f13}  , FUSE_FSM_BAD)
@@ -119,12 +119,12 @@ void fuse_lib_rename(fuse_req_t req, fuse_ino_t olddir,
         if (!f->conf.hard_remove && !(flags & RENAME_EXCHANGE) && is_open(f, newdir, newname))
             err = hide_node(new_fsm, f, newpath, newdir, newname);
         else
-            fuse_fsm_run(new_fsm, "ok");
+            fuse_fsm_run(new_fsm, FUSE_FSM_EVENT_OK);
 
         if (err == FUSE_LIB_ERROR_PENDING_REQ)
             return;
 
-        if (!strcmp(fuse_fsm_cur_state(new_fsm),"DONE"))
+        if (fuse_fsm_is_done(new_fsm))
             FUSE_FSM_FREE(new_fsm);
     }else
         reply_err(req, err);

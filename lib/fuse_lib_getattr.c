@@ -23,7 +23,7 @@ struct fsm_getattr_data{
 };
 
 
-static const char* f1(struct fuse_fsm* fsm __attribute__((unused)),void *data){
+static struct fuse_fsm_event f1(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_getattr_data *dt = (struct fsm_getattr_data *)data;
     fuse_prepare_interrupt(dt->f, dt->req, &dt->d);
     int err;
@@ -33,13 +33,13 @@ static const char* f1(struct fuse_fsm* fsm __attribute__((unused)),void *data){
         err = fuse_fs_getattr(fsm, dt->f->fs, dt->path, &dt->buf);
 
     if (err == FUSE_LIB_ERROR_PENDING_REQ)
-        return NULL;
+        return FUSE_FSM_EVENT_NONE;
     fuse_fsm_set_err(fsm,err);
-    return (err)?"error":"ok";
+    return (err)?FUSE_FSM_EVENT_ERROR:FUSE_FSM_EVENT_OK;
 }
 
 
-static const char* f3(struct fuse_fsm* fsm __attribute__((unused)),void *data){
+static struct fuse_fsm_event f3(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_getattr_data *dt = (struct fsm_getattr_data *)data;
     struct node *node;
 
@@ -55,23 +55,23 @@ static const char* f3(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     set_stat(dt->f, dt->ino, &dt->buf);
     fuse_reply_attr(dt->req, &dt->buf, dt->f->conf.attr_timeout);
     free_path(dt->f, dt->ino, dt->path);
-	return NULL;
+	return FUSE_FSM_EVENT_NONE;
 }
 
 
-static const char* f4(struct fuse_fsm* fsm __attribute__((unused)),void *data){
+static struct fuse_fsm_event f4(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_getattr_data *dt = (struct fsm_getattr_data *)data;
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
     int err = fuse_fsm_get_err(fsm);
     reply_err(dt->req, err);
     free_path(dt->f, dt->ino, dt->path);
-	return NULL;
+	return FUSE_FSM_EVENT_NONE;
 }
 
-FUSE_FSM_EVENTS(GETATTR,"ok","error")
+FUSE_FSM_EVENTS(GETATTR,FUSE_FSM_EVENT_OK,FUSE_FSM_EVENT_ERROR)
 FUSE_FSM_STATES(GETATTR,                "CREATED",   "GETS"    ,"DONE")
-FUSE_FSM_ENTRY(GETATTR,/*"ok"*/         {"GETS",f1},  {"DONE",f3},FUSE_FSM_BAD)           
-FUSE_FSM_LAST (GETATTR,/*"error"*/      {"DONE",f4},  {"DONE",f4},FUSE_FSM_BAD)       
+FUSE_FSM_ENTRY(GETATTR,/*FUSE_FSM_EVENT_OK*/         {"GETS",f1},  {"DONE",f3},FUSE_FSM_BAD)           
+FUSE_FSM_LAST (GETATTR,/*FUSE_FSM_EVENT_ERROR*/      {"DONE",f4},  {"DONE",f4},FUSE_FSM_BAD)       
 
 
 
@@ -96,8 +96,8 @@ void fuse_lib_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi)
             dt->fi = *fi;
         dt->ino = ino;
         dt->req = req;
-        fuse_fsm_run(new_fsm, "ok");
-        if (!strcmp(fuse_fsm_cur_state(new_fsm),"DONE"))
+        fuse_fsm_run(new_fsm, FUSE_FSM_EVENT_OK);
+        if (fuse_fsm_is_done(new_fsm))
             FUSE_FSM_FREE(new_fsm);
     }else
         reply_err(req, err);

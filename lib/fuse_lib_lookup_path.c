@@ -14,7 +14,7 @@ struct fsm_lookup_path_data{
 };
 
 
-static const char* f1(struct fuse_fsm* fsm __attribute__((unused)),void *data){
+static struct fuse_fsm_event f1(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_lookup_path_data *dt = (struct fsm_lookup_path_data *)data;
     int err;
     if(dt->has_fi)
@@ -23,14 +23,14 @@ static const char* f1(struct fuse_fsm* fsm __attribute__((unused)),void *data){
         err = fuse_fs_getattr(fsm, dt->f->fs, dt->path, &dt->e->attr);
     if (err == FUSE_LIB_ERROR_PENDING_REQ){
         fuse_fsm_free_on_done(dt->parent,1);
-        return NULL;
+        return FUSE_FSM_EVENT_NONE;
     }
     fuse_fsm_set_err(fsm, err);
-    return (err)?"error":"ok";
+    return (err)?FUSE_FSM_EVENT_ERROR:FUSE_FSM_EVENT_OK;
 }
 
 
-static const char* f3(struct fuse_fsm* fsm __attribute__((unused)),void *data){
+static struct fuse_fsm_event f3(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_lookup_path_data *dt = (struct fsm_lookup_path_data *)data;
 
     int res = do_lookup(dt->f, dt->nodeid, dt->name, dt->e);
@@ -39,24 +39,24 @@ static const char* f3(struct fuse_fsm* fsm __attribute__((unused)),void *data){
             (unsigned long long) dt->e->ino);
     }
     if (dt->parent)
-        fuse_fsm_run(dt->parent, "ok");
-	return NULL;
+        fuse_fsm_run(dt->parent, FUSE_FSM_EVENT_OK);
+	return FUSE_FSM_EVENT_NONE;
 }
 
-static const char* f4(struct fuse_fsm* fsm __attribute__((unused)),void *data){
+static struct fuse_fsm_event f4(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_lookup_path_data *dt = (struct fsm_lookup_path_data *)data;
     int err = fuse_fsm_get_err(fsm);
     if (dt->parent){
         fuse_fsm_set_err(dt->parent,err);
-        fuse_fsm_run(dt->parent, "error");
+        fuse_fsm_run(dt->parent, FUSE_FSM_EVENT_ERROR);
     }
-	return NULL;
+	return FUSE_FSM_EVENT_NONE;
 }
 
-FUSE_FSM_EVENTS(LOOKUP_PATH,"ok","error")
+FUSE_FSM_EVENTS(LOOKUP_PATH,FUSE_FSM_EVENT_OK,FUSE_FSM_EVENT_ERROR)
 FUSE_FSM_STATES(LOOKUP_PATH,            "CREATED",    "GETS"     ,"DONE")
-FUSE_FSM_ENTRY(LOOKUP_PATH, /*"ok"*/  {"GETS",f1},  {"DONE",f3},FUSE_FSM_BAD)           
-FUSE_FSM_LAST (LOOKUP_PATH,/*"error"*/{"DONE",f4},  {"DONE",f4},FUSE_FSM_BAD)           
+FUSE_FSM_ENTRY(LOOKUP_PATH, /*FUSE_FSM_EVENT_OK*/  {"GETS",f1},  {"DONE",f3},FUSE_FSM_BAD)           
+FUSE_FSM_LAST (LOOKUP_PATH,/*FUSE_FSM_EVENT_ERROR*/{"DONE",f4},  {"DONE",f4},FUSE_FSM_BAD)           
 
 
 
@@ -81,8 +81,8 @@ int lookup_path(struct fuse_fsm *parent,
     dt->path = path;
     dt->e = e;
     
-    fuse_fsm_run(new_fsm, "ok");
-    if (!strcmp(fuse_fsm_cur_state(new_fsm),"DONE")){
+    fuse_fsm_run(new_fsm, FUSE_FSM_EVENT_OK);
+    if (fuse_fsm_is_done(new_fsm)){
         int res = fuse_fsm_get_err(new_fsm);
         FUSE_FSM_FREE(new_fsm);
         return res;

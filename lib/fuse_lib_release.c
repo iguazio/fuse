@@ -14,18 +14,18 @@ struct fsm_release_data{
 };
 
 
-static const char* f1(struct fuse_fsm* fsm __attribute__((unused)),void *data){
+static struct fuse_fsm_event f1(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_release_data *dt = (struct fsm_release_data *)data;
     fuse_prepare_interrupt(dt->f, dt->req, &dt->d);
     int err = fuse_fs_release(fsm, dt->f->fs, dt->path, &dt->fi);
     if (err == FUSE_LIB_ERROR_PENDING_REQ)
-        return NULL;
+        return FUSE_FSM_EVENT_NONE;
     fuse_fsm_set_err(fsm, err);
-    return (err)?"error":"ok";
+    return (err)?FUSE_FSM_EVENT_ERROR:FUSE_FSM_EVENT_OK;
 }
 
 //Release OK or ERROR - don't care
-static const char* f2(struct fuse_fsm* fsm __attribute__((unused)),void *data){
+static struct fuse_fsm_event f2(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_release_data *dt = (struct fsm_release_data *)data;
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
     free_path(dt->f, dt->ino, (char*)dt->path);
@@ -34,26 +34,26 @@ static const char* f2(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     if (dt->req)
         reply_err(dt->req,0);
 
-    return NULL;
+    return FUSE_FSM_EVENT_NONE;
 }
 
 //Send unlink
-static const char* f3(struct fuse_fsm* fsm __attribute__((unused)),void *data){
+static struct fuse_fsm_event f3(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_release_data *dt = (struct fsm_release_data *)data;
     fuse_fs_unlink(fsm, dt->f->fs, dt->unlinkpath);
-    return NULL;
+    return FUSE_FSM_EVENT_NONE;
 }
 
 
 
 
-FUSE_FSM_EVENTS(RELEASE, "ok","error")
+FUSE_FSM_EVENTS(RELEASE, FUSE_FSM_EVENT_OK,FUSE_FSM_EVENT_ERROR)
 FUSE_FSM_STATES(RELEASE,           "CREATED",         "RELEASE"  , "DONE")
 FUSE_FSM_ENTRY(RELEASE, /*ok*/    {"RELEASE",f1},    {"DONE",f2} , FUSE_FSM_BAD)           
 FUSE_FSM_LAST (RELEASE, /*error*/ {"DONE",f2},       {"DONE",f2} , FUSE_FSM_BAD)
 
 
-FUSE_FSM_EVENTS(RELEASE_UNLINK, "ok","error")
+FUSE_FSM_EVENTS(RELEASE_UNLINK, FUSE_FSM_EVENT_OK,FUSE_FSM_EVENT_ERROR)
 FUSE_FSM_STATES(RELEASE_UNLINK, "CREATED",         "RELEASE"        , "UNLINK"    , "DONE")
 FUSE_FSM_ENTRY(RELEASE_UNLINK,  /*ok*/           {"RELEASE",f1},    {"UNLINK",f3}    , {"DONE",f2} , FUSE_FSM_BAD)           
 FUSE_FSM_LAST (RELEASE_UNLINK, /*error*/        {"UNLINK",f3},       {"UNLINK",f3}  , {"DONE",f2} , FUSE_FSM_BAD)
@@ -95,8 +95,8 @@ int fuse_do_release(fuse_req_t req, struct fuse *f, fuse_ino_t ino, const char *
     dt->path = path;
     dt->self = new_fsm;
 
-    fuse_fsm_run(new_fsm, "ok");
-    if (!strcmp(fuse_fsm_cur_state(new_fsm),"DONE")){
+    fuse_fsm_run(new_fsm, FUSE_FSM_EVENT_OK);
+    if (fuse_fsm_is_done(new_fsm)){
         FUSE_FSM_FREE(new_fsm);
         return 0;
     }

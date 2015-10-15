@@ -17,7 +17,7 @@ struct fsm_readdir_data{
 
 
 /*Send request to the fs*/
-static const char* f1(struct fuse_fsm* fsm __attribute__((unused)),void *data){
+static struct fuse_fsm_event f1(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_readdir_data *dt = (struct fsm_readdir_data *)data;
     fuse_fill_dir_t filler = fill_dir;
 
@@ -35,12 +35,12 @@ static const char* f1(struct fuse_fsm* fsm __attribute__((unused)),void *data){
 //    fuse_prepare_interrupt(dt->f, dt->req, &d);
     int err = fuse_fs_readdir(fsm, dt->f->fs, dt->path, dt->dh, filler, dt->off, &dt->fi, dt->flags);
     if (err == FUSE_LIB_ERROR_PENDING_REQ)
-        return NULL;
+        return FUSE_FSM_EVENT_NONE;
     fuse_fsm_set_err(fsm, err);
-    return (err)?"error":"ok";
+    return (err)?FUSE_FSM_EVENT_ERROR:FUSE_FSM_EVENT_OK;
 }
 /*There is correct data - send it back to the driver*/
-static const char* f2(struct fuse_fsm* fsm __attribute__((unused)),void *data){
+static struct fuse_fsm_event f2(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_readdir_data *dt = (struct fsm_readdir_data *)data;
     dt->dh->req = NULL;
     dt->dh->filled = 1;
@@ -55,16 +55,16 @@ static const char* f2(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     else
         fuse_reply_buf(dt->req, dt->dh->contents, dt->dh->len);
     pthread_mutex_unlock(&dt->dh->lock);
-	return NULL;
+	return FUSE_FSM_EVENT_NONE;
 }
 
 /*Error - report driver*/
-static const char* f3(struct fuse_fsm* fsm __attribute__((unused)),void *data){
+static struct fuse_fsm_event f3(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_readdir_data *dt = (struct fsm_readdir_data *)data;
     int err = fuse_fsm_get_err(fsm);
     free_path(dt->f, dt->ino, dt->path);
     reply_err(dt->req, err);
-	return NULL;
+	return FUSE_FSM_EVENT_NONE;
 }
 
 
@@ -113,7 +113,7 @@ static int readdir_fill_from_list(fuse_req_t req, struct fuse_dh *dh,
     return 0;
 }
 
-FUSE_FSM_EVENTS(READDIR,"ok","error")
+FUSE_FSM_EVENTS(READDIR,FUSE_FSM_EVENT_OK,FUSE_FSM_EVENT_ERROR)
 FUSE_FSM_STATES(READDIR,          "CREATED",  "RDIR"      ,   "DONE")
 FUSE_FSM_ENTRY(READDIR,/*ok*/   {"RDIR",f1},  {"DONE",f2} ,   FUSE_FSM_BAD)           
 FUSE_FSM_LAST (READDIR,/*error*/{"DONE",f3},  {"DONE",f3} ,   FUSE_FSM_BAD)           
@@ -155,8 +155,8 @@ static void fuse_readdir_common(fuse_req_t req, fuse_ino_t ino, size_t size,
             dt->f = f;
             dt->path = path;
             dt->fi = fi;
-            fuse_fsm_run(new_fsm, "ok");
-            if (!strcmp(fuse_fsm_cur_state(new_fsm),"DONE"))
+            fuse_fsm_run(new_fsm, FUSE_FSM_EVENT_OK);
+            if (fuse_fsm_is_done(new_fsm))
                 FUSE_FSM_FREE(new_fsm);
         }else
             reply_err(req,err);
