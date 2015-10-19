@@ -63,7 +63,7 @@ void go(){
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "fuse_async_responce.h"
+#include "fuse_async_response.h"
 struct fuse_fsm;
 
 struct fuse_fsm_event {

@@ -16,7 +16,7 @@
 #include "fuse_opt.h"
 #include "fuse_misc.h"
 #include "fuse_kernel.h"
-#include "fuse_async_responce.h"
+#include "fuse_async_response.h"
 #include "fuse_fsm.h"
 #include "fuse_fs.h"
 #include "fuse_prv.h"

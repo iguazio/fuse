@@ -29,7 +29,7 @@ static struct fuse_fsm_event f2(struct fuse_fsm* fsm __attribute__((unused)), vo
     // This is an ugly workaround of the fact that the actual size
     // is expected to be return by this function
     // Instead we will return it in the fi structure, since we are working with a copy
-    // The right way would be to pass a pointer to actual_size that would be updated in the ig_write_responce 
+    // The right way would be to pass a pointer to actual_size that would be updated in the ig_write_response 
     int size = *((size_t*)(&dt->fi));
 
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
