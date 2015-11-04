@@ -913,7 +913,7 @@ struct fuse_session *fuse_get_session(struct fuse *f);
 #endif
 
 struct fuse_async_response;
-#define FUSE_LIB_ERROR_PENDING_REQ 0x98765432
+#define FUSE_LIB_ERROR_PENDING_REQ (-76543210)
 
 
 
