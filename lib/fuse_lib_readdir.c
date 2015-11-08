@@ -43,17 +43,20 @@ static struct fuse_fsm_event f1(struct fuse_fsm* fsm __attribute__((unused)),voi
 static struct fuse_fsm_event f2(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_readdir_data *dt = (struct fsm_readdir_data *)data;
     dt->dh->req = NULL;
-    dt->dh->filled = 1;
     if (dt->dh->error)
         dt->dh->filled = 0;
     free_path(dt->f, dt->ino, dt->path);
     pthread_mutex_lock(&dt->dh->lock);
-    dt->dh->needlen = dt->size;
-    int err = readdir_fill_from_list(dt->req, dt->dh, dt->off, dt->flags);
-    if (err)
-        reply_err(dt->req, err);
-    else
-        fuse_reply_buf(dt->req, dt->dh->contents, dt->dh->len);
+    if (dt->dh->filled) {
+        dt->dh->needlen = dt->size;
+        int err = readdir_fill_from_list(dt->req, dt->dh, dt->off, dt->flags);
+        if (err) {
+            reply_err(dt->req, err);
+            pthread_mutex_unlock(&dt->dh->lock);
+            return FUSE_FSM_EVENT_ERROR;
+        }
+    }
+    fuse_reply_buf(dt->req, dt->dh->contents, dt->dh->len);
     pthread_mutex_unlock(&dt->dh->lock);
 	return FUSE_FSM_EVENT_NONE;
 }
