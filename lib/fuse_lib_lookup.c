@@ -7,7 +7,6 @@ struct fsm_lookup_data{
     struct fuse_intr_data d;
     struct fuse *f;
     fuse_ino_t parent;
-    const char *name;
     const char *path;
     struct fuse_entry_param e;  
     fuse_req_t req;
@@ -18,7 +17,7 @@ struct fsm_lookup_data{
 static struct fuse_fsm_event f1(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_lookup_data *dt = (struct fsm_lookup_data *)data;
     fuse_prepare_interrupt(dt->f, dt->req, &dt->d);
-    int err = lookup_path(dt->owner,dt->f, dt->parent, dt->name, dt->path, &dt->e, NULL);
+    int err = lookup_path(dt->owner,dt->f, dt->parent, dt->path, dt->path, &dt->e, NULL);
     if (err == FUSE_LIB_ERROR_PENDING_REQ){
         fuse_fsm_free_on_done(dt->owner,1);
         return FUSE_FSM_EVENT_NONE;
@@ -106,7 +105,6 @@ void fuse_lib_lookup(fuse_req_t req, fuse_ino_t parent,
         struct fsm_lookup_data *dt = (struct fsm_lookup_data*)new_fsm->data;
 
         dt->f = f;
-        dt->name = name;
         dt->parent = parent;
         dt->path = path;
         dt->req = req;
