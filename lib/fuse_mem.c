@@ -1,6 +1,8 @@
 #include "fuse_mem.h"
 #include "fuse_list.h"
 
+#define print_out(dir,ptr)         fprintf(stderr, dir"(%p)%s<%d>%c%c%c%c%c%c%c%c\n",ptr,file,line,((char*)ptr)[0],((char*)ptr)[1],((char*)ptr)[2],((char*)ptr)[3],((char*)ptr)[4],((char*)ptr)[5],((char*)ptr)[6],((char*)ptr)[7]);
+
 
 struct mem_descriptor{
     int line;
@@ -19,6 +21,7 @@ void* _fuse_malloc( size_t size,int line,const char* file )
     ptr->file = file;
     list_add_head( &ptr->node, &mem_allocs);
     ref_cntr++;
+    print_out("->", ptr->data);
     return (void*)ptr->data;
 }
 
@@ -29,6 +32,7 @@ void* _fuse_calloc( size_t nmenb,size_t size,int line,const char* file )
     ptr->file = file;
     list_add_head( &ptr->node, &mem_allocs);
     ref_cntr++;
+    print_out("->", ptr->data);
     return (void*)ptr->data;
 }
 
@@ -44,6 +48,7 @@ void* _fuse_realloc( void *oldptr, size_t newsize,int line,const char* file )
     }else{
         ref_cntr++;
         ptr = (struct mem_descriptor*)realloc(oldptr , newsize + sizeof(struct mem_descriptor));
+        print_out("->", ptr->data);
     }
     ptr->line = line;
     ptr->file = file;
@@ -61,6 +66,7 @@ void _fuse_free( void *oldptr ,int line,const char* file )
         old_mptr--;
         list_del(&old_mptr->node);
         ref_cntr--;
+        print_out("<-", old_mptr->data);
         free(old_mptr);
     }
 }
