@@ -1,4 +1,5 @@
 #include "fuse_mem.h"
+#include "fuse_list.h"
 
 
 struct mem_descriptor{
