@@ -8,6 +8,7 @@ struct fsm_lookup_data{
     struct fuse *f;
     fuse_ino_t parent;
     const char *path;
+    char *name;
     struct fuse_entry_param e;  
     fuse_req_t req;
     struct node *dot;
@@ -17,7 +18,7 @@ struct fsm_lookup_data{
 static struct fuse_fsm_event f1(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_lookup_data *dt = (struct fsm_lookup_data *)data;
     fuse_prepare_interrupt(dt->f, dt->req, &dt->d);
-    int err = lookup_path(dt->owner,dt->f, dt->parent, dt->path, dt->path, &dt->e, NULL);
+    int err = lookup_path(dt->owner,dt->f, dt->parent, dt->name, dt->path, &dt->e, NULL);
     if (err == FUSE_LIB_ERROR_PENDING_REQ){
         fuse_fsm_free_on_done(dt->owner,1);
         return FUSE_FSM_EVENT_NONE;
@@ -30,6 +31,8 @@ static struct fuse_fsm_event f2(struct fuse_fsm* fsm __attribute__((unused)),voi
     struct fsm_lookup_data *dt = (struct fsm_lookup_data *)data;
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
     free_path(dt->f, dt->parent, (char*)dt->path);
+    fuse_free(dt->name);
+
     reply_entry(dt->req, &dt->e, 0);
     if (dt->dot) {
         pthread_mutex_lock(&dt->f->lock);
@@ -43,6 +46,7 @@ static struct fuse_fsm_event f3(struct fuse_fsm* fsm __attribute__((unused)),voi
     struct fsm_lookup_data *dt = (struct fsm_lookup_data *)data;
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
     free_path(dt->f, dt->parent, (char*)dt->path);
+    fuse_free(dt->name);
     int err = fuse_fsm_get_err(fsm);
     if (err == -ENOENT && dt->f->conf.negative_timeout != 0.0){
         dt->e.ino = 0;
@@ -110,6 +114,7 @@ void fuse_lib_lookup(fuse_req_t req, fuse_ino_t parent,
         dt->req = req;
         dt->owner = new_fsm;
         dt->dot = dot;
+        dt->name = fuse_strdup(name);
 
 
         if (f->conf.debug)

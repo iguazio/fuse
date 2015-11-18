@@ -6,6 +6,7 @@ struct fsm_lookup_path_data{
     struct fuse_fsm *parent;
     struct fuse_entry_param *e;
     const char *path;
+    const char *name;
     struct fuse * f;
     struct fuse_file_info fi;
     int has_fi;
@@ -31,8 +32,7 @@ static struct fuse_fsm_event f1(struct fuse_fsm* fsm __attribute__((unused)),voi
 
 static struct fuse_fsm_event f3(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_lookup_path_data *dt = (struct fsm_lookup_path_data *)data;
-
-    int res = do_lookup(dt->f, dt->nodeid, dt->path, dt->e);
+    int res = do_lookup(dt->f, dt->nodeid, dt->name, dt->e);
     if (res == 0 && dt->f->conf.debug) {
         fprintf(stderr, "   NODEID: %llu\n",
             (unsigned long long) dt->e->ino);
@@ -69,13 +69,11 @@ int lookup_path(struct fuse_fsm *parent,
 
     memset(e, 0, sizeof(struct fuse_entry_param));
 
-    (void)name;
-
-
     dt->f = f;
     dt->has_fi = (fi != NULL);
     if(dt->has_fi)
         dt->fi = *fi;
+    dt->name = name;
     dt->nodeid = nodeid;
     dt->parent = parent;
     dt->path = path;
