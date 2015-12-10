@@ -78,24 +78,28 @@ FUSE_FSM_LAST (GETATTR,/*FUSE_FSM_EVENT_ERROR*/      {"DONE",f4},  {"DONE",f4},F
 
 void fuse_lib_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi)
 {
-    struct fuse_fsm *new_fsm = NULL;
-    FUSE_FSM_ALLOC(GETATTR,new_fsm,struct fsm_getattr_data);
-    struct fsm_getattr_data *dt = (struct fsm_getattr_data*)new_fsm->data;
     int err;
     struct fuse *f = req_fuse_prepare(req);
+    char *path;
+
     
     if (fi != NULL && f->fs->op.fgetattr)
-        err = get_path_nullok(f, ino, &dt->path);
+        err = get_path_nullok(f, ino, &path);
     else
-        err = get_path(f, ino, &dt->path);
+        err = get_path(f, ino, &path);
     
     if (!err) {
+        struct fuse_fsm *new_fsm = NULL;
+        FUSE_FSM_ALLOC(GETATTR, new_fsm, struct fsm_getattr_data);
+        struct fsm_getattr_data *dt = (struct fsm_getattr_data*)new_fsm->data;
+
         dt->f = f;
         dt->has_fi = (fi != NULL);
         if (dt->has_fi)
             dt->fi = *fi;
         dt->ino = ino;
         dt->req = req;
+        dt->path = path;
         fuse_fsm_run(new_fsm, FUSE_FSM_EVENT_OK);
         if (fuse_fsm_is_done(new_fsm))
             FUSE_FSM_FREE(new_fsm);

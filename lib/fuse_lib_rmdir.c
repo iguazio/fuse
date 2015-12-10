@@ -15,6 +15,7 @@ static struct fuse_fsm_event f1(struct fuse_fsm* fsm __attribute__((unused)), vo
     struct fsm_rmdir_data *dt = (struct fsm_rmdir_data *)data;
     fuse_prepare_interrupt(dt->f, dt->req, &dt->d);
     int err = fuse_fs_rmdir(fsm, dt->f->fs, dt->path);
+    fuse_finish_interrupt(dt->f, dt->req, &dt->d);
     if (err == FUSE_LIB_ERROR_PENDING_REQ)
         return FUSE_FSM_EVENT_NONE;
     fuse_fsm_set_err(fsm, err);
@@ -25,7 +26,6 @@ static struct fuse_fsm_event f1(struct fuse_fsm* fsm __attribute__((unused)), vo
 static struct fuse_fsm_event f10(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
     struct fsm_rmdir_data *dt = (struct fsm_rmdir_data *)data;
 
-    fuse_finish_interrupt(dt->f, dt->req, &dt->d);
     remove_node(dt->f, dt->parent, dt->name);
     free_path_wrlock(dt->f, dt->parent, dt->wnode, (char*)dt->path);
     reply_err(dt->req, 0);
@@ -37,8 +37,6 @@ static struct fuse_fsm_event f10(struct fuse_fsm* fsm __attribute__((unused)), v
 static struct fuse_fsm_event f13(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
     struct fsm_rmdir_data *dt = (struct fsm_rmdir_data *)data;
     int err = fuse_fsm_get_err(fsm);
-
-    fuse_finish_interrupt(dt->f, dt->req, &dt->d);
     free_path_wrlock(dt->f, dt->parent, dt->wnode, (char*)dt->path);
     reply_err(dt->req, err);
     return FUSE_FSM_EVENT_NONE;
