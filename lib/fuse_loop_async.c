@@ -53,7 +53,7 @@ int fuse_session_loop_async( struct fuse_session *se, int fd, fuse_async_get_msg
             if (fds[1].revents & POLLIN){
                 int err;
                 struct fuse_fsm* fsm;
-                if (!callback_on_new_msg(callback_payload,&err,&fsm)){
+                while (!callback_on_new_msg(callback_payload,&err,&fsm)){
                     fuse_fsm_set_err(fsm,err);
                     fuse_fsm_run(fsm,err?FUSE_FSM_EVENT_ERROR:FUSE_FSM_EVENT_OK);
                     if (fuse_fsm_is_done(fsm))
