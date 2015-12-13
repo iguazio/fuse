@@ -130,12 +130,12 @@ void unlock_path( struct fuse *f, fuse_ino_t nodeid, struct node *wnode, struct 
 
     for (node = get_node(f, nodeid);
         node != end && node->nodeid != FUSE_ROOT_ID; node = node->parent) {
-            assert(node->treelock != 0);
-            assert(node->treelock != TREELOCK_WAIT_OFFSET);
-            assert(node->treelock != TREELOCK_WRITE);
+//             assert(node->treelock != 0);
+//             assert(node->treelock != TREELOCK_WAIT_OFFSET);
+//             assert(node->treelock != TREELOCK_WRITE);
             node->treelock--;
-            if (node->treelock == TREELOCK_WAIT_OFFSET)
-                node->treelock = 0;
+             if (node->treelock == TREELOCK_WAIT_OFFSET)
+                 node->treelock = 0;
     }
 }
 
