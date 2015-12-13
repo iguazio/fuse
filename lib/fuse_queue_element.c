@@ -9,8 +9,8 @@ void queue_element_wakeup( struct fuse *f, struct lock_queue_element *qe )
 
     if (!qe->path1) {
         /* Just waiting for it to be unlocked */
-        if (get_node(f, qe->nodeid1)->treelock == 0)
-            pthread_cond_signal(&qe->cond);
+//         if (get_node(f, qe->nodeid1)->treelock == 0)
+//             pthread_cond_signal(&qe->cond);
 
         return;
     }

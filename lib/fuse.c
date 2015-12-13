@@ -346,7 +346,7 @@ void delete_node(struct fuse *f, struct node *node)
 		fprintf(stderr, "DELETE: %llu\n",
 			(unsigned long long) node->nodeid);
 
-	assert(node->treelock == 0);
+//	assert(node->treelock == 0);
 	unhash_name(f, node);
 	if (lru_enabled(&f->conf))
 		remove_node_lru(node);
@@ -446,21 +446,21 @@ void forget_node(struct fuse *f, fuse_ino_t nodeid, uint64_t nlookup)
 	 * Node may still be locked due to interrupt idiocy in open,
 	 * create and opendir
 	 */
-	while (node->nlookup == nlookup && node->treelock) {
-		struct lock_queue_element qe = {
-			.nodeid1 = nodeid,
-		};
-
-		debug_path(f, "QUEUE PATH (forget)", nodeid, NULL, false);
-		queue_path(f, &qe);
-
-		do {
-			pthread_cond_wait(&qe.cond, &f->lock);
-		} while (node->nlookup == nlookup && node->treelock);
-
-		dequeue_path(f, &qe);
-		debug_path(f, "DEQUEUE_PATH (forget)", nodeid, NULL, false);
-	}
+// 	while (node->nlookup == nlookup && node->treelock) {
+// 		struct lock_queue_element qe = {
+// 			.nodeid1 = nodeid,
+// 		};
+// 
+// 		debug_path(f, "QUEUE PATH (forget)", nodeid, NULL, false);
+// 		queue_path(f, &qe);
+// 
+// 		do {
+// 			pthread_cond_wait(&qe.cond, &f->lock);
+// 		} while (node->nlookup == nlookup && node->treelock);
+// 
+// 		dequeue_path(f, &qe);
+// 		debug_path(f, "DEQUEUE_PATH (forget)", nodeid, NULL, false);
+// 	}
 
 	assert(node->nlookup >= nlookup);
 	node->nlookup -= nlookup;

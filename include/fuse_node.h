@@ -25,7 +25,7 @@ struct node {
     struct lock *locks;
     unsigned int is_hidden : 1;
     unsigned int cache_valid : 1;
-    int treelock;
+//    int treelock;
     char inline_name[32];
 };
 

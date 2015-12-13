@@ -58,10 +58,10 @@ int try_get_path( struct fuse *f, fuse_ino_t nodeid, const char *name, char **pa
 
             if (need_lock) {
                 err = -EAGAIN;
-                if (node->treelock < 0)
-                    goto out_unlock;
-
-                node->treelock++;
+//                 if (node->treelock < 0)
+//                     goto out_unlock;
+// 
+//                 node->treelock++;
             }
     }
 
@@ -125,7 +125,7 @@ void unlock_path( struct fuse *f, fuse_ino_t nodeid, struct node *wnode, struct 
 
     if (wnode) {
 //        assert(wnode->treelock == TREELOCK_WRITE);
-        wnode->treelock = 0;
+//        wnode->treelock = 0;
     }
 
     for (node = get_node(f, nodeid);
@@ -133,9 +133,9 @@ void unlock_path( struct fuse *f, fuse_ino_t nodeid, struct node *wnode, struct 
 //             assert(node->treelock != 0);
 //             assert(node->treelock != TREELOCK_WAIT_OFFSET);
 //             assert(node->treelock != TREELOCK_WRITE);
-            node->treelock--;
-             if (node->treelock == TREELOCK_WAIT_OFFSET)
-                 node->treelock = 0;
+//             node->treelock--;
+//              if (node->treelock == TREELOCK_WAIT_OFFSET)
+//                  node->treelock = 0;
     }
 }
 
