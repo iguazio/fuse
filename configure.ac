@@ -25,8 +25,6 @@ fi
 
 AC_ARG_ENABLE(lib,
 	[  --enable-lib            Compile with library ])
-AC_ARG_ENABLE(util,
-	[  --enable-util           Compile with util ])
 AC_ARG_ENABLE(example,
 	[  --enable-example        Compile with examples ])
 AC_ARG_ENABLE(mtab,
@@ -40,15 +38,6 @@ AC_SUBST(pkgconfigdir)
 
 subdirs2="include"
 
-if test "$enable_lib" != "no"; then
-	subdirs2="$subdirs2 lib";
-fi
-if test "$arch" = linux -a "$enable_util" != "no"; then
-	subdirs2="$subdirs2 util";
-fi
-if test "$enable_example" != "no"; then
-	subdirs2="$subdirs2 example";
-fi
 if test "$enable_mtab" = "no"; then
 	AC_DEFINE(IGNORE_MTAB, 1, [Don't update /etc/mtab])
 fi
@@ -120,7 +109,8 @@ if test "$arch" = linux -a "$cross_compiling" != "yes"; then
 	fi
 fi
 
-AC_CONFIG_FILES([fuse3.pc Makefile lib/Makefile util/Makefile example/Makefile include/Makefile doc/Makefile])
+AC_CONFIG_FILES([fuse3.pc Makefile lib/Makefile include/Makefile])
+
 AC_OUTPUT
 
 if test "$util_linux_ok" = no; then
