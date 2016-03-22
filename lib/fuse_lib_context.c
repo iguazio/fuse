@@ -1,4 +1,5 @@
 #include "fuse_lib_context.h"
+#include "fuse_log.h"
 
 pthread_key_t fuse_context_key;
 pthread_mutex_t fuse_context_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -15,7 +16,7 @@ struct fuse_context_i * fuse_create_context( struct fuse *f )
             abort.  If memory is so low that the
             context cannot be allocated, there's not
             much hope for the filesystem anyway */
-            fprintf(stderr, "fuse: failed to allocate thread specific data\n");
+            fuse_log_err( "fuse: failed to allocate thread specific data\n");
             abort();
         }
         pthread_setspecific(fuse_context_key, c);
@@ -44,7 +45,7 @@ int fuse_create_context_key( void )
     if (!fuse_context_ref) {
         err = pthread_key_create(&fuse_context_key, fuse_freecontext);
         if (err) {
-            fprintf(stderr, "fuse: failed to create thread specific key: %s\n",
+            fuse_log_err( "fuse: failed to create thread specific key: %s\n",
                 strerror(err));
             pthread_mutex_unlock(&fuse_context_lock);
             return -1;

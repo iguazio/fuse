@@ -91,7 +91,7 @@ static void free_slab(struct fuse *f, struct node_slab *slab)
     list_del(&slab->list);
     res = munmap(slab, f->pagesize);
     if (res == -1)
-        fprintf(stderr, "fuse warning: munmap(%p) failed\n", slab);
+        fuse_log_err( "fuse warning: munmap(%p) failed\n", slab);
 }
 
 static void free_node_mem(struct fuse *f, struct node *node)

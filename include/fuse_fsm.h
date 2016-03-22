@@ -104,7 +104,6 @@ void    fuse_fsm_free_on_done(struct fuse_fsm *fsm, int do_cleanup);
 int    fuse_fsm_is_done(struct fuse_fsm *fsm);
 void    fuse_fsm_run( struct fuse_fsm * fsm, struct fuse_fsm_event event );
 const char* fuse_fsm_cur_state( struct fuse_fsm * fsm ) ;
-void    fuse_fsm_set_debug(int d);
 
 #define FUSE_FSM_BAD {NULL,fuse_lib_fsm_transition_function_null}
 

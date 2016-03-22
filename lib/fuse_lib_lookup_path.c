@@ -1,5 +1,6 @@
 #include "fuse_lib.h"
 #include "fuse_lib_lookup_path.h"
+#include "fuse_log.h"
 
 
 struct fsm_lookup_path_data{
@@ -34,7 +35,7 @@ static struct fuse_fsm_event f3(struct fuse_fsm* fsm __attribute__((unused)),voi
     struct fsm_lookup_path_data *dt = (struct fsm_lookup_path_data *)data;
     int res = do_lookup(dt->f, dt->nodeid, dt->name, dt->e);
     if (res == 0 && dt->f->conf.debug) {
-        fprintf(stderr, "   NODEID: %llu\n",
+        fuse_log_debug( "   NODEID: %llu\n",
             (unsigned long long) dt->e->ino);
     }
     if (dt->parent)

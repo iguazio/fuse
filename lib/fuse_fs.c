@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <assert.h>
+#include "fuse_log.h"
 
 #include "fuse_fs.h"
 
@@ -13,7 +14,7 @@ int fuse_fs_getattr( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_f
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.getattr) {
         if (fs->debug)
-            fprintf(stderr, "getattr %s\n", path);
+            fuse_log_debug( "getattr %s\n", path);
 
         return fs->op.getattr(fsm, path, buf);
     } else {
@@ -26,13 +27,13 @@ int fuse_fs_fgetattr( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.fgetattr) {
         if (fs->debug)
-            fprintf(stderr, "fgetattr[%llu] %s\n",
+            fuse_log_debug( "fgetattr[%llu] %s\n",
             (unsigned long long) fi->fh, path);
 
         return fs->op.fgetattr(fsm, path, buf, fi);
     } else if (path && fs->op.getattr) {
         if (fs->debug)
-            fprintf(stderr, "getattr %s\n", path);
+            fuse_log_debug( "getattr %s\n", path);
 
         return fs->op.getattr(fsm, path, buf);
     } else {
@@ -45,7 +46,7 @@ int fuse_fs_rename( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.rename) {
         if (fs->debug)
-            fprintf(stderr, "rename %s %s 0x%x\n", oldpath, newpath,
+            fuse_log_debug( "rename %s %s 0x%x\n", oldpath, newpath,
             flags);
 
         return fs->op.rename(fsm, oldpath, newpath, flags);
@@ -59,7 +60,7 @@ int fuse_fs_unlink( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.unlink) {
         if (fs->debug)
-            fprintf(stderr, "unlink %s\n", path);
+            fuse_log_debug( "unlink %s\n", path);
 
         return fs->op.unlink(fsm, path);
     } else {
@@ -72,7 +73,7 @@ int fuse_fs_rmdir( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs 
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.rmdir) {
         if (fs->debug)
-            fprintf(stderr, "rmdir %s\n", path);
+            fuse_log_debug( "rmdir %s\n", path);
 
         return fs->op.rmdir(fsm, path);
     } else {
@@ -85,7 +86,7 @@ int fuse_fs_symlink( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_f
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.symlink) {
         if (fs->debug)
-            fprintf(stderr, "symlink %s %s\n", linkname, path);
+            fuse_log_debug( "symlink %s %s\n", linkname, path);
 
         return fs->op.symlink(fsm, linkname, path);
     } else {
@@ -98,7 +99,7 @@ int fuse_fs_link( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.link) {
         if (fs->debug)
-            fprintf(stderr, "link %s %s\n", oldpath, newpath);
+            fuse_log_debug( "link %s %s\n", oldpath, newpath);
 
         return fs->op.link(fsm, oldpath, newpath);
     } else {
@@ -111,7 +112,7 @@ int fuse_fs_release( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_f
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.release) {
         if (fs->debug)
-            fprintf(stderr, "release%s[%llu] flags: 0x%x\n",
+            fuse_log_debug( "release%s[%llu] flags: 0x%x\n",
             fi->flush ? "+flush" : "",
             (unsigned long long) fi->fh, fi->flags);
 
@@ -128,13 +129,13 @@ int fuse_fs_opendir( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_f
         int err;
 
         if (fs->debug)
-            fprintf(stderr, "opendir flags: 0x%x %s\n", fi->flags,
+            fuse_log_debug( "opendir flags: 0x%x %s\n", fi->flags,
             path);
 
         err = fs->op.opendir(fsm, path, fi);
 
         if (fs->debug && !err)
-            fprintf(stderr, "   opendir[%llu] flags: 0x%x %s\n",
+            fuse_log_debug( "   opendir[%llu] flags: 0x%x %s\n",
             (unsigned long long) fi->fh, fi->flags, path);
 
         return err;
@@ -150,13 +151,13 @@ int fuse_fs_open( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *
         int err;
 
         if (fs->debug)
-            fprintf(stderr, "open flags: 0x%x %s\n", fi->flags,
+            fuse_log_debug( "open flags: 0x%x %s\n", fi->flags,
             path);
 
         err = fs->op.open(fsm, path, fi);
 
         if (fs->debug && !err)
-            fprintf(stderr, "   open[%llu] flags: 0x%x %s\n",
+            fuse_log_debug( "   open[%llu] flags: 0x%x %s\n",
             (unsigned long long) fi->fh, fi->flags, path);
 
         return err;
@@ -172,7 +173,7 @@ int fuse_fs_read_buf( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_
         int res;
 
         if (fs->debug)
-            fprintf(stderr,
+            fuse_log_debug(
             "read[%llu] %zu bytes from %llu flags: 0x%x\n",
             (unsigned long long) fi->fh,
             size, (unsigned long long) off, fi->flags);
@@ -202,12 +203,12 @@ int fuse_fs_read_buf( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_
         }
 
         if (fs->debug && res >= 0)
-            fprintf(stderr, "   read[%llu] %zu bytes from %llu\n",
+            fuse_log_debug( "   read[%llu] %zu bytes from %llu\n",
             (unsigned long long) fi->fh,
             fuse_buf_size(*bufp),
             (unsigned long long) off);
         if (res >= 0 && fuse_buf_size(*bufp) > (int) size)
-            fprintf(stderr, "fuse: read too many bytes\n");
+            fuse_log_err( "fuse: read too many bytes\n");
 
         if (res < 0)
             return res;
@@ -243,7 +244,7 @@ int fuse_fs_write_buf( struct fuse_fsm* fsm __attribute__((unused)), struct fuse
 
         assert(buf->idx == 0 && buf->off == 0);
         if (fs->debug)
-            fprintf(stderr,
+            fuse_log_debug(
             "write%s[%llu] %zu bytes to %llu flags: 0x%x\n",
             fi->writepage ? "page" : "",
             (unsigned long long) fi->fh,
@@ -283,12 +284,12 @@ out_free:
         }
 out:
         if (fs->debug && res >= 0)
-            fprintf(stderr, "   write%s[%llu] %u bytes to %llu\n",
+            fuse_log_debug( "   write%s[%llu] %u bytes to %llu\n",
             fi->writepage ? "page" : "",
             (unsigned long long) fi->fh, res,
             (unsigned long long) off);
         if (res > (int) size)
-            fprintf(stderr, "fuse: wrote too many bytes\n");
+            fuse_log_err( "fuse: wrote too many bytes\n");
 
         return res;
     } else {
@@ -310,7 +311,7 @@ int fuse_fs_fsync( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs 
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.fsync) {
         if (fs->debug)
-            fprintf(stderr, "fsync[%llu] datasync: %i\n",
+            fuse_log_debug( "fsync[%llu] datasync: %i\n",
             (unsigned long long) fi->fh, datasync);
 
         return fs->op.fsync(fsm, path, datasync, fi);
@@ -324,7 +325,7 @@ int fuse_fs_fsyncdir( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.fsyncdir) {
         if (fs->debug)
-            fprintf(stderr, "fsyncdir[%llu] datasync: %i\n",
+            fuse_log_debug( "fsyncdir[%llu] datasync: %i\n",
             (unsigned long long) fi->fh, datasync);
 
         return fs->op.fsyncdir(fsm, path, datasync, fi);
@@ -338,7 +339,7 @@ int fuse_fs_flush( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs 
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.flush) {
         if (fs->debug)
-            fprintf(stderr, "flush[%llu]\n",
+            fuse_log_debug( "flush[%llu]\n",
             (unsigned long long) fi->fh);
 
         return fs->op.flush(fsm, path, fi);
@@ -352,7 +353,7 @@ int fuse_fs_statfs( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.statfs) {
         if (fs->debug)
-            fprintf(stderr, "statfs %s\n", path);
+            fuse_log_debug( "statfs %s\n", path);
 
         return fs->op.statfs(fsm, path, buf);
     } else {
@@ -367,7 +368,7 @@ int fuse_fs_releasedir( struct fuse_fsm* fsm __attribute__((unused)), struct fus
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.releasedir) {
         if (fs->debug)
-            fprintf(stderr, "releasedir[%llu] flags: 0x%x\n",
+            fuse_log_debug( "releasedir[%llu] flags: 0x%x\n",
             (unsigned long long) fi->fh, fi->flags);
 
         return fs->op.releasedir(fsm, path, fi);
@@ -381,7 +382,7 @@ int fuse_fs_readdir( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_f
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.readdir) {
         if (fs->debug) {
-            fprintf(stderr, "readdir%s[%llu] from %llu\n",
+            fuse_log_debug( "readdir%s[%llu] from %llu\n",
                 (flags & FUSE_READDIR_PLUS) ? "plus" : "",
                 (unsigned long long) fi->fh,
                 (unsigned long long) off);
@@ -400,7 +401,7 @@ int fuse_fs_create( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs
         int err;
 
         if (fs->debug)
-            fprintf(stderr,
+            fuse_log_debug(
             "create flags: 0x%x %s 0%o umask=0%03o\n",
             fi->flags, path, mode,
             fuse_get_context()->umask);
@@ -408,7 +409,7 @@ int fuse_fs_create( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs
         err = fs->op.create(fsm, path, mode, fi);
 
         if (fs->debug && !err)
-            fprintf(stderr, "   create[%llu] flags: 0x%x %s\n",
+            fuse_log_debug( "   create[%llu] flags: 0x%x %s\n",
             (unsigned long long) fi->fh, fi->flags, path);
 
         return err;
@@ -422,7 +423,7 @@ int fuse_fs_lock( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.lock) {
         if (fs->debug)
-            fprintf(stderr, "lock[%llu] %s %s start: %llu len: %llu pid: %llu\n",
+            fuse_log_debug( "lock[%llu] %s %s start: %llu len: %llu pid: %llu\n",
             (unsigned long long) fi->fh,
             (cmd == F_GETLK ? "F_GETLK" :
             (cmd == F_SETLK ? "F_SETLK" :
@@ -448,7 +449,7 @@ int fuse_fs_flock( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs 
         if (fs->debug) {
             int xop = op & ~LOCK_NB;
 
-            fprintf(stderr, "lock[%llu] %s%s\n",
+            fuse_log_debug( "lock[%llu] %s%s\n",
                 (unsigned long long) fi->fh,
                 xop == LOCK_SH ? "LOCK_SH" :
                 (xop == LOCK_EX ? "LOCK_EX" :
@@ -466,7 +467,7 @@ int fuse_fs_chown( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs 
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.chown) {
         if (fs->debug)
-            fprintf(stderr, "chown %s %lu %lu\n", path,
+            fuse_log_debug( "chown %s %lu %lu\n", path,
             (unsigned long) uid, (unsigned long) gid);
 
         return fs->op.chown(fsm, path, uid, gid);
@@ -480,7 +481,7 @@ int fuse_fs_truncate( struct fuse_fsm* fsm __attribute__((unused)),struct fuse_f
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.truncate) {
         if (fs->debug)
-            fprintf(stderr, "truncate %s %llu\n", path,
+            fuse_log_debug( "truncate %s %llu\n", path,
             (unsigned long long) size);
 
         return fs->op.truncate(fsm, path, size);
@@ -494,14 +495,14 @@ int fuse_fs_ftruncate(struct fuse_fsm* fsm __attribute__((unused)),struct fuse_f
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.ftruncate) {
         if (fs->debug)
-            fprintf(stderr, "ftruncate[%llu] %llu\n",
+            fuse_log_debug( "ftruncate[%llu] %llu\n",
             (unsigned long long) fi->fh,
             (unsigned long long) size);
 
         return fs->op.ftruncate(fsm, path, size, fi);
     } else if (path && fs->op.truncate) {
         if (fs->debug)
-            fprintf(stderr, "truncate %s %llu\n", path,
+            fuse_log_debug( "truncate %s %llu\n", path,
             (unsigned long long) size);
 
         return fs->op.truncate(fsm, path, size);
@@ -515,7 +516,7 @@ int fuse_fs_utimens( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_f
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.utimens) {
         if (fs->debug)
-            fprintf(stderr, "utimens %s %li.%09lu %li.%09lu\n",
+            fuse_log_debug( "utimens %s %li.%09lu %li.%09lu\n",
             path, tv[0].tv_sec, tv[0].tv_nsec,
             tv[1].tv_sec, tv[1].tv_nsec);
 
@@ -530,7 +531,7 @@ int fuse_fs_access( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.access) {
         if (fs->debug)
-            fprintf(stderr, "access %s 0%o\n", path, mask);
+            fuse_log_debug( "access %s 0%o\n", path, mask);
 
         return fs->op.access(fsm, path, mask);
     } else {
@@ -543,7 +544,7 @@ int fuse_fs_readlink( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.readlink) {
         if (fs->debug)
-            fprintf(stderr, "readlink %s %lu\n", path,
+            fuse_log_debug( "readlink %s %lu\n", path,
             (unsigned long) len);
 
         return fs->op.readlink(fsm, path, buf, len);
@@ -557,7 +558,7 @@ int fuse_fs_mknod( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs 
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.mknod) {
         if (fs->debug)
-            fprintf(stderr, "mknod %s 0%o 0x%llx umask=0%03o\n",
+            fuse_log_debug( "mknod %s 0%o 0x%llx umask=0%03o\n",
             path, mode, (unsigned long long) rdev,
             fuse_get_context()->umask);
 
@@ -572,7 +573,7 @@ int fuse_fs_mkdir( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs 
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.mkdir) {
         if (fs->debug)
-            fprintf(stderr, "mkdir %s 0%o umask=0%03o\n",
+            fuse_log_debug( "mkdir %s 0%o umask=0%03o\n",
             path, mode, fuse_get_context()->umask);
 
         return fs->op.mkdir(fsm, path, mode);
@@ -586,7 +587,7 @@ int fuse_fs_setxattr( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.setxattr) {
         if (fs->debug)
-            fprintf(stderr, "setxattr %s %s %lu 0x%x\n",
+            fuse_log_debug( "setxattr %s %s %lu 0x%x\n",
             path, name, (unsigned long) size, flags);
 
         return fs->op.setxattr(fsm, path, name, value, size, flags);
@@ -600,7 +601,7 @@ int fuse_fs_getxattr( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.getxattr) {
         if (fs->debug)
-            fprintf(stderr, "getxattr %s %s %lu\n",
+            fuse_log_debug( "getxattr %s %s %lu\n",
             path, name, (unsigned long) size);
 
         return fs->op.getxattr(fsm, path, name, value, size);
@@ -614,7 +615,7 @@ int fuse_fs_listxattr( struct fuse_fsm* fsm __attribute__((unused)), struct fuse
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.listxattr) {
         if (fs->debug)
-            fprintf(stderr, "listxattr %s %lu\n",
+            fuse_log_debug( "listxattr %s %lu\n",
             path, (unsigned long) size);
 
         return fs->op.listxattr(fsm, path, list, size);
@@ -628,7 +629,7 @@ int fuse_fs_bmap( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.bmap) {
         if (fs->debug)
-            fprintf(stderr, "bmap %s blocksize: %lu index: %llu\n",
+            fuse_log_debug( "bmap %s blocksize: %lu index: %llu\n",
             path, (unsigned long) blocksize,
             (unsigned long long) *idx);
 
@@ -643,7 +644,7 @@ int fuse_fs_removexattr( struct fuse_fsm* fsm __attribute__((unused)), struct fu
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.removexattr) {
         if (fs->debug)
-            fprintf(stderr, "removexattr %s %s\n", path, name);
+            fuse_log_debug( "removexattr %s %s\n", path, name);
 
         return fs->op.removexattr(fsm, path, name);
     } else {
@@ -656,7 +657,7 @@ int fuse_fs_ioctl( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs 
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.ioctl) {
         if (fs->debug)
-            fprintf(stderr, "ioctl[%llu] 0x%x flags: 0x%x\n",
+            fuse_log_debug( "ioctl[%llu] 0x%x flags: 0x%x\n",
             (unsigned long long) fi->fh, cmd, flags);
 
         return fs->op.ioctl(fsm, path, cmd, arg, fi, flags, data);
@@ -671,14 +672,14 @@ int fuse_fs_poll( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *
         int res;
 
         if (fs->debug)
-            fprintf(stderr, "poll[%llu] ph: %p, events 0x%x\n",
+            fuse_log_debug( "poll[%llu] ph: %p, events 0x%x\n",
             (unsigned long long) fi->fh, ph,
             fi->poll_events);
 
         res = fs->op.poll(fsm, path, fi, ph, reventsp);
 
         if (fs->debug && !res)
-            fprintf(stderr, "   poll[%llu] revents: 0x%x\n",
+            fuse_log_debug( "   poll[%llu] revents: 0x%x\n",
             (unsigned long long) fi->fh, *reventsp);
 
         return res;
@@ -691,7 +692,7 @@ int fuse_fs_fallocate( struct fuse_fsm* fsm __attribute__((unused)), struct fuse
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.fallocate) {
         if (fs->debug)
-            fprintf(stderr, "fallocate %s mode %x, offset: %llu, length: %llu\n",
+            fuse_log_debug( "fallocate %s mode %x, offset: %llu, length: %llu\n",
             path,
             mode,
             (unsigned long long) offset,

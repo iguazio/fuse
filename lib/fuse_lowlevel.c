@@ -13,6 +13,7 @@
 #include "fuse_kernel.h"
 #include "fuse_opt.h"
 #include "fuse_misc.h"
+#include "fuse_log.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -145,7 +146,7 @@ static struct fuse_req *fuse_ll_alloc_req(struct fuse_ll *f)
 
 	req = (struct fuse_req *) fuse_calloc(1, sizeof(struct fuse_req));
 	if (req == NULL) {
-		fprintf(stderr, "fuse: failed to allocate request\n");
+		fuse_log_err( "fuse: failed to allocate request\n");
 	} else {
 		req->f = f;
 		req->ctr = 1;
@@ -166,7 +167,7 @@ static int fuse_chan_recv(struct fuse_session *se, struct fuse_buf *buf,
 	if (!buf->mem) {
 		buf->mem = fuse_malloc(f->bufsize);
 		if (!buf->mem) {
-			fprintf(stderr,
+			fuse_log_err(
 				"fuse: failed to allocate read buffer\n");
 			return -ENOMEM;
 		}
@@ -197,7 +198,7 @@ restart:
 		return -err;
 	}
 	if ((size_t) res < sizeof(struct fuse_in_header)) {
-		fprintf(stderr, "short read on fuse device\n");
+		fuse_log_err( "short read on fuse device\n");
 		return -EIO;
 	}
 
@@ -242,15 +243,15 @@ static int fuse_send_msg(struct fuse_ll *f, struct fuse_chan *ch,
 	out->len = iov_length(iov, count);
 	if (f->debug) {
 		if (out->unique == 0) {
-			fprintf(stderr, "NOTIFY: code=%d length=%u\n",
+            fuse_log_debug( "NOTIFY: code=%d length=%u\n",
 				out->error, out->len);
 		} else if (out->error) {
-			fprintf(stderr,
+            fuse_log_debug(
 				"   unique: %llu, error: %i (%s), outsize: %i\n",
 				(unsigned long long) out->unique, out->error,
 				strerror(-out->error), out->len);
 		} else {
-			fprintf(stderr,
+            fuse_log_debug(
 				"   unique: %llu, success, outsize: %i\n",
 				(unsigned long long) out->unique, out->len);
 		}
@@ -265,7 +266,7 @@ int fuse_send_reply_iov_nofree(fuse_req_t req, int error, struct iovec *iov,
 	struct fuse_out_header out;
 
 	if (error <= -1000 || error > 0) {
-		fprintf(stderr, "fuse: bad error value: %i\n",	error);
+		fuse_log_err( "fuse: bad error value: %i\n",	error);
 		error = -ERANGE;
 	}
 
@@ -645,11 +646,11 @@ static int read_back(int fd, char *buf, size_t len)
 
 	res = read(fd, buf, len);
 	if (res == -1) {
-		fprintf(stderr, "fuse: internal error: failed to read back from pipe: %s\n", strerror(errno));
+		fuse_log_err( "fuse: internal error: failed to read back from pipe: %s\n", strerror(errno));
 		return -EIO;
 	}
 	if (res != len) {
-		fprintf(stderr, "fuse: internal error: short read back from pipe: %i from %zi\n", res, len);
+		fuse_log_err( "fuse: internal error: short read back from pipe: %i from %zi\n", res, len);
 		return -EIO;
 	}
 	return 0;
@@ -726,7 +727,7 @@ static int fuse_send_data_iov(struct fuse_ll *f, struct fuse_chan *ch,
 
 	if (res != headerlen) {
 		res = -EIO;
-		fprintf(stderr, "fuse: short vmsplice to pipe: %u/%zu\n", res,
+		fuse_log_err( "fuse: short vmsplice to pipe: %u/%zu\n", res,
 			headerlen);
 		goto clear_pipe;
 	}
@@ -819,7 +820,7 @@ static int fuse_send_data_iov(struct fuse_ll *f, struct fuse_chan *ch,
 	out->len = headerlen + len;
 
 	if (f->debug) {
-		fprintf(stderr,
+        fuse_log_debug(
 			"   unique: %llu, success, outsize: %i (splice)\n",
 			(unsigned long long) out->unique, out->len);
 	}
@@ -838,7 +839,7 @@ static int fuse_send_data_iov(struct fuse_ll *f, struct fuse_chan *ch,
 	}
 	if (res != out->len) {
 		res = -EIO;
-		fprintf(stderr, "fuse: short splice from pipe: %u/%u\n",
+		fuse_log_err( "fuse: short splice from pipe: %u/%u\n",
 			res, out->len);
 		goto clear_pipe;
 	}
@@ -1408,7 +1409,7 @@ static void do_write_buf(fuse_req_t req, fuse_ino_t nodeid, const void *inarg,
 			sizeof(struct fuse_write_in);
 	}
 	if (bufv.buf[0].size < arg->size) {
-		fprintf(stderr, "fuse: do_write_buf: buffer size too small\n");
+		fuse_log_err( "fuse: do_write_buf: buffer size too small\n");
 		fuse_reply_err(req, EIO);
 		goto out;
 	}
@@ -1734,7 +1735,7 @@ static void do_interrupt(fuse_req_t req, fuse_ino_t nodeid, const void *inarg)
 
 	(void) nodeid;
 	if (f->debug)
-		fprintf(stderr, "INTERRUPT: %llu\n",
+        fuse_log_debug( "INTERRUPT: %llu\n",
 			(unsigned long long) arg->unique);
 
 	req->u.i.unique = arg->unique;
@@ -1866,10 +1867,10 @@ static void do_init(fuse_req_t req, fuse_ino_t nodeid, const void *inarg)
 
 	(void) nodeid;
 	if (f->debug) {
-		fprintf(stderr, "INIT: %u.%u\n", arg->major, arg->minor);
+        fuse_log_debug( "INIT: %u.%u\n", arg->major, arg->minor);
 		if (arg->major == 7 && arg->minor >= 6) {
-			fprintf(stderr, "flags=0x%08x\n", arg->flags);
-			fprintf(stderr, "max_readahead=0x%08x\n",
+            fuse_log_debug( "flags=0x%08x\n", arg->flags);
+            fuse_log_debug( "max_readahead=0x%08x\n",
 				arg->max_readahead);
 		}
 	}
@@ -1883,7 +1884,7 @@ static void do_init(fuse_req_t req, fuse_ino_t nodeid, const void *inarg)
 	outarg.minor = FUSE_KERNEL_MINOR_VERSION;
 
 	if (arg->major < 7) {
-		fprintf(stderr, "fuse: unsupported protocol version: %u.%u\n",
+		fuse_log_err( "fuse: unsupported protocol version: %u.%u\n",
 			arg->major, arg->minor);
 		fuse_reply_err(req, EPROTO);
 		return;
@@ -1969,7 +1970,7 @@ static void do_init(fuse_req_t req, fuse_ino_t nodeid, const void *inarg)
 		f->conn.want |= FUSE_CAP_WRITEBACK_CACHE;
 
 	if (bufsize < FUSE_MIN_READ_BUFFER) {
-		fprintf(stderr, "fuse: warning: buffer size too small: %zu\n",
+		fuse_log_err( "fuse: warning: buffer size too small: %zu\n",
 			bufsize);
 		bufsize = FUSE_MIN_READ_BUFFER;
 	}
@@ -2042,16 +2043,16 @@ static void do_init(fuse_req_t req, fuse_ino_t nodeid, const void *inarg)
 		outarg.time_gran = f->conn.time_gran;
 
 	if (f->debug) {
-		fprintf(stderr, "   INIT: %u.%u\n", outarg.major, outarg.minor);
-		fprintf(stderr, "   flags=0x%08x\n", outarg.flags);
-		fprintf(stderr, "   max_readahead=0x%08x\n",
+        fuse_log_debug( "   INIT: %u.%u\n", outarg.major, outarg.minor);
+        fuse_log_debug( "   flags=0x%08x\n", outarg.flags);
+        fuse_log_debug( "   max_readahead=0x%08x\n",
 			outarg.max_readahead);
-		fprintf(stderr, "   max_write=0x%08x\n", outarg.max_write);
-		fprintf(stderr, "   max_background=%i\n",
+        fuse_log_debug( "   max_write=0x%08x\n", outarg.max_write);
+        fuse_log_debug( "   max_background=%i\n",
 			outarg.max_background);
-		fprintf(stderr, "   congestion_threshold=%i\n",
+        fuse_log_debug( "   congestion_threshold=%i\n",
 		        outarg.congestion_threshold);
-		fprintf(stderr, "   time_gran=%u\n",
+        fuse_log_debug( "   time_gran=%u\n",
 			outarg.time_gran);
 	}
 	if (arg->minor < 5)
@@ -2301,7 +2302,7 @@ static void fuse_ll_retrieve_reply(struct fuse_notify_req *nreq,
 		sizeof(struct fuse_notify_retrieve_in);
 
 	if (bufv.buf[0].size < arg->size) {
-		fprintf(stderr, "fuse: retrieve reply: buffer size too small\n");
+		fuse_log_err( "fuse: retrieve reply: buffer size too small\n");
 		fuse_reply_none(req);
 		goto out;
 	}
@@ -2467,11 +2468,11 @@ static int fuse_ll_copy_from_pipe(struct fuse_bufvec *dst,
 {
 	int res = fuse_buf_copy(dst, src, 0);
 	if (res < 0) {
-		fprintf(stderr, "fuse: copy from pipe: %s\n", strerror(-res));
+		fuse_log_err( "fuse: copy from pipe: %s\n", strerror(-res));
 		return res;
 	}
 	if (res < fuse_buf_size(dst)) {
-		fprintf(stderr, "fuse: copy from pipe: short read\n");
+		fuse_log_err( "fuse: copy from pipe: short read\n");
 		return -1;
 	}
 	return 0;
@@ -2498,7 +2499,7 @@ void fuse_session_process_buf(struct fuse_session *se,
 
 		mbuf = fuse_malloc(tmpbuf.buf[0].size);
 		if (mbuf == NULL) {
-			fprintf(stderr, "fuse: failed to allocate header\n");
+			fuse_log_err( "fuse: failed to allocate header\n");
 			goto clear_pipe;
 		}
 		tmpbuf.buf[0].mem = mbuf;
@@ -2513,7 +2514,7 @@ void fuse_session_process_buf(struct fuse_session *se,
 	}
 
 	if (f->debug) {
-		fprintf(stderr,
+        fuse_log_debug(
 			"unique: %llu, opcode: %s (%i), nodeid: %llu, insize: %zu, pid: %u\n",
 			(unsigned long long) in->unique,
 			opname((enum fuse_opcode) in->opcode), in->opcode,
@@ -2666,13 +2667,13 @@ static const struct fuse_opt fuse_ll_opts[] = {
 
 static void fuse_ll_version(void)
 {
-	printf("using FUSE kernel interface version %i.%i\n",
+    fuse_log_debug("using FUSE kernel interface version %i.%i\n",
 	       FUSE_KERNEL_VERSION, FUSE_KERNEL_MINOR_VERSION);
 }
 
 static void fuse_ll_help(void)
 {
-	printf(
+    fuse_log_err(
 "    -o max_write=N         set maximum size of write requests\n"
 "    -o max_readahead=N     set maximum readahead\n"
 "    -o max_background=N    set number of maximum background requests\n"
@@ -2710,7 +2711,7 @@ static int fuse_ll_opt_proc(void *data, const char *arg, int key,
 		break;
 
 	default:
-		fprintf(stderr, "fuse: unknown option `%s'\n", arg);
+		fuse_log_err( "fuse: unknown option `%s'\n", arg);
 	}
 
 	return -1;
@@ -2796,7 +2797,7 @@ int fuse_session_receive_buf(struct fuse_session *se, struct fuse_buf *buf,
 	}
 
 	if (res < sizeof(struct fuse_in_header)) {
-		fprintf(stderr, "short splice from fuse device\n");
+		fuse_log_err( "short splice from fuse device\n");
 		return -EIO;
 	}
 
@@ -2819,7 +2820,7 @@ int fuse_session_receive_buf(struct fuse_session *se, struct fuse_buf *buf,
 		if (!buf->mem) {
 			buf->mem = fuse_malloc(f->bufsize);
 			if (!buf->mem) {
-				fprintf(stderr,
+				fuse_log_err(
 					"fuse: failed to allocate read buffer\n");
 				return -ENOMEM;
 			}
@@ -2830,13 +2831,13 @@ int fuse_session_receive_buf(struct fuse_session *se, struct fuse_buf *buf,
 
 		res = fuse_buf_copy(&dst, &src, 0);
 		if (res < 0) {
-			fprintf(stderr, "fuse: copy from pipe: %s\n",
+			fuse_log_err( "fuse: copy from pipe: %s\n",
 				strerror(-res));
 			fuse_ll_clear_pipe(f);
 			return res;
 		}
 		if (res < tmpbuf.size) {
-			fprintf(stderr, "fuse: copy from pipe: short read\n");
+			fuse_log_err( "fuse: copy from pipe: short read\n");
 			fuse_ll_clear_pipe(f);
 			return -EIO;
 		}
@@ -2873,13 +2874,13 @@ struct fuse_session *fuse_lowlevel_new(struct fuse_args *args,
 	struct fuse_session *se;
 
 	if (sizeof(struct fuse_lowlevel_ops) < op_size) {
-		fprintf(stderr, "fuse: warning: library too old, some operations may not work\n");
+		fuse_log_err( "fuse: warning: library too old, some operations may not work\n");
 		op_size = sizeof(struct fuse_lowlevel_ops);
 	}
 
 	f = (struct fuse_ll *) fuse_calloc(1, sizeof(struct fuse_ll));
 	if (f == NULL) {
-		fprintf(stderr, "fuse: failed to allocate fuse object\n");
+		fuse_log_err( "fuse: failed to allocate fuse object\n");
 		goto out;
 	}
 
@@ -2898,7 +2899,7 @@ struct fuse_session *fuse_lowlevel_new(struct fuse_args *args,
 
 	err = pthread_key_create(&f->pipe_key, fuse_ll_pipe_destructor);
 	if (err) {
-		fprintf(stderr, "fuse: failed to create thread specific key: %s\n",
+		fuse_log_err( "fuse: failed to create thread specific key: %s\n",
 			strerror(err));
 		goto out_free;
 	}
@@ -2907,7 +2908,7 @@ struct fuse_session *fuse_lowlevel_new(struct fuse_args *args,
 		goto out_key_destroy;
 
 	if (f->debug)
-		fprintf(stderr, "FUSE library version: %s\n", PACKAGE_VERSION);
+        fuse_log_debug( "FUSE library version: %s\n", PACKAGE_VERSION);
 
 	memcpy(&f->op, op, op_size);
 	f->owner = getuid();

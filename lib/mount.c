@@ -11,6 +11,7 @@
 #include "fuse_misc.h"
 #include "fuse_opt.h"
 #include "mount_util.h"
+#include "fuse_log.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -127,7 +128,7 @@ static const struct fuse_opt fuse_mount_opts[] = {
 
 static void mount_help(void)
 {
-	printf(
+    fuse_log_err(
 "    -o allow_other         allow access to other users\n"
 "    -o allow_root          allow access to root\n"
 "    -o auto_unmount        auto unmount on process termination\n"
@@ -196,7 +197,7 @@ static void set_mount_flag(const char *s, int *flags)
 			return;
 		}
 	}
-	fprintf(stderr, "fuse: internal error, can't find mount flag\n");
+	fuse_log_err( "fuse: internal error, can't find mount flag\n");
 	abort();
 }
 
@@ -282,7 +283,7 @@ static int receive_fd(int fd)
 
 	cmsg = CMSG_FIRSTHDR(&msg);
 	if (cmsg->cmsg_type != SCM_RIGHTS) {
-		fprintf(stderr, "got control message of unknown type %d\n",
+		fuse_log_err( "got control message of unknown type %d\n",
 			cmsg->cmsg_type);
 		return -1;
 	}
@@ -345,7 +346,7 @@ static int fuse_mount_fusermount(const char *mountpoint, struct mount_opts *mo,
 	int rv;
 
 	if (!mountpoint) {
-		fprintf(stderr, "fuse: missing mountpoint parameter\n");
+		fuse_log_err( "fuse: missing mountpoint parameter\n");
 		return -1;
 	}
 
@@ -426,13 +427,13 @@ static int fuse_mount_sys(const char *mnt, struct mount_opts *mo,
 	int res;
 
 	if (!mnt) {
-		fprintf(stderr, "fuse: missing mountpoint parameter\n");
+		fuse_log_err( "fuse: missing mountpoint parameter\n");
 		return -1;
 	}
 
 	res = stat(mnt, &stbuf);
 	if (res == -1) {
-		fprintf(stderr ,"fuse: failed to access mountpoint %s: %s\n",
+		fuse_log_err("fuse: failed to access mountpoint %s: %s\n",
 			mnt, strerror(errno));
 		return -1;
 	}
@@ -453,9 +454,9 @@ static int fuse_mount_sys(const char *mnt, struct mount_opts *mo,
 	fd = open(devname, O_RDWR | O_CLOEXEC);
 	if (fd == -1) {
 		if (errno == ENODEV || errno == ENOENT)
-			fprintf(stderr, "fuse: device not found, try 'modprobe fuse' first\n");
+			fuse_log_err( "fuse: device not found, try 'modprobe fuse' first\n");
 		else
-			fprintf(stderr, "fuse: failed to open %s: %s\n",
+			fuse_log_err( "fuse: failed to open %s: %s\n",
 				devname, strerror(errno));
 		return -1;
 	}
@@ -475,7 +476,7 @@ static int fuse_mount_sys(const char *mnt, struct mount_opts *mo,
 
 	type = fuse_malloc((mo->subtype ? strlen(mo->subtype) : 0) + 32);
 	if (!type || !source) {
-		fprintf(stderr, "fuse: failed to allocate memory\n");
+		fuse_log_err( "fuse: failed to allocate memory\n");
 		goto out_close;
 	}
 
@@ -511,10 +512,10 @@ static int fuse_mount_sys(const char *mnt, struct mount_opts *mo,
 			int errno_save = errno;
 			if (mo->blkdev && errno == ENODEV &&
 			    !fuse_mnt_check_fuseblk())
-				fprintf(stderr,
+				fuse_log_err(
 					"fuse: 'fuseblk' support missing\n");
 			else
-				fprintf(stderr, "fuse: mount failed: %s\n",
+				fuse_log_err( "fuse: mount failed: %s\n",
 					strerror(errno_save));
 		}
 
@@ -580,7 +581,7 @@ int fuse_kern_mount(const char *mountpoint, struct fuse_args *args)
 		return -1;
 
 	if (mo.allow_other && mo.allow_root) {
-		fprintf(stderr, "fuse: 'allow_other' and 'allow_root' options are mutually exclusive\n");
+		fuse_log_err( "fuse: 'allow_other' and 'allow_root' options are mutually exclusive\n");
 		goto out;
 	}
 	res = 0;

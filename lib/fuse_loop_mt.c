@@ -11,6 +11,7 @@
 #include "fuse_misc.h"
 #include "fuse_kernel.h"
 #include "fuse_i.h"
+#include "fuse_log.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -150,7 +151,7 @@ int fuse_start_thread(pthread_t *thread_id, void *(*func)(void *), void *arg)
 	pthread_attr_init(&attr);
 	stack_size = getenv(ENVNAME_THREAD_STACK);
 	if (stack_size && pthread_attr_setstacksize(&attr, atoi(stack_size)))
-		fprintf(stderr, "fuse: invalid stack size: %s\n", stack_size);
+		fuse_log_err( "fuse: invalid stack size: %s\n", stack_size);
 
 	/* Disallow signal reception in worker threads */
 	sigemptyset(&newset);
@@ -163,7 +164,7 @@ int fuse_start_thread(pthread_t *thread_id, void *(*func)(void *), void *arg)
 	pthread_sigmask(SIG_SETMASK, &oldset, NULL);
 	pthread_attr_destroy(&attr);
 	if (res != 0) {
-		fprintf(stderr, "fuse: error creating thread: %s\n",
+		fuse_log_err( "fuse: error creating thread: %s\n",
 			strerror(res));
 		return -1;
 	}
@@ -176,7 +177,7 @@ static int fuse_loop_start_thread(struct fuse_mt *mt)
 	int res;
 	struct fuse_worker *w = fuse_malloc(sizeof(struct fuse_worker));
 	if (!w) {
-		fprintf(stderr, "fuse: failed to allocate worker structure\n");
+		fuse_log_err( "fuse: failed to allocate worker structure\n");
 		return -1;
 	}
 	memset(w, 0, sizeof(struct fuse_worker));

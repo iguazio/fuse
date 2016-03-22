@@ -9,6 +9,7 @@
 #include "config.h"
 #include "fuse_i.h"
 #include "fuse_misc.h"
+#include "fuse_log.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,7 +22,7 @@ struct fuse_session *fuse_session_new(void)
 {
 	struct fuse_session *se = (struct fuse_session *) fuse_malloc(sizeof(*se));
 	if (se == NULL) {
-		fprintf(stderr, "fuse: failed to allocate session\n");
+		fuse_log_err( "fuse: failed to allocate session\n");
 		return NULL;
 	}
 	memset(se, 0, sizeof(*se));
@@ -78,7 +79,7 @@ struct fuse_chan *fuse_chan_new(int fd)
 {
 	struct fuse_chan *ch = (struct fuse_chan *) fuse_malloc(sizeof(*ch));
 	if (ch == NULL) {
-		fprintf(stderr, "fuse: failed to allocate channel\n");
+		fuse_log_err( "fuse: failed to allocate channel\n");
 		return NULL;
 	}
 

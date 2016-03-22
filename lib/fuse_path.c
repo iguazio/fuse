@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include "fuse_path.h"
 #include "fuse_prv.h"
+#include "fuse_log.h"
 
 int try_get_path( struct fuse *f, fuse_ino_t nodeid, const char *name, char **path, struct node **wnodep, bool need_lock )
 {
@@ -303,10 +304,10 @@ void debug_path( struct fuse *f, const char *msg, fuse_ino_t nodeid, const char 
             wnode = lookup_node(f, nodeid, name);
 
         if (wnode) {
-            fprintf(stderr, "%s %llu (w)\n",
+            fuse_log_debug( "%s %llu (w)\n",
                 msg, (unsigned long long) wnode->nodeid);
         } else {
-            fprintf(stderr, "%s %llu\n",
+            fuse_log_debug( "%s %llu\n",
                 msg, (unsigned long long) nodeid);
         }
     }

@@ -102,7 +102,7 @@ static const struct fuse_opt fuse_mount_opts[] = {
 
 static void mount_help(void)
 {
-	printf("    -o allow_root          allow access to root\n");
+    fuse_log_err("    -o allow_root          allow access to root\n");
 	system(FUSERMOUNT_PROG " --help");
 	fputc('\n', stderr);
 }
@@ -274,7 +274,7 @@ static int fuse_mount_core(const char *mountpoint, const char *opts)
 		fd = strtol(fdnam, &ep, 10);
 
 		if (*ep != '\0') {
-			fprintf(stderr, "invalid value given in FUSE_DEV_FD\n");
+			fuse_log_err( "invalid value given in FUSE_DEV_FD\n");
 			return -1;
 		}
 
@@ -375,7 +375,7 @@ int fuse_kern_mount(const char *mountpoint, struct fuse_args *args)
 		return -1;
 
 	if (mo.allow_other && mo.allow_root) {
-		fprintf(stderr, "fuse: 'allow_other' and 'allow_root' options are mutually exclusive\n");
+		fuse_log_err( "fuse: 'allow_other' and 'allow_root' options are mutually exclusive\n");
 		goto out;
 	}
 	if (mo.ishelp)

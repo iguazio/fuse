@@ -9,6 +9,7 @@
 #include "fuse_fs.h"
 #include "fuse_lib.h"
 #include "fuse_lib_lookup_path.h"
+#include "fuse_log.h"
 
 #include <errno.h>
 #include <sys/file.h>
@@ -35,7 +36,7 @@ static void fuse_lib_destroy(void *data)
 static void do_forget(struct fuse *f, fuse_ino_t ino, uint64_t nlookup)
 {
     if (f->conf.debug)
-        fprintf(stderr, "FORGET %llu/%llu\n", (unsigned long long)ino,
+        fuse_log_debug( "FORGET %llu/%llu\n", (unsigned long long)ino,
         (unsigned long long) nlookup);
     forget_node(f, ino, nlookup);
 }

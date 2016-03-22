@@ -1,5 +1,6 @@
 #include "fuse_lib.h"
 #include "fuse_lib_lookup_path.h"
+#include "fuse_log.h"
 
 
 struct fsm_lookup_data{
@@ -83,7 +84,7 @@ void fuse_lib_lookup(fuse_req_t req, fuse_ino_t parent,
             pthread_mutex_lock(&f->lock);
             if (len == 1) {
                 if (f->conf.debug)
-                    fprintf(stderr, "LOOKUP-DOT\n");
+                    fuse_log_debug( "LOOKUP-DOT\n");
                 dot = get_node_nocheck(f, parent);
                 if (dot == NULL) {
                     pthread_mutex_unlock(&f->lock);
@@ -93,7 +94,7 @@ void fuse_lib_lookup(fuse_req_t req, fuse_ino_t parent,
                 dot->refctr++;
             } else {
                 if (f->conf.debug)
-                    fprintf(stderr, "LOOKUP-DOTDOT\n");
+                    fuse_log_debug( "LOOKUP-DOTDOT\n");
                 parent = get_node(f, parent)->parent->nodeid;
             }
             pthread_mutex_unlock(&f->lock);
@@ -118,7 +119,7 @@ void fuse_lib_lookup(fuse_req_t req, fuse_ino_t parent,
 
 
         if (f->conf.debug)
-            fprintf(stderr, "LOOKUP %s\n", path);
+            fuse_log_debug( "LOOKUP %s\n", path);
         
         fuse_fsm_run(new_fsm, FUSE_FSM_EVENT_OK);
         if (fuse_fsm_is_done(new_fsm))

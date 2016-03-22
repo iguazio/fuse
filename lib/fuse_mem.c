@@ -1,7 +1,8 @@
 #include "fuse_mem.h"
 #include "fuse_list.h"
+#include "fuse_log.h"
 
-#define print_out(dir,ptr)         fprintf(stderr, dir"(%p)%s<%d>%c%c%c%c%c%c%c%c\n",ptr,file,line,((char*)ptr)[0],((char*)ptr)[1],((char*)ptr)[2],((char*)ptr)[3],((char*)ptr)[4],((char*)ptr)[5],((char*)ptr)[6],((char*)ptr)[7]);
+#define print_out(dir,ptr)         fuse_log_debug( dir"(%p)%s<%d>%c%c%c%c%c%c%c%c\n",ptr,file,line,((char*)ptr)[0],((char*)ptr)[1],((char*)ptr)[2],((char*)ptr)[3],((char*)ptr)[4],((char*)ptr)[5],((char*)ptr)[6],((char*)ptr)[7]);
 
 
 struct mem_descriptor{
@@ -91,7 +92,7 @@ static void fuse_mem_dump( void )
     for (curr = mem_allocs.next; curr != &mem_allocs; curr = next) {
         next = curr->next;
         desc = list_entry(curr, struct mem_descriptor, node);
-        printf("%p %s(%d)\n",desc->data,desc->file,desc->line);
+        fuse_log_err("%p %s(%d)\n",desc->data,desc->file,desc->line);
     }
 }
 
@@ -110,7 +111,7 @@ void fuse_mem_verify(void){
     static int max_blocks_allowed = 50;
     int i = fuse_mem_cntr();
     if (i > max_blocks_allowed){
-        printf("Number of mallocs is %d\n",max_blocks_allowed);
+        fuse_log_err("Number of mallocs is %d\n",max_blocks_allowed);
         fuse_mem_dump();
         max_blocks_allowed = i * 1.5;
     }

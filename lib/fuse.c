@@ -11,6 +11,7 @@
 #define _GNU_SOURCE
 
 #include "config.h"
+#include "fuse_log.h"
 #include "fuse_i.h"
 #include "fuse_lowlevel.h"
 #include "fuse_opt.h"
@@ -67,7 +68,7 @@ struct node *get_node(struct fuse *f, fuse_ino_t nodeid)
 {
     struct node *node = get_node_nocheck(f, nodeid);
     if (!node) {
-        fprintf(stderr, "fuse internal error: node %llu not found\n",
+        fuse_log_err( "fuse internal error: node %llu not found\n",
             (unsigned long long) nodeid);
         abort();
     }
@@ -278,7 +279,7 @@ static void unhash_name(struct fuse *f, struct node *node)
 					remerge_name(f);
 				return;
 			}
-		fprintf(stderr,
+		fuse_log_err(
 			"fuse internal error: unable to unhash node: %llu\n",
 			(unsigned long long) node->nodeid);
 		abort();
@@ -343,7 +344,7 @@ static int hash_name(struct fuse *f, struct node *node, fuse_ino_t parentid,
 void delete_node(struct fuse *f, struct node *node)
 {
 	if (f->conf.debug)
-		fprintf(stderr, "DELETE: %llu\n",
+        fuse_log_debug( "DELETE: %llu\n",
 			(unsigned long long) node->nodeid);
 
 //	assert(node->treelock == 0);
@@ -507,7 +508,7 @@ int rename_node(struct fuse *f, fuse_ino_t olddir, const char *oldname,
 
 	if (newnode != NULL) {
 		if (hide) {
-			fprintf(stderr, "fuse: hidden file got created during hiding\n");
+            fuse_log_debug( "fuse: hidden file got created during hiding\n");
 			err = -EBUSY;
 			goto out;
 		}
@@ -1105,7 +1106,7 @@ static const struct fuse_opt fuse_lib_opts[] = {
 
 static void fuse_lib_help(void)
 {
-	printf(
+    fuse_log_err(
 "    -o hard_remove         immediate removal (don't hide files)\n"
 "    -o use_ino             let filesystem set inode numbers\n"
 "    -o readdir_ino         try to fill in d_ino in readdir\n"
@@ -1131,7 +1132,7 @@ static void fuse_lib_help(void)
 static void fuse_lib_help_modules(void)
 {
 	struct fuse_module *m;
-	printf("\nModule options:\n");
+    fuse_log_err("\nModule options:\n");
 	pthread_mutex_lock(&fuse_context_lock);
 	for (m = fuse_modules; m; m = m->next) {
 		struct fuse_fs *fs = NULL;
@@ -1139,7 +1140,7 @@ static void fuse_lib_help_modules(void)
 		struct fuse_args args = FUSE_ARGS_INIT(0, NULL);
 		if (fuse_opt_add_arg(&args, "") != -1 &&
 		    fuse_opt_add_arg(&args, "-h") != -1) {
-			printf("\n[%s]\n", m->name);
+            fuse_log_err("\n[%s]\n", m->name);
 			newfs = m->factory(&args, &fs);
 			assert(newfs == NULL);
 		}
@@ -1224,13 +1225,13 @@ struct fuse_fs *fuse_fs_new(const struct fuse_operations *op, size_t op_size,
 	struct fuse_fs *fs;
 
 	if (sizeof(struct fuse_operations) < op_size) {
-		fprintf(stderr, "fuse: warning: library too old, some operations may not not work\n");
+		fuse_log_err( "fuse: warning: library too old, some operations may not not work\n");
 		op_size = sizeof(struct fuse_operations);
 	}
 
 	fs = (struct fuse_fs *) fuse_calloc(1, sizeof(struct fuse_fs));
 	if (!fs) {
-		fprintf(stderr, "fuse: failed to allocate fuse_fs object\n");
+		fuse_log_err( "fuse: failed to allocate fuse_fs object\n");
 		return NULL;
 	}
 
@@ -1245,7 +1246,7 @@ static int node_table_init(struct node_table *t)
 	t->size = NODE_TABLE_MIN_SIZE;
 	t->array = (struct node **) fuse_calloc(1, sizeof(struct node *) * t->size);
 	if (t->array == NULL) {
-		fprintf(stderr, "fuse: memory allocation failed\n");
+		fuse_log_err( "fuse: memory allocation failed\n");
 		return -1;
 	}
 	t->use = 0;
@@ -1310,7 +1311,7 @@ struct fuse *fuse_new(struct fuse_chan *ch, struct fuse_args *args,
 
 	f = (struct fuse *) fuse_calloc(1, sizeof(struct fuse));
 	if (f == NULL) {
-		fprintf(stderr, "fuse: failed to allocate fuse object\n");
+		fuse_log_err( "fuse: failed to allocate fuse object\n");
 		goto out_delete_context_key;
 	}
 
@@ -1377,10 +1378,8 @@ struct fuse *fuse_new(struct fuse_chan *ch, struct fuse_args *args,
 	fuse_session_add_chan(f->se, ch);
 
 	if (f->conf.debug) {
-		fprintf(stderr, "nopath: %i\n", f->conf.nopath);
+		fuse_log_debug( "nopath: %i\n", f->conf.nopath);
 	}
-
-    fuse_fsm_set_debug(f->conf.debug);
 
 	/* Trace topmost layer by default */
 	f->fs->debug = f->conf.debug;
@@ -1396,7 +1395,7 @@ struct fuse *fuse_new(struct fuse_chan *ch, struct fuse_args *args,
 
 	root = alloc_node(&f->conf);
 	if (root == NULL) {
-		fprintf(stderr, "fuse: memory allocation failed\n");
+		fuse_log_err( "fuse: memory allocation failed\n");
 		goto out_free_id_table;
 	}
 	if (lru_enabled(&f->conf)) {

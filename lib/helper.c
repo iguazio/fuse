@@ -11,6 +11,7 @@
 #include "fuse_misc.h"
 #include "fuse_opt.h"
 #include "fuse_lowlevel.h"
+#include "fuse_log.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -58,8 +59,8 @@ static const struct fuse_opt fuse_helper_opts[] = {
 
 static void usage(const char *progname)
 {
-	printf("usage: %s mountpoint [options]\n\n", progname);
-	printf("general options:\n"
+    fuse_log_err("usage: %s mountpoint [options]\n\n", progname);
+    fuse_log_err("general options:\n"
 	       "    -o opt,[opt...]        mount options\n"
 	       "    -h   --help            print help\n"
 	       "    -V   --version         print version\n"
@@ -68,7 +69,7 @@ static void usage(const char *progname)
 
 static void helper_help(void)
 {
-	printf("FUSE options:\n"
+    fuse_log_err("FUSE options:\n"
 	       "    -d   -o debug          enable debug output (implies -f)\n"
 	       "    -f                     foreground operation\n"
 	       "    -s                     disable multi-threaded operation\n"
@@ -77,7 +78,7 @@ static void helper_help(void)
 
 static void helper_version(void)
 {
-	printf("FUSE library version: %s\n", PACKAGE_VERSION);
+    fuse_log_err("FUSE library version: %s\n", PACKAGE_VERSION);
 }
 
 static int fuse_helper_opt_proc(void *data, const char *arg, int key,
@@ -102,14 +103,14 @@ static int fuse_helper_opt_proc(void *data, const char *arg, int key,
 		if (!hopts->mountpoint) {
 			char mountpoint[PATH_MAX];
 			if (realpath(arg, mountpoint) == NULL) {
-				fprintf(stderr,
+				fuse_log_err(
 					"fuse: bad mount point `%s': %s\n",
 					arg, strerror(errno));
 				return -1;
 			}
 			return fuse_opt_add_opt(&hopts->mountpoint, mountpoint);
 		} else {
-			fprintf(stderr, "fuse: invalid argument `%s'\n", arg);
+			fuse_log_err( "fuse: invalid argument `%s'\n", arg);
 			return -1;
 		}
 
@@ -130,7 +131,7 @@ static int add_default_subtype(const char *progname, struct fuse_args *args)
 
 	subtype_opt = (char *) fuse_malloc(strlen(basename) + 64);
 	if (subtype_opt == NULL) {
-		fprintf(stderr, "fuse: memory allocation failed\n");
+		fuse_log_err( "fuse: memory allocation failed\n");
 		return -1;
 	}
 	sprintf(subtype_opt, "-osubtype=%s", basename);

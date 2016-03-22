@@ -16,6 +16,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
+#include "fuse_log.h"
 
 struct subdir {
 	char *base;
@@ -619,7 +620,7 @@ static const struct fuse_opt subdir_opts[] = {
 
 static void subdir_help(void)
 {
-	printf(
+    fuse_log_err(
 "    -o subdir=DIR	    prepend this directory to all paths (mandatory)\n"
 "    -o [no]rellinks	    transform absolute symlinks to relative\n");
 }
@@ -645,7 +646,7 @@ static struct fuse_fs *subdir_new(struct fuse_args *args,
 
 	d = fuse_calloc(1, sizeof(struct subdir));
 	if (d == NULL) {
-		fprintf(stderr, "fuse-subdir: memory allocation failed\n");
+		fuse_log_err( "fuse-subdir: memory allocation failed\n");
 		return NULL;
 	}
 
@@ -653,19 +654,19 @@ static struct fuse_fs *subdir_new(struct fuse_args *args,
 		goto out_free;
 
 	if (!next[0] || next[1]) {
-		fprintf(stderr, "fuse-subdir: exactly one next filesystem required\n");
+		fuse_log_err( "fuse-subdir: exactly one next filesystem required\n");
 		goto out_free;
 	}
 
 	if (!d->base) {
-		fprintf(stderr, "fuse-subdir: missing 'subdir' option\n");
+		fuse_log_err( "fuse-subdir: missing 'subdir' option\n");
 		goto out_free;
 	}
 
 	if (d->base[0] && d->base[strlen(d->base)-1] != '/') {
 		char *tmp = fuse_realloc(d->base, strlen(d->base) + 2);
 		if (!tmp) {
-			fprintf(stderr, "fuse-subdir: memory allocation failed\n");
+			fuse_log_err( "fuse-subdir: memory allocation failed\n");
 			goto out_free;
 		}
 		d->base = tmp;

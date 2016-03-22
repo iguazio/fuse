@@ -3,6 +3,7 @@
 #include "fuse_module.h"
 #include "fuse_i.h"
 #include "fuse_mem.h"
+#include "fuse_log.h"
 
 fuse_module_factory_t fuse_module_subdir_factory;
 fuse_module_factory_t fuse_module_iconv_factory;
@@ -14,12 +15,12 @@ int fuse_register_module( const char *name, fuse_module_factory_t factory, struc
 
     mod = fuse_calloc(1, sizeof(struct fuse_module));
     if (!mod) {
-        fprintf(stderr, "fuse: failed to allocate module\n");
+        fuse_log_err( "fuse: failed to allocate module\n");
         return -1;
     }
     mod->name = fuse_strdup(name);
     if (!mod->name) {
-        fprintf(stderr, "fuse: failed to allocate module name\n");
+        fuse_log_err( "fuse: failed to allocate module name\n");
         fuse_free(mod);
         return -1;
     }
@@ -43,19 +44,19 @@ int fuse_load_so_module( const char *module )
 
     tmp = fuse_malloc(strlen(module) + 64);
     if (!tmp) {
-        fprintf(stderr, "fuse: memory allocation failed\n");
+        fuse_log_err( "fuse: memory allocation failed\n");
         return -1;
     }
     sprintf(tmp, "libfusemod_%s.so", module);
     so = fuse_calloc(1, sizeof(struct fusemod_so));
     if (!so) {
-        fprintf(stderr, "fuse: failed to allocate module so\n");
+        fuse_log_err( "fuse: failed to allocate module so\n");
         goto out;
     }
 
     so->handle = dlopen(tmp, RTLD_NOW);
     if (so->handle == NULL) {
-        fprintf(stderr, "fuse: dlopen(%s) failed: %s\n",
+        fuse_log_err( "fuse: dlopen(%s) failed: %s\n",
             tmp, dlerror());
         goto out_free_so;
     }
@@ -63,7 +64,7 @@ int fuse_load_so_module( const char *module )
     sprintf(tmp, "fuse_module_%s_factory", module);
     factory = dlsym(so->handle, tmp);
     if (factory == NULL) {
-        fprintf(stderr, "fuse: symbol <%s> not found in module: %s\n",
+        fuse_log_err( "fuse: symbol <%s> not found in module: %s\n",
             tmp, dlerror());
         goto out_dlclose;
     }
