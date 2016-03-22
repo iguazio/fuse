@@ -43,12 +43,6 @@ subdirs2="include"
 if test "$enable_lib" != "no"; then
 	subdirs2="$subdirs2 lib";
 fi
-if test "$arch" = linux -a "$enable_util" != "no"; then
-	subdirs2="$subdirs2 util";
-fi
-if test "$enable_example" != "no"; then
-	subdirs2="$subdirs2 example";
-fi
 if test "$enable_mtab" = "no"; then
 	AC_DEFINE(IGNORE_MTAB, 1, [Don't update /etc/mtab])
 fi
