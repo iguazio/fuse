@@ -8,6 +8,7 @@
 
 #include "config.h"
 #include "fuse_lowlevel.h"
+#include "fuse_log.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -62,7 +63,7 @@ int fuse_set_signal_handlers(struct fuse_session *se)
 void fuse_remove_signal_handlers(struct fuse_session *se)
 {
 	if (fuse_instance != se)
-		fprintf(stderr,
+		fuse_log_err(
 			"fuse: fuse_remove_signal_handlers: unknown session\n");
 	else
 		fuse_instance = NULL;

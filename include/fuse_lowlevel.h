@@ -172,7 +172,7 @@ struct fuse_lowlevel_ops {
 	 *
 	 * @param userdata the user data passed to fuse_lowlevel_new()
 	 */
-	void (*init) (void *userdata, struct fuse_conn_info *conn);
+    void (*init) (void *userdata, struct fuse_conn_info *conn);
 
 	/**
 	 * Clean up filesystem
@@ -1683,6 +1683,10 @@ int fuse_session_exited(struct fuse_session *se);
  * @return 0 on success, -1 on error
  */
 int fuse_session_loop(struct fuse_session *se);
+
+
+int fuse_session_loop_async(struct fuse_session *se, int fd, fuse_async_get_msg_t callback_on_new_msg, void* callback_payload);
+
 
 /**
  * Enter a multi-threaded event loop

@@ -25,6 +25,7 @@
 #include <sys/wait.h>
 #include <sys/mount.h>
 #include <sys/param.h>
+#include "fuse_log.h"
 
 #ifdef __NetBSD__
 #define umount2(mnt, flags) unmount(mnt, (flags == 2) ? MNT_FORCE : 0)
@@ -87,13 +88,13 @@ static int add_mount(const char *progname, const char *fsname,
 	sigaddset(&blockmask, SIGCHLD);
 	res = sigprocmask(SIG_BLOCK, &blockmask, &oldmask);
 	if (res == -1) {
-		fprintf(stderr, "%s: sigprocmask: %s\n", progname, strerror(errno));
+		fuse_log_err( "%s: sigprocmask: %s\n", progname, strerror(errno));
 		return -1;
 	}
 
 	res = fork();
 	if (res == -1) {
-		fprintf(stderr, "%s: fork: %s\n", progname, strerror(errno));
+		fuse_log_err( "%s: fork: %s\n", progname, strerror(errno));
 		goto out_restore;
 	}
 	if (res == 0) {
@@ -103,13 +104,13 @@ static int add_mount(const char *progname, const char *fsname,
 		setuid(geteuid());
 		execle("/bin/mount", "/bin/mount", "--no-canonicalize", "-i",
 		       "-f", "-t", type, "-o", opts, fsname, mnt, NULL, &env);
-		fprintf(stderr, "%s: failed to execute /bin/mount: %s\n",
+		fuse_log_err( "%s: failed to execute /bin/mount: %s\n",
 			progname, strerror(errno));
 		exit(1);
 	}
 	res = waitpid(res, &status, 0);
 	if (res == -1)
-		fprintf(stderr, "%s: waitpid: %s\n", progname, strerror(errno));
+		fuse_log_err( "%s: waitpid: %s\n", progname, strerror(errno));
 
 	if (status != 0)
 		res = -1;
@@ -140,13 +141,13 @@ static int exec_umount(const char *progname, const char *rel_mnt, int lazy)
 	sigaddset(&blockmask, SIGCHLD);
 	res = sigprocmask(SIG_BLOCK, &blockmask, &oldmask);
 	if (res == -1) {
-		fprintf(stderr, "%s: sigprocmask: %s\n", progname, strerror(errno));
+		fuse_log_err( "%s: sigprocmask: %s\n", progname, strerror(errno));
 		return -1;
 	}
 
 	res = fork();
 	if (res == -1) {
-		fprintf(stderr, "%s: fork: %s\n", progname, strerror(errno));
+		fuse_log_err( "%s: fork: %s\n", progname, strerror(errno));
 		goto out_restore;
 	}
 	if (res == 0) {
@@ -161,13 +162,13 @@ static int exec_umount(const char *progname, const char *rel_mnt, int lazy)
 			execle("/bin/umount", "/bin/umount", "-i", rel_mnt,
 			       NULL, &env);
 		}
-		fprintf(stderr, "%s: failed to execute /bin/umount: %s\n",
+		fuse_log_err( "%s: failed to execute /bin/umount: %s\n",
 			progname, strerror(errno));
 		exit(1);
 	}
 	res = waitpid(res, &status, 0);
 	if (res == -1)
-		fprintf(stderr, "%s: waitpid: %s\n", progname, strerror(errno));
+		fuse_log_err( "%s: waitpid: %s\n", progname, strerror(errno));
 
 	if (status != 0) {
 		res = -1;
@@ -187,7 +188,7 @@ int fuse_mnt_umount(const char *progname, const char *abs_mnt,
 	if (!mtab_needs_update(abs_mnt)) {
 		res = umount2(rel_mnt, lazy ? 2 : 0);
 		if (res == -1)
-			fprintf(stderr, "%s: failed to unmount %s: %s\n",
+			fuse_log_err( "%s: failed to unmount %s: %s\n",
 				progname, abs_mnt, strerror(errno));
 		return res;
 	}
@@ -206,13 +207,13 @@ static int remove_mount(const char *progname, const char *mnt)
 	sigaddset(&blockmask, SIGCHLD);
 	res = sigprocmask(SIG_BLOCK, &blockmask, &oldmask);
 	if (res == -1) {
-		fprintf(stderr, "%s: sigprocmask: %s\n", progname, strerror(errno));
+		fuse_log_err( "%s: sigprocmask: %s\n", progname, strerror(errno));
 		return -1;
 	}
 
 	res = fork();
 	if (res == -1) {
-		fprintf(stderr, "%s: fork: %s\n", progname, strerror(errno));
+		fuse_log_err( "%s: fork: %s\n", progname, strerror(errno));
 		goto out_restore;
 	}
 	if (res == 0) {
@@ -222,13 +223,13 @@ static int remove_mount(const char *progname, const char *mnt)
 		setuid(geteuid());
 		execle("/bin/umount", "/bin/umount", "--no-canonicalize", "-i",
 		       "--fake", mnt, NULL, &env);
-		fprintf(stderr, "%s: failed to execute /bin/umount: %s\n",
+		fuse_log_err( "%s: failed to execute /bin/umount: %s\n",
 			progname, strerror(errno));
 		exit(1);
 	}
 	res = waitpid(res, &status, 0);
 	if (res == -1)
-		fprintf(stderr, "%s: waitpid: %s\n", progname, strerror(errno));
+		fuse_log_err( "%s: waitpid: %s\n", progname, strerror(errno));
 
 	if (status != 0)
 		res = -1;
@@ -256,14 +257,14 @@ char *fuse_mnt_resolve_path(const char *progname, const char *orig)
 	const char *toresolv;
 
 	if (!orig[0]) {
-		fprintf(stderr, "%s: invalid mountpoint '%s'\n", progname,
+		fuse_log_err( "%s: invalid mountpoint '%s'\n", progname,
 			orig);
 		return NULL;
 	}
 
 	copy = strdup(orig);
 	if (copy == NULL) {
-		fprintf(stderr, "%s: failed to allocate memory\n", progname);
+		fuse_log_err( "%s: failed to allocate memory\n", progname);
 		return NULL;
 	}
 
@@ -290,7 +291,7 @@ char *fuse_mnt_resolve_path(const char *progname, const char *orig)
 			tmp[0] = '\0';
 	}
 	if (realpath(toresolv, buf) == NULL) {
-		fprintf(stderr, "%s: bad mount point %s: %s\n", progname, orig,
+		fuse_log_err( "%s: bad mount point %s: %s\n", progname, orig,
 			strerror(errno));
 		free(copy);
 		return NULL;
@@ -309,7 +310,7 @@ char *fuse_mnt_resolve_path(const char *progname, const char *orig)
 	}
 	free(copy);
 	if (dst == NULL)
-		fprintf(stderr, "%s: failed to allocate memory\n", progname);
+		fuse_log_err( "%s: failed to allocate memory\n", progname);
 	return dst;
 }
 
@@ -322,7 +323,7 @@ int fuse_mnt_check_empty(const char *progname, const char *mnt,
 		struct dirent *ent;
 		DIR *dp = opendir(mnt);
 		if (dp == NULL) {
-			fprintf(stderr,
+			fuse_log_err(
 				"%s: failed to open mountpoint for reading: %s\n",
 				progname, strerror(errno));
 			return -1;
@@ -339,8 +340,8 @@ int fuse_mnt_check_empty(const char *progname, const char *mnt,
 		isempty = 0;
 
 	if (!isempty) {
-		fprintf(stderr, "%s: mountpoint is not empty\n", progname);
-		fprintf(stderr, "%s: if you are sure this is safe, use the 'nonempty' mount option\n", progname);
+		fuse_log_err( "%s: mountpoint is not empty\n", progname);
+		fuse_log_err( "%s: if you are sure this is safe, use the 'nonempty' mount option\n", progname);
 		return -1;
 	}
 	return 0;

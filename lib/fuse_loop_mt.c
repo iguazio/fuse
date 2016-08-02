@@ -11,6 +11,7 @@
 #include "fuse_misc.h"
 #include "fuse_kernel.h"
 #include "fuse_i.h"
+#include "fuse_log.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -126,8 +127,8 @@ static void *fuse_do_work(void *data)
 			pthread_mutex_unlock(&mt->lock);
 
 			pthread_detach(w->thread_id);
-			free(w->fbuf.mem);
-			free(w);
+			fuse_free(w->fbuf.mem);
+			fuse_free(w);
 			return NULL;
 		}
 		pthread_mutex_unlock(&mt->lock);
@@ -150,7 +151,7 @@ int fuse_start_thread(pthread_t *thread_id, void *(*func)(void *), void *arg)
 	pthread_attr_init(&attr);
 	stack_size = getenv(ENVNAME_THREAD_STACK);
 	if (stack_size && pthread_attr_setstacksize(&attr, atoi(stack_size)))
-		fprintf(stderr, "fuse: invalid stack size: %s\n", stack_size);
+		fuse_log_err( "fuse: invalid stack size: %s\n", stack_size);
 
 	/* Disallow signal reception in worker threads */
 	sigemptyset(&newset);
@@ -163,7 +164,7 @@ int fuse_start_thread(pthread_t *thread_id, void *(*func)(void *), void *arg)
 	pthread_sigmask(SIG_SETMASK, &oldset, NULL);
 	pthread_attr_destroy(&attr);
 	if (res != 0) {
-		fprintf(stderr, "fuse: error creating thread: %s\n",
+		fuse_log_err( "fuse: error creating thread: %s\n",
 			strerror(res));
 		return -1;
 	}
@@ -174,9 +175,9 @@ int fuse_start_thread(pthread_t *thread_id, void *(*func)(void *), void *arg)
 static int fuse_loop_start_thread(struct fuse_mt *mt)
 {
 	int res;
-	struct fuse_worker *w = malloc(sizeof(struct fuse_worker));
+	struct fuse_worker *w = fuse_malloc(sizeof(struct fuse_worker));
 	if (!w) {
-		fprintf(stderr, "fuse: failed to allocate worker structure\n");
+		fuse_log_err( "fuse: failed to allocate worker structure\n");
 		return -1;
 	}
 	memset(w, 0, sizeof(struct fuse_worker));
@@ -185,7 +186,7 @@ static int fuse_loop_start_thread(struct fuse_mt *mt)
 
 	res = fuse_start_thread(&w->thread_id, fuse_do_work, w);
 	if (res == -1) {
-		free(w);
+		fuse_free(w);
 		return -1;
 	}
 	list_add_worker(w, &mt->main);
@@ -201,8 +202,8 @@ static void fuse_join_worker(struct fuse_mt *mt, struct fuse_worker *w)
 	pthread_mutex_lock(&mt->lock);
 	list_del_worker(w);
 	pthread_mutex_unlock(&mt->lock);
-	free(w->fbuf.mem);
-	free(w);
+	fuse_free(w->fbuf.mem);
+	fuse_free(w);
 }
 
 int fuse_session_loop_mt(struct fuse_session *se)

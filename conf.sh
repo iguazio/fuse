@@ -1,0 +1,1 @@
+./configure --enable-example=no --enable-util=no CFLAGS="-Wall -W -Wno-sign-compare -Wstrict-prototypes -Wmissing-declarations -Wwrite-strings -g -O0 -fno-strict-aliasing" --enable-shared=no --prefix=/home/alex/work/engine/zeek/build/vendor/fuse --exec-prefix=/home/alex/work/engine/zeek/build/vendor/fuse --sbindir=/home/alex/work/engine/zeek/build/vendor/fuse 

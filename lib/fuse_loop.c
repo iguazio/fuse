@@ -12,7 +12,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#if defined _XOPEN_STREAMS && _XOPEN_STREAMS == -1
+#include <stropts.h>
+#endif
 
+#include <poll.h>
 int fuse_session_loop(struct fuse_session *se)
 {
 	int res = 0;
@@ -32,7 +36,7 @@ int fuse_session_loop(struct fuse_session *se)
 		fuse_session_process_buf(se, &fbuf, ch);
 	}
 
-	free(fbuf.mem);
+	fuse_free(fbuf.mem);
 	fuse_session_reset(se);
 	return res < 0 ? -1 : 0;
 }

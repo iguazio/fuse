@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <assert.h>
+#include <stdlib.h>
 
 size_t fuse_buf_size(const struct fuse_bufvec *bufv)
 {
@@ -315,4 +316,14 @@ ssize_t fuse_buf_copy(struct fuse_bufvec *dstv, struct fuse_bufvec *srcv,
 	}
 
 	return copied;
+}
+void fuse_buf_free(struct fuse_bufvec *buf)
+{
+    if (buf != NULL) {
+        size_t i;
+
+        for (i = 0; i < buf->count; i++)
+            fuse_free(buf->buf[i].mem);
+        fuse_free(buf);
+    }
 }
