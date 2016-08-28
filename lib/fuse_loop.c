@@ -12,7 +12,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <stropts.h>
 #include <poll.h>
 int fuse_session_loop(struct fuse_session *se)
 {
