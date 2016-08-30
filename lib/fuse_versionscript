@@ -20,6 +20,7 @@ FUSE_3.0 {
 		fuse_session_exit;
 		fuse_session_exited;
 		fuse_session_loop;
+		fuse_session_loop_async;
 		fuse_session_loop_mt;
 		fuse_session_chan;
 		fuse_session_reset;

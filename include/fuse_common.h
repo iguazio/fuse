@@ -15,8 +15,12 @@
 #define _FUSE_COMMON_H_
 
 #include "fuse_opt.h"
+#include "fuse_mem.h"
+
 #include <stdint.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <limits.h>
 
 /** Major version of FUSE library interface */
 #define FUSE_MAJOR_VERSION 3
@@ -522,5 +526,11 @@ _Static_assert(sizeof(off_t) == 8, "fuse: off_t must be 64bit");
 struct _fuse_off_t_must_be_64bit_dummy_struct \
 	{ unsigned _fuse_off_t_must_be_64bit:((sizeof(off_t) == 8) ? 1 : -1); };
 #endif
+
+
+struct fuse_fsm;
+typedef int (*fuse_async_get_msg_t)(void* payload,int *err,struct fuse_fsm** fsm);
+
+void fuse_buf_free(struct fuse_bufvec *buf);
 
 #endif /* _FUSE_COMMON_H_ */

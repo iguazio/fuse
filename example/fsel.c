@@ -64,7 +64,7 @@ static int fsel_path_index(const char *path)
 	return ch <= '9' ? ch - '0' : ch - 'A' + 10;
 }
 
-static int fsel_getattr(const char *path, struct stat *stbuf)
+static int fsel_getattr(struct fuse_fsm* fsm __attribute__ ((unused)), const char *path, struct stat *stbuf)
 {
 	int idx;
 
@@ -86,7 +86,7 @@ static int fsel_getattr(const char *path, struct stat *stbuf)
 	return 0;
 }
 
-static int fsel_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
+static int fsel_readdir(struct fuse_fsm* fsm __attribute__ ((unused)), const char *path, void *buf, fuse_fill_dir_t filler,
 			off_t offset, struct fuse_file_info *fi,
 			enum fuse_readdir_flags flags)
 {
@@ -108,7 +108,7 @@ static int fsel_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	return 0;
 }
 
-static int fsel_open(const char *path, struct fuse_file_info *fi)
+static int fsel_open(struct fuse_fsm* fsm __attribute__ ((unused)), const char *path, struct fuse_file_info *fi)
 {
 	int idx = fsel_path_index(path);
 
@@ -132,7 +132,7 @@ static int fsel_open(const char *path, struct fuse_file_info *fi)
 	return 0;
 }
 
-static int fsel_release(const char *path, struct fuse_file_info *fi)
+static int fsel_release(struct fuse_fsm* fsm __attribute__ ((unused)), const char *path, struct fuse_file_info *fi)
 {
 	int idx = fi->fh;
 
@@ -142,7 +142,7 @@ static int fsel_release(const char *path, struct fuse_file_info *fi)
 	return 0;
 }
 
-static int fsel_read(const char *path, char *buf, size_t size, off_t offset,
+static int fsel_read(struct fuse_fsm* fsm __attribute__ ((unused)), const char *path, char *buf, size_t size, off_t offset,
 		     struct fuse_file_info *fi)
 {
 	int idx = fi->fh;
@@ -161,7 +161,7 @@ static int fsel_read(const char *path, char *buf, size_t size, off_t offset,
 	return size;
 }
 
-static int fsel_poll(const char *path, struct fuse_file_info *fi,
+static int fsel_poll(struct fuse_fsm* fsm __attribute__ ((unused)), const char *path, struct fuse_file_info *fi,
 		     struct fuse_pollhandle *ph, unsigned *reventsp)
 {
 	static unsigned polled_zero;
@@ -214,7 +214,7 @@ static struct fuse_operations fsel_oper = {
 	.poll		= fsel_poll,
 };
 
-static void *fsel_producer(void *data)
+static void *fsel_producer( void *data)
 {
 	const struct timespec interval = { 0, 250000000 };
 	unsigned idx = 0, nr = 1;

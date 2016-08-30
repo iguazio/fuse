@@ -20,7 +20,7 @@ case $target_os in
 esac
 
 if test "$ac_env_CFLAGS_set" != set; then
-	CFLAGS="-Wall -W -Wno-sign-compare -Wstrict-prototypes -Wmissing-declarations -Wwrite-strings -g -O2 -fno-strict-aliasing"
+	CFLAGS="-Wall -W -Wno-sign-compare -Wstrict-prototypes -Wmissing-declarations -Wwrite-strings -g -O0 -fno-strict-aliasing"
 fi
 
 AC_ARG_ENABLE(lib,
@@ -42,12 +42,6 @@ subdirs2="include"
 
 if test "$enable_lib" != "no"; then
 	subdirs2="$subdirs2 lib";
-fi
-if test "$arch" = linux -a "$enable_util" != "no"; then
-	subdirs2="$subdirs2 util";
-fi
-if test "$enable_example" != "no"; then
-	subdirs2="$subdirs2 example";
 fi
 if test "$enable_mtab" = "no"; then
 	AC_DEFINE(IGNORE_MTAB, 1, [Don't update /etc/mtab])

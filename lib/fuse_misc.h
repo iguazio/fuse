@@ -9,7 +9,15 @@
 #include <pthread.h>
 
 #ifndef USE_UCLIBC
-#define fuse_mutex_init(mut) pthread_mutex_init(mut, NULL)
+//#define fuse_mutex_init(mut) pthread_mutex_init(mut, NULL)
+static inline void fuse_mutex_init(pthread_mutex_t *mut)
+{
+    pthread_mutexattr_t attr;
+    pthread_mutexattr_init(&attr);
+    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+    pthread_mutex_init(mut, &attr);
+    pthread_mutexattr_destroy(&attr);
+}
 #else
 /* Is this hack still needed? */
 static inline void fuse_mutex_init(pthread_mutex_t *mut)
