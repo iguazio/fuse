@@ -8,6 +8,7 @@
 #include "fuse_fs.h"
 
 void fuse_lib_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi);
+void fuse_lib_access(fuse_req_t req, fuse_ino_t ino, int mask);
 void fuse_lib_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off, struct fuse_file_info *llfi);
 void fuse_lib_readdirplus(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off, struct fuse_file_info *llfi);
 void fuse_lib_lookup(fuse_req_t req, fuse_ino_t parent, const char *name);
