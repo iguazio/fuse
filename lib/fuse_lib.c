@@ -59,30 +59,6 @@ struct fuse_forget_data *forgets)
     fuse_reply_none(req);
 }
 
-
-static void fuse_lib_access(fuse_req_t req, fuse_ino_t ino, int mask)
-{
-    struct fuse *f = req_fuse_prepare(req);
-    char *path;
-    int err;
-
-    err = get_path(f, ino, &path);
-    if (!err) {
-        struct fuse_intr_data d;
-
-        fuse_prepare_interrupt(f, req, &d);
-        err = fuse_fs_access(NULL, f->fs, path, mask);
-        fuse_finish_interrupt(f, req, &d);
-        free_path(f, ino, path);
-    }
-
-    // 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-    // 		fuse_async_add_pending(NULL,f, req, ino, FUSE_ACCESS);
-    //         return;
-    //     }
-    reply_err(req, err);
-}
-
 static void fuse_lib_readlink(fuse_req_t req, fuse_ino_t ino)
 {
     struct fuse *f = req_fuse_prepare(req);
