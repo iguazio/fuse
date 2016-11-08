@@ -49,6 +49,9 @@ int fuse_session_loop_async( struct fuse_session *se, int fd, fuse_async_get_msg
                     break;
                 fuse_session_process_buf(se, &fbuf, ch);
             }
+            if (fds[0].revents & POLLERR) {
+                break;
+            }
             if (fds[1].revents & POLLIN){
                 int err;
                 struct fuse_fsm* fsm;
