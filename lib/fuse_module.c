@@ -133,3 +133,20 @@ struct fuse_module * fuse_find_module( const char *module )
     }
     return m;
 }
+static  void  __attribute__((destructor)) fuse_destroy_modules()
+{
+    struct fuse_module *m;
+    struct fuse_module *prev = NULL;
+    for (m = fuse_modules; m; m = m->next) {
+        if (prev) {
+            free(prev->name);
+            free(prev);
+        }
+        prev = m;
+    }
+    if (prev) {
+        free(prev->name);
+        free(prev);
+    }
+}
+
