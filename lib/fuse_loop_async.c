@@ -23,6 +23,7 @@ int fuse_session_loop_async( struct fuse_session *se, int fd, fuse_async_get_msg
 {
     int res = 0;
     struct fuse_chan *ch = fuse_session_chan(se);
+    struct fuse_fsm* fsm;
     struct fuse_buf fbuf = {
         .mem = NULL,
     };
@@ -54,7 +55,6 @@ int fuse_session_loop_async( struct fuse_session *se, int fd, fuse_async_get_msg
             }
             if (fds[1].revents & POLLIN){
                 int err;
-                struct fuse_fsm* fsm;
                 while (!callback_on_new_msg(callback_payload,&err,&fsm)){
                     fuse_fsm_set_err(fsm,err);
                     fuse_fsm_run(fsm,err?FUSE_FSM_EVENT_ERROR:FUSE_FSM_EVENT_OK);
@@ -62,6 +62,13 @@ int fuse_session_loop_async( struct fuse_session *se, int fd, fuse_async_get_msg
                         FUSE_FSM_FREE(fsm);
                 }
             }
+            while ((fsm = fuse_dlist_pop(&pending_fsm_queue, struct fuse_fsm, node)) != NULL) {
+                fuse_dlist_add(&allocated_fsm, &fsm->node);
+                fuse_fsm_run(fsm, fsm->pending_event);
+                if (fuse_fsm_is_done(fsm))
+                    FUSE_FSM_FREE(fsm);
+            }
+
         }
         fuse_mem_verify();
     }

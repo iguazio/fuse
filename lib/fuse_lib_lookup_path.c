@@ -23,7 +23,6 @@ static struct fuse_fsm_event f1(struct fuse_fsm* fsm __attribute__((unused)),voi
     else
         err = fuse_fs_getattr(fsm, dt->f->fs, dt->path, &dt->e->attr);
     if (err == FUSE_LIB_ERROR_PENDING_REQ){
-        fuse_fsm_free_on_done(dt->parent,1);
         return FUSE_FSM_EVENT_NONE;
     }
     fuse_fsm_set_err(fsm, err);
@@ -39,7 +38,7 @@ static struct fuse_fsm_event f3(struct fuse_fsm* fsm __attribute__((unused)),voi
             (unsigned long long) dt->e->ino);
     }
     if (dt->parent)
-        fuse_fsm_run(dt->parent, FUSE_FSM_EVENT_OK);
+        FUSE_FSM_MARK_PENDING(dt->parent, FUSE_FSM_EVENT_OK);
 	return FUSE_FSM_EVENT_NONE;
 }
 
@@ -48,7 +47,7 @@ static struct fuse_fsm_event f4(struct fuse_fsm* fsm __attribute__((unused)),voi
     int err = fuse_fsm_get_err(fsm);
     if (dt->parent){
         fuse_fsm_set_err(dt->parent,err);
-        fuse_fsm_run(dt->parent, FUSE_FSM_EVENT_ERROR);
+        FUSE_FSM_MARK_PENDING(dt->parent, FUSE_FSM_EVENT_ERROR);
     }
 	return FUSE_FSM_EVENT_NONE;
 }

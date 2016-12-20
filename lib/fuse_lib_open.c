@@ -130,7 +130,6 @@ static struct fuse_fsm_event fc1(struct fuse_fsm* fsm, void *data) {
     int err;
     err = fuse_fs_fgetattr(fsm, dt->f->fs, dt->path, &dt->stbuf, dt->fi);
     if (err == FUSE_LIB_ERROR_PENDING_REQ){
-        fuse_fsm_free_on_done(dt->parent,1);
         return FUSE_FSM_EVENT_NONE;
     }
     fuse_fsm_set_err(fsm, err);
@@ -151,7 +150,7 @@ static struct fuse_fsm_event fc2(struct fuse_fsm* fsm, void *data) {
 
     dt->node->cache_valid = 1;
     pthread_mutex_unlock(&dt->f->lock);
-    fuse_fsm_run(dt->parent, FUSE_FSM_EVENT_OK);
+    FUSE_FSM_MARK_PENDING(dt->parent, FUSE_FSM_EVENT_OK);
 	return FUSE_FSM_EVENT_NONE;
 }
 
@@ -164,7 +163,7 @@ static struct fuse_fsm_event fc3(struct fuse_fsm* fsm, void *data) {
 	pthread_mutex_unlock(&dt->f->lock);
     int err = fuse_fsm_get_err(fsm);
     fuse_fsm_set_err(dt->parent,err);
-    fuse_fsm_run(dt->parent, FUSE_FSM_EVENT_ERROR);
+    FUSE_FSM_MARK_PENDING(dt->parent, FUSE_FSM_EVENT_ERROR);
     return FUSE_FSM_EVENT_NONE;
 }
 

@@ -15,7 +15,7 @@ static struct fuse_fsm_event f1(struct fuse_fsm* fsm __attribute__((unused)),voi
     fuse_prepare_interrupt(dt->f, dt->req, &dt->d);
     int err;
 
-    err = fuse_fs_access(fsm, dt->f->fs, dt->path, &dt->mask);
+    err = fuse_fs_access(fsm, dt->f->fs, dt->path, dt->mask);
 
     if (err == FUSE_LIB_ERROR_PENDING_REQ)
         return FUSE_FSM_EVENT_NONE;

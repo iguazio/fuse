@@ -64,7 +64,11 @@ void go(){
 #include <string.h>
 #include <assert.h>
 #include "fuse_async_response.h"
+#include "fuse_dlist.h"
 struct fuse_fsm;
+
+extern struct fuse_dlist_head allocated_fsm;
+extern struct fuse_dlist_head pending_fsm_queue;
 
 struct fuse_fsm_event {
 	int id;
@@ -86,7 +90,6 @@ struct fuse_fsm_entry{
 };
 
 struct fuse_fsm{
-    int do_free_on_done;
     const char *name;
     int err;
     int current_state;
@@ -95,14 +98,15 @@ struct fuse_fsm{
     const struct fuse_fsm_entry *fuse_fsm_transition_table;
     const int num_of_states;
     const int num_of_events;
+    struct fuse_dlist_node node;
+    struct fuse_fsm_event pending_event;
     char data[0];
 };
 
-void    fuse_fsm_set_err(struct fuse_fsm *fsm, int err);
-int     fuse_fsm_get_err(struct fuse_fsm *fsm);
-void    fuse_fsm_free_on_done(struct fuse_fsm *fsm, int do_cleanup);
+void   fuse_fsm_set_err(struct fuse_fsm *fsm, int err);
+int    fuse_fsm_get_err(struct fuse_fsm *fsm);
 int    fuse_fsm_is_done(struct fuse_fsm *fsm);
-void    fuse_fsm_run( struct fuse_fsm * fsm, struct fuse_fsm_event event );
+void   fuse_fsm_run( struct fuse_fsm * fsm, struct fuse_fsm_event event );
 const char* fuse_fsm_cur_state( struct fuse_fsm * fsm ) ;
 
 #define FUSE_FSM_BAD {NULL,fuse_lib_fsm_transition_function_null}
@@ -139,19 +143,21 @@ __attribute__((constructor)) static void fuse_fsm_init_##api_name(void) {\
         assert(!strcmp(fuse_fsm_states_##api_name[num_of_states-1],"DONE"));\
 }
 
-#define _FUSE_FSM_INIT(api_name) {0, #api_name,0, 0, (const char**)fuse_fsm_events_##api_name,\
+#define _FUSE_FSM_INIT(api_name) {#api_name,0, 0, (const char**)fuse_fsm_events_##api_name,\
     (const char**)fuse_fsm_states_##api_name,\
    (const struct fuse_fsm_entry *)fuse_fsm_transition_table_##api_name,\
     sizeof(fuse_fsm_states_##api_name)/sizeof(fuse_fsm_states_##api_name[0]),\
-    sizeof(fuse_fsm_events_##api_name)/sizeof(fuse_fsm_events_##api_name[0])}
+    sizeof(fuse_fsm_events_##api_name)/sizeof(fuse_fsm_events_##api_name[0]),{},{}}
 
 #define FUSE_FSM_ALLOC(api_name,fsm,tt) {struct fuse_fsm f = _FUSE_FSM_INIT(api_name);\
     fsm = (struct fuse_fsm*)fuse_calloc(1,sizeof(struct fuse_fsm) + sizeof(tt));\
-    memcpy(fsm,&f,sizeof(struct fuse_fsm));}
+    memcpy(fsm,&f,sizeof(struct fuse_fsm));\
+    fuse_dlist_add(&allocated_fsm, &fsm->node); }
 
 
-#define FUSE_FSM_FREE(fsm)   fuse_free(fsm)
+#define FUSE_FSM_FREE(fsm)   do {fuse_dlist_del(&fsm->node);fuse_free(fsm);} while(0)
 
+#define FUSE_FSM_MARK_PENDING(__fsm, __event)   do {__fsm->pending_event = (__event); fuse_dlist_del(&__fsm->node);fuse_dlist_add(&pending_fsm_queue, &__fsm->node);} while(0)
 
 /*private*/
 int     _fuse_fsm_state_str_to_id(int num_of_states,const char** states,const char *state);

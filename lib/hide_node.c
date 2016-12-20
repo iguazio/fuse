@@ -20,7 +20,6 @@ static struct fuse_fsm_event f1(struct fuse_fsm* fsm,void *data){
 
     err = fuse_fs_getattr(fsm, dt->f->fs, dt->newpath, &dt->buf);
     if (err == FUSE_LIB_ERROR_PENDING_REQ){
-        fuse_fsm_free_on_done(dt->parent,1);
         return FUSE_FSM_EVENT_NONE;
     }
     fuse_fsm_set_err(fsm, err);
@@ -49,7 +48,7 @@ static struct fuse_fsm_event f2(struct fuse_fsm* fsm __attribute__((unused)),voi
     err = rename_node(dt->f, dt->dir, dt->oldname, dt->dir, dt->newname, 1);
     if(dt->newpath)
         fuse_free(dt->newpath);
-    fuse_fsm_run(dt->parent,(err)? FUSE_FSM_EVENT_ERROR : FUSE_FSM_EVENT_OK);
+    FUSE_FSM_MARK_PENDING(dt->parent, (err)? FUSE_FSM_EVENT_ERROR : FUSE_FSM_EVENT_OK);
     return FUSE_FSM_EVENT_NONE;
 }
 
@@ -57,7 +56,7 @@ static struct fuse_fsm_event f3(struct fuse_fsm* fsm __attribute__((unused)),voi
     struct fsm_hide_node_data *dt = (struct fsm_hide_node_data *)data;
     if(dt->newpath)
         fuse_free(dt->newpath);
-    fuse_fsm_run(dt->parent, FUSE_FSM_EVENT_ERROR);
+    FUSE_FSM_MARK_PENDING(dt->parent, FUSE_FSM_EVENT_ERROR);
     return FUSE_FSM_EVENT_NONE;
 }
 
@@ -136,7 +135,7 @@ int hide_node( struct fuse_fsm* parent , struct fuse *f, const char *oldpath, fu
         pthread_mutex_unlock(&f->lock);
         FUSE_FSM_FREE(new_fsm);
         fuse_fsm_set_err(parent,-EBUSY);
-        fuse_fsm_run(parent,FUSE_FSM_EVENT_ERROR);
+        FUSE_FSM_MARK_PENDING(parent, FUSE_FSM_EVENT_ERROR);
         return -EBUSY;
     }
     do {
@@ -152,7 +151,7 @@ int hide_node( struct fuse_fsm* parent , struct fuse *f, const char *oldpath, fu
         pthread_mutex_unlock(&f->lock);
         FUSE_FSM_FREE(new_fsm);
         fuse_fsm_set_err(parent,-EBUSY);
-        fuse_fsm_run(parent,FUSE_FSM_EVENT_ERROR);
+        FUSE_FSM_MARK_PENDING(parent, FUSE_FSM_EVENT_ERROR);
         return err;
     }
 

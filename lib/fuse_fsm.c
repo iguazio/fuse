@@ -2,6 +2,10 @@
 #include <assert.h>
 #include "fuse_log.h"
 
+struct fuse_dlist_head allocated_fsm = FUSE_DLIST_HEAD_INIT(allocated_fsm);
+struct fuse_dlist_head pending_fsm_queue = FUSE_DLIST_HEAD_INIT(pending_fsm_queue);
+
+
 
 static  struct fuse_fsm_event fsm_process_event( struct fuse_fsm * fsm, struct fuse_fsm_event event ){
     int curr_s = fsm->current_state;
@@ -21,9 +25,6 @@ void fuse_fsm_run( struct fuse_fsm * fsm, struct fuse_fsm_event event )
 {
     while (event.id != FUSE_FSM_EVENT_NONE.id)
         event = fsm_process_event(fsm,event);
-
-    if (fsm->do_free_on_done && fuse_fsm_is_done(fsm))
-        FUSE_FSM_FREE(fsm);
 }
 
 const char* fuse_fsm_cur_state( struct fuse_fsm * fsm ) 
@@ -46,10 +47,6 @@ int fuse_fsm_get_err( struct fuse_fsm *fsm )
     return fsm->err;
 }
 
-void fuse_fsm_free_on_done( struct fuse_fsm *fsm, int do_cleanup )
-{
-    fsm->do_free_on_done = do_cleanup;
-}
 
 int fuse_fsm_is_done(struct fuse_fsm *fsm)
 {
