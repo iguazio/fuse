@@ -15,7 +15,42 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <poll.h>
+#include <signal.h>
+#include <sys/signalfd.h>
 
+
+static int signaler_fd_create(int *out_fd)
+{
+    int32_t signum_vec[] =
+    { SIGQUIT,
+        SIGTERM,
+        SIGHUP,
+        SIGPIPE,
+        SIGABRT,
+        SIGCHLD
+    };
+    uint32_t signum_vlen = sizeof(signum_vec) / sizeof(signum_vec[0]);
+    sigset_t mask;
+    size_t i;
+    int32_t fd;
+
+    /* Create a sigset of all the signals that we're interested in */
+    sigemptyset(&mask);
+    for (i = 0; i < signum_vlen; ++i)
+        sigaddset(&mask, signum_vec[i]);
+
+    /* We must block the signals in order for signalfd to receive them */
+    if (sigprocmask(SIG_BLOCK, &mask, NULL) < 0)
+        return errno;
+
+    fd = signalfd(-1, &mask, SFD_NONBLOCK | SFD_CLOEXEC);
+    if (fd == -1)
+        return errno;
+
+    *out_fd = fd;
+
+    return 0;
+}
 
 
 
@@ -28,7 +63,7 @@ int fuse_session_loop_async( struct fuse_session *se, int fd, fuse_async_get_msg
         .mem = NULL,
     };
 
-    struct pollfd fds[2];
+    struct pollfd fds[3];
     int ret;
 
     /* Open STREAMS device. */
@@ -39,8 +74,15 @@ int fuse_session_loop_async( struct fuse_session *se, int fd, fuse_async_get_msg
     fds[1].fd = fd;
     fds[1].events = POLLIN;
 
+    
+    fds[2].events = POLLIN;
+    if (signaler_fd_create(&fds[2].fd)) {
+        fprintf(stderr, "Failed to create signaler_fd\n");
+        return -errno;
+    }
+
     while (!fuse_session_exited(se)) {
-        ret = poll(fds, 2, -1);
+        ret = poll(fds, 3, -1);
         if (ret > 0){
             if (fds[0].revents & POLLIN){
                 res = fuse_session_receive_buf(se, &fbuf, ch);
@@ -68,12 +110,18 @@ int fuse_session_loop_async( struct fuse_session *se, int fd, fuse_async_get_msg
                 if (fuse_fsm_is_done(fsm))
                     FUSE_FSM_FREE(fsm);
             }
-
+            
+            if (fds[2].revents & POLLIN) 
+            {
+                fprintf(stderr, "fuse:caught exit signal\n");
+                fuse_session_exit(se);
+            }
         }
         fuse_mem_verify();
     }
 
     fuse_free(fbuf.mem);
     fuse_session_reset(se);
+    close(fds[2].fd);
     return res < 0 ? -1 : 0;
 }
