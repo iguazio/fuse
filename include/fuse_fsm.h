@@ -149,10 +149,14 @@ __attribute__((constructor)) static void fuse_fsm_init_##api_name(void) {\
     sizeof(fuse_fsm_states_##api_name)/sizeof(fuse_fsm_states_##api_name[0]),\
     sizeof(fuse_fsm_events_##api_name)/sizeof(fuse_fsm_events_##api_name[0]),{},{}}
 
-#define FUSE_FSM_ALLOC(api_name,fsm,tt) {struct fuse_fsm f = _FUSE_FSM_INIT(api_name);\
+#define FUSE_FSM_ALLOC(api_name,fsm,tt) {\
+    _Pragma("GCC diagnostic push") \
+    _Pragma("GCC diagnostic ignored \"-Wmissing-field-initializers\"")\
+    struct fuse_fsm f = _FUSE_FSM_INIT(api_name);\
     fsm = (struct fuse_fsm*)fuse_calloc(1,sizeof(struct fuse_fsm) + sizeof(tt));\
     memcpy(fsm,&f,sizeof(struct fuse_fsm));\
-    fuse_dlist_add(&allocated_fsm, &fsm->node); }
+    fuse_dlist_add(&allocated_fsm, &fsm->node); \
+    _Pragma("GCC diagnostic pop") }
 
 
 #define FUSE_FSM_FREE(fsm)   do {fuse_dlist_del(&fsm->node);fuse_free(fsm);} while(0)

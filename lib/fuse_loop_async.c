@@ -17,6 +17,7 @@
 #include <poll.h>
 #include <signal.h>
 #include <sys/signalfd.h>
+#include <unistd.h>
 
 
 static int signaler_fd_create(int *out_fd)
