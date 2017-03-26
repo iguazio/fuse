@@ -99,10 +99,12 @@ int fuse_session_loop_async( struct fuse_session *se, int fd, fuse_async_get_msg
             if (fds[1].revents & POLLIN){
                 int err;
                 while (!callback_on_new_msg(callback_payload,&err,&fsm)){
-                    fuse_fsm_set_err(fsm,err);
-                    fuse_fsm_run(fsm,err?FUSE_FSM_EVENT_ERROR:FUSE_FSM_EVENT_OK);
-                    if (fuse_fsm_is_done(fsm))
-                        FUSE_FSM_FREE(fsm);
+                    if (fsm) {
+                        fuse_fsm_set_err(fsm, err);
+                        fuse_fsm_run(fsm, err ? FUSE_FSM_EVENT_ERROR : FUSE_FSM_EVENT_OK);
+                        if (fuse_fsm_is_done(fsm))
+                            FUSE_FSM_FREE(fsm);
+                    }
                 }
             }
             while ((fsm = fuse_dlist_pop(&pending_fsm_queue, struct fuse_fsm, node)) != NULL) {
