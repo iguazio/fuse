@@ -5,7 +5,7 @@ struct fsm_create_data {
 	struct node *node;
     struct fuse_intr_data d;
 	char *path;
-    const char *name;
+    char *name;
     int mode;
 	struct fuse * f;
 	struct fuse_file_info fi;
@@ -79,6 +79,7 @@ static struct fuse_fsm_event f10(struct fuse_fsm* fsm __attribute__((unused)), v
 	get_node(dt->f, dt->e.ino)->open_count++;
 	pthread_mutex_unlock(&dt->f->lock);
     free_path(dt->f, dt->parent, dt->path);
+    fuse_free(dt->name);
 	if (fuse_reply_create(dt->req, &dt->e, &dt->fi) == -ENOENT)
         return FUSE_FSM_EVENT_ERROR;
     return FUSE_FSM_EVENT_OK;
@@ -93,6 +94,7 @@ static struct fuse_fsm_event f13(struct fuse_fsm* fsm __attribute__((unused)), v
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
     free_path(dt->f, dt->parent, dt->path);
     reply_err(dt->req, err);
+    fuse_free(dt->name);
     return FUSE_FSM_EVENT_NONE;
 }
 
@@ -133,7 +135,7 @@ void fuse_lib_create(fuse_req_t req, fuse_ino_t parent,
         dt->parent = parent;
         dt->req = req;
         dt->path = path;
-        dt->name = name;
+        dt->name = fuse_strdup(name);
         dt->mode = mode;
 
         fuse_fsm_run(new_fsm, FUSE_FSM_EVENT_OK);
