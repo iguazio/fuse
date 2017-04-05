@@ -10,7 +10,7 @@ struct fsm_rename_data{
     fuse_ino_t olddir;
     const char *oldname;
     fuse_ino_t newdir;
-    const char *newname;
+    char *newname;
     fuse_req_t req;
     struct fuse_intr_data d;
 };
@@ -40,6 +40,7 @@ static struct fuse_fsm_event f10(struct fuse_fsm* fsm __attribute__((unused)), v
             dt->newdir, dt->newname, 0);
     }
     free_path2(dt->f, dt->olddir, dt->newdir, dt->wnode1, dt->wnode2,(char*) dt->oldpath, (char*)dt->newpath);
+    fuse_free(dt->newname);
     reply_err(dt->req, err);
     return FUSE_FSM_EVENT_NONE;
 }
@@ -51,6 +52,7 @@ static struct fuse_fsm_event f13(struct fuse_fsm* fsm __attribute__((unused)), v
 
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
     free_path2(dt->f, dt->olddir, dt->newdir, dt->wnode1, dt->wnode2,(char*) dt->oldpath, (char*)dt->newpath);
+    fuse_free(dt->newname);
     reply_err(dt->req, err);
     return FUSE_FSM_EVENT_NONE;
 }
@@ -113,7 +115,7 @@ void fuse_lib_rename(fuse_req_t req, fuse_ino_t olddir,
         dt->olddir = olddir;
         dt->oldname = oldname;
         dt->newdir = newdir;
-        dt->newname = newname;
+        dt->newname = fuse_strdup(newname);
         dt->flags = flags;
 
         if (!f->conf.hard_remove && !(flags & RENAME_EXCHANGE) && is_open(f, newdir, newname))

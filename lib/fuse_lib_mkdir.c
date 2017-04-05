@@ -2,7 +2,7 @@
 #include "fuse_lib_lookup_path.h"
 struct fsm_mkdir_data {
     const char *path;
-    const char *name;
+    char *name;
     struct fuse * f;
     fuse_ino_t parent;
     int mode;
@@ -39,6 +39,7 @@ static struct fuse_fsm_event f10(struct fuse_fsm* fsm __attribute__((unused)), v
 
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
     free_path(dt->f, dt->parent, (char*)dt->path);
+    fuse_free(dt->name);
     reply_entry(dt->req, &dt->e, err);
     return FUSE_FSM_EVENT_NONE;
 }
@@ -70,7 +71,7 @@ void fuse_lib_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name,
         dt->parent = parent;
         dt->req = req;
         dt->path = path;
-        dt->name = name;
+        dt->name = fuse_strdup(name);
         dt->mode = mode;
 
         fuse_fsm_run(new_fsm, FUSE_FSM_EVENT_OK);
