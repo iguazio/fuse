@@ -1,4 +1,5 @@
 #include "fuse_lib.h"
+#include "fuse_fsm.h"
 static int readdir_fill_from_list(fuse_req_t req, struct fuse_dh *dh,
                                   off_t off, enum fuse_readdir_flags flags);
 

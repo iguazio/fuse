@@ -1,5 +1,6 @@
 #include "fuse_lib.h"
 #include "fuse_lib_lookup_path.h"
+#include "fuse_fsm.h"
 
 struct fsm_create_data {
 	struct node *node;

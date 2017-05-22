@@ -1,4 +1,5 @@
 #include "fuse_lib.h"
+#include "fuse_fsm.h"
 #define LOG_CTX //printf("%s::%s\n",__FILE__,__FUNCTION__)
 static int open_auto_cache(struct fuse_fsm* parent,struct fuse_fsm** cache_fsm, struct fuse *f, fuse_ino_t ino, const char *path, struct fuse_file_info *fi);
 
