@@ -1,5 +1,5 @@
 #include "fuse_lib.h"
-//#include "fuse_lib_lookup_path.h"
+#include "fuse_fsm.h"
 
 struct fsm_hide_node_data{
     struct fuse_fsm *parent;

@@ -1,5 +1,7 @@
 #include "fuse_lib.h"
 #include "fuse_misc.h"
+#include "fuse_fsm.h"
+
 struct fsm_setattr_data{
     char *path;
     struct fuse * f;

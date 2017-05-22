@@ -1,4 +1,5 @@
 #include "fuse_lib.h"
+#include "fuse_fsm.h"
 
 struct fsm_read_data {
 	char *path;

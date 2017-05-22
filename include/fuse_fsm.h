@@ -63,6 +63,7 @@ void go(){
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include "fuse.h"
 #include "fuse_async_response.h"
 #include "fuse_dlist.h"
 struct fuse_fsm;
@@ -100,6 +101,7 @@ struct fuse_fsm{
     const int num_of_events;
     struct fuse_dlist_node node;
     struct fuse_fsm_event pending_event;
+    struct fuse_context fuse_ctxt;
     char data[0];
 };
 
@@ -107,16 +109,16 @@ void   fuse_fsm_set_err(struct fuse_fsm *fsm, int err);
 int    fuse_fsm_get_err(struct fuse_fsm *fsm);
 int    fuse_fsm_is_done(struct fuse_fsm *fsm);
 void   fuse_fsm_run( struct fuse_fsm * fsm, struct fuse_fsm_event event );
-const char* fuse_fsm_cur_state( struct fuse_fsm * fsm ) ;
+const char* fuse_fsm_cur_state(struct fuse_fsm * fsm);
 
 #define FUSE_FSM_BAD {NULL,fuse_lib_fsm_transition_function_null}
 
 /*
-	It would be reasonable to have the events to be initialized as 
+    It would be reasonable to have the events to be initialized as
     static const struct fuse_fsm_event fuse_fsm_events_##api_name[]={__VA_ARGS__};
-	it generates "initializer element is not constant" compilation error.
-	So we just make sure it initialize to known "ok" and "error" pair of events and generates 
-	error when trying to have more (or less) events
+    it generates "initializer element is not constant" compilation error.
+    So we just make sure it initialize to known "ok" and "error" pair of events and generates
+    error when trying to have more (or less) events
 */
 #define FUSE_FSM_EVENTS(api_name,_ok_,_error_,...) \
 		static const struct fuse_fsm_event fuse_fsm_events_##api_name[] = { {0,"ok"}, {1,"error"} __VA_ARGS__ };
@@ -156,6 +158,7 @@ __attribute__((constructor)) static void fuse_fsm_init_##api_name(void) {\
     fsm = (struct fuse_fsm*)fuse_calloc(1,sizeof(struct fuse_fsm) + sizeof(tt));\
     memcpy(fsm,&f,sizeof(struct fuse_fsm));\
     fuse_dlist_add(&allocated_fsm, &fsm->node); \
+    ((fsm)->fuse_ctxt) = *fuse_get_context();\
     _Pragma("GCC diagnostic pop") }
 
 
