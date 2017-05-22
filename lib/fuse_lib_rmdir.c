@@ -1,5 +1,7 @@
 #include "fuse_lib.h"
 #include "fuse_lib_lookup_path.h"
+#include "fuse_fsm.h"
+
 struct fsm_rmdir_data {
     const char *path;
     const char *name;

@@ -1,4 +1,5 @@
 #include "fuse_lib.h"
+#include "fuse_fsm.h"
 
 struct fsm_access_data{
     struct fuse_intr_data d;
