@@ -101,7 +101,8 @@ int fuse_session_loop_async( struct fuse_session *se, int fd, fuse_async_get_msg
                 while (!callback_on_new_msg(callback_payload,&err,&fsm)){
                     if (fsm) {
                         fuse_fsm_set_err(fsm, err);
-                        fuse_fsm_run(fsm, err ? FUSE_FSM_EVENT_ERROR : FUSE_FSM_EVENT_OK);
+                        // some APIs will return positive valid value
+                        fuse_fsm_run(fsm, (err < 0) ? FUSE_FSM_EVENT_ERROR : FUSE_FSM_EVENT_OK);
                         if (fuse_fsm_is_done(fsm))
                             FUSE_FSM_FREE(fsm);
                     }

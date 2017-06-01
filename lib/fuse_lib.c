@@ -408,38 +408,38 @@ static int common_listxattr(struct fuse *f, fuse_req_t req, fuse_ino_t ino,
 }
 
 
-static void fuse_lib_getxattr(fuse_req_t req, fuse_ino_t ino, const char *name,
-                              size_t size)
-{
-    struct fuse *f = req_fuse_prepare(req);
-    int res;
-    char *value = NULL;
-    if (size) {
-        char *value = (char *) fuse_malloc(size);
-        if (value == NULL) {
-            reply_err(req, -ENOMEM);
-            return;
-        }
-    }
+// static void fuse_lib_getxattr(fuse_req_t req, fuse_ino_t ino, const char *name,
+//                               size_t size)
+// {
+//     struct fuse *f = req_fuse_prepare(req);
+//     int res;
+//     char *value = NULL;
+//     if (size) {
+//         char *value = (char *) fuse_malloc(size);
+//         if (value == NULL) {
+//             reply_err(req, -ENOMEM);
+//             return;
+//         }
+//     }
 
-    res = common_getxattr(f, req, ino, name, value, size);
-    // 	if (res == FUSE_LIB_ERROR_PENDING_REQ){
-    // 		fuse_async_add_pending(NULL,f, req, ino, FUSE_GETXATTR);
-    // 		if (value)
-    // 			fuse_free(value);
-    //         return;
-    //     }
+//     res = common_getxattr(f, req, ino, name, value, size);
+//     // 	if (res == FUSE_LIB_ERROR_PENDING_REQ){
+//     // 		fuse_async_add_pending(NULL,f, req, ino, FUSE_GETXATTR);
+//     // 		if (value)
+//     // 			fuse_free(value);
+//     //         return;
+//     //     }
 
-    if (size && res > 0)
-        fuse_reply_buf(req, value, res);
-    else if(!size && res >= 0)
-        fuse_reply_xattr(req, res);
-    else
-        reply_err(req, res);
+//     if (size && res > 0)
+//         fuse_reply_buf(req, value, res);
+//     else if(!size && res >= 0)
+//         fuse_reply_xattr(req, res);
+//     else
+//         reply_err(req, res);
 
-    if (value)
-        fuse_free(value);
-}
+//     if (value)
+//         fuse_free(value);
+// }
 
 static void fuse_lib_listxattr(fuse_req_t req, fuse_ino_t ino, size_t size)
 {

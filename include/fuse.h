@@ -575,6 +575,21 @@ struct fuse_operations {
 	 */
 	int (*fallocate) (struct fuse_fsm* fsm __attribute__((unused)), const char *, int, off_t, off_t,
 			  struct fuse_file_info *);
+
+
+	/**
+	 * Get attributes from an open file
+	 *
+	 * This method is called instead of the getattr() method if the
+	 * file information is available.
+	 *
+	 * Currently this is only called after the create() method if that
+	 * is implemented (see above).  Later it may be called for
+	 * invocations of fstat() too.
+	 *
+	 * Introduced in version 2.5
+	 */
+	int (*fgetxattr) (struct fuse_fsm* fsm __attribute__((unused)), const char *, const char *, char *, size_t, struct fuse_file_info *);
 };
 
 /** Extra context that may be needed by some filesystems
@@ -859,7 +874,7 @@ int fuse_fs_poll(struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *f
 int fuse_fs_fallocate(struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, int mode, off_t offset, off_t length, struct fuse_file_info *fi);
 void fuse_fs_init(struct fuse_fs *fs, struct fuse_conn_info *conn);
 void fuse_fs_destroy(struct fuse_fs *fs);
-
+int fuse_fs_fgetxattr( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, const char *name, char *value, size_t size, struct fuse_file_info *fi);
 int fuse_notify_poll(struct fuse_pollhandle *ph);
 
 /**

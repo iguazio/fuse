@@ -20,7 +20,8 @@ endif
 libfuse3_la_SOURCES = 		\
 	fuse_mem.c \
 	fuse_log.c \
-  hide_node.c \
+  	fuse_lib_getxattr.c \
+	hide_node.c \
 	fuse_lib_rename.c \
 	fuse_lib_unlink.c \
 	fuse_lib_rmdir.c \
