@@ -21,10 +21,12 @@ struct fsm_getxattr_data{
     size_t size;
 };
 
-static struct fuse_fsm_event fuse_lib_getxattr_f1(struct fuse_fsm* fsm __attribute__((unused)),void *data){
+static struct fuse_fsm_event fuse_lib_getxattr_f1(struct fuse_fsm* fsm __attribute__((unused)),void *data) {
     struct fsm_getxattr_data *dt = (struct fsm_getxattr_data *)data;
+    int err;
+    
     fuse_prepare_interrupt(dt->f, dt->req, &dt->d);
-    int err = fuse_fs_getxattr(fsm, dt->f->fs, dt->path, dt->name, dt->value, dt->size);
+    err = fuse_fs_getxattr(fsm, dt->f->fs, dt->path, dt->name, dt->value, dt->size);
 
     if (err == FUSE_LIB_ERROR_PENDING_REQ)
         return FUSE_FSM_EVENT_NONE;
@@ -37,9 +39,10 @@ static struct fuse_fsm_event fuse_lib_getxattr_f1(struct fuse_fsm* fsm __attribu
 
 static struct fuse_fsm_event fuse_lib_getxattr_f3(struct fuse_fsm* fsm __attribute__((unused)),void *data) {
     struct fsm_getxattr_data *dt = (struct fsm_getxattr_data *)data;
+    int res;
     
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
-    int res = fuse_fsm_get_err(fsm);
+    res = fuse_fsm_get_err(fsm);
 
     if (dt->size) {
         if (res > 0)

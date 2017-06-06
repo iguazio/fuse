@@ -604,9 +604,8 @@ int fuse_fs_getxattr( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_
             fuse_log_debug( "getxattr %s %s %lu\n", path, name, (unsigned long) size);
 
         return fs->op.getxattr(fsm, path, name, value, size);
-    } else {
-        return -ENOSYS;
-    }
+    } 
+    return -ENOSYS;
 }
 
 int fuse_fs_fgetxattr( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, const char *name, char *value, size_t size, struct fuse_file_info *fi )
@@ -623,9 +622,8 @@ int fuse_fs_fgetxattr( struct fuse_fsm* fsm __attribute__((unused)), struct fuse
             fuse_log_debug( "fgetxattr %s\n", path);
 
         return fs->op.getxattr(fsm, path, name, value, size);
-    } else {
-        return -ENOSYS;
-    }
+    } 
+    return -ENOSYS;
 }
 
 int fuse_fs_listxattr( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, char *list, size_t size )
