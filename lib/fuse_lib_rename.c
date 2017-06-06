@@ -1,5 +1,7 @@
 #include "fuse_lib.h"
 #include "fuse_lib_lookup_path.h"
+#include "fuse_fsm.h"
+
 struct fsm_rename_data{
     const char *oldpath;
     const char *newpath;

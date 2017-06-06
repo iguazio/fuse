@@ -1,5 +1,4 @@
 #pragma once
-#include "fuse_fsm.h"
 #include "fuse_fs.h"
 #include "fuse_interrupt.h"
 #include "fuse_prv.h"

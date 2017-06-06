@@ -373,23 +373,6 @@ static void fuse_lib_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name,
 	reply_err(req, err);
 }
 
-static int common_getxattr(struct fuse *f, fuse_req_t req, fuse_ino_t ino,
-                           const char *name, char *value, size_t size)
-{
-    int err;
-    char *path;
-
-    err = get_path(f, ino, &path);
-    if (!err) {
-        struct fuse_intr_data d;
-        fuse_prepare_interrupt(f, req, &d);
-        err = fuse_fs_getxattr(NULL, f->fs, path, name, value, size);
-        fuse_finish_interrupt(f, req, &d);
-        free_path(f, ino, path);
-    }
-    return err;
-}
-
 static int common_listxattr(struct fuse *f, fuse_req_t req, fuse_ino_t ino,
                             char *list, size_t size)
 {

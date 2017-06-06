@@ -1,5 +1,6 @@
 #include "fuse.h"
 #include "fuse_lib.h"
+#include "fuse_fsm.h"
 
 
 struct fsm_release_data{
