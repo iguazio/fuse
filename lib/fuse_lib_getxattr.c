@@ -4,12 +4,12 @@
 
 /*/////////////////////////////////////////////////////////////////////////
                 states
-events          CREATED         FGETS_SENT          GETS_SENT         DESTROYED    
+events          CREATED         FGETS_SENT          GETS_SENT         DESTROYED
                 -------         ---------           ---------         ---------
-send_fget       FGETS_SENT(f1)  NONE                NONE            
-send_get        GETS_SENT(f2)   NONE                NONE            
-ok              SUCCEDED(f3)    SUCCEDED(f3)        SUCCEDED(f3)      
-error           FAILED(f3)      FAILED(f3)          FAILED(f3)        
+send_fget       FGETS_SENT(f1)  NONE                NONE
+send_get        GETS_SENT(f2)   NONE                NONE
+ok              SUCCEDED(f3)    SUCCEDED(f3)        SUCCEDED(f3)
+error           FAILED(f3)      FAILED(f3)          FAILED(f3)
 /////////////////////////////////////////////////////////////////////////*/
 
 struct fsm_getxattr_data{
@@ -26,7 +26,7 @@ struct fsm_getxattr_data{
 static struct fuse_fsm_event fuse_lib_getxattr_f1(struct fuse_fsm* fsm __attribute__((unused)),void *data) {
     struct fsm_getxattr_data *dt = (struct fsm_getxattr_data *)data;
     int err;
-    
+
     fuse_prepare_interrupt(dt->f, dt->req, &dt->d);
     err = fuse_fs_getxattr(fsm, dt->f->fs, dt->path, dt->name, dt->value, dt->size);
 
@@ -42,7 +42,7 @@ static struct fuse_fsm_event fuse_lib_getxattr_f1(struct fuse_fsm* fsm __attribu
 static struct fuse_fsm_event fuse_lib_getxattr_f3(struct fuse_fsm* fsm __attribute__((unused)),void *data) {
     struct fsm_getxattr_data *dt = (struct fsm_getxattr_data *)data;
     int res;
-    
+
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
     res = fuse_fsm_get_err(fsm);
 
@@ -62,7 +62,7 @@ static struct fuse_fsm_event fuse_lib_getxattr_f3(struct fuse_fsm* fsm __attribu
     if (dt->value)
         free(dt->value);
 
-	return FUSE_FSM_EVENT_NONE;
+    return FUSE_FSM_EVENT_NONE;
 }
 
 static struct fuse_fsm_event fuse_lib_getxattr_f4(struct fuse_fsm* fsm __attribute__((unused)),void *data) {
@@ -71,7 +71,10 @@ static struct fuse_fsm_event fuse_lib_getxattr_f4(struct fuse_fsm* fsm __attribu
     int err = fuse_fsm_get_err(fsm);
     reply_err(dt->req, err);
     free_path(dt->f, dt->ino, dt->path);
-	return FUSE_FSM_EVENT_NONE;
+    if (dt->value)
+        free(dt->value);
+
+    return FUSE_FSM_EVENT_NONE;
 }
 
 FUSE_FSM_EVENTS(GETXATTR,FUSE_FSM_EVENT_OK,FUSE_FSM_EVENT_ERROR)
