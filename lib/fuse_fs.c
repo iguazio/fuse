@@ -601,13 +601,29 @@ int fuse_fs_getxattr( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.getxattr) {
         if (fs->debug)
-            fuse_log_debug( "getxattr %s %s %lu\n",
-            path, name, (unsigned long) size);
+            fuse_log_debug( "getxattr %s %s %lu\n", path, name, (unsigned long) size);
 
         return fs->op.getxattr(fsm, path, name, value, size);
-    } else {
-        return -ENOSYS;
-    }
+    } 
+    return -ENOSYS;
+}
+
+int fuse_fs_fgetxattr( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, const char *name, char *value, size_t size, struct fuse_file_info *fi )
+{
+    fuse_get_context()->private_data = fs->user_data;
+    if (fs->op.fgetxattr) {
+        if (fs->debug)
+            fuse_log_debug( "fgetxattr[%llu] %s\n",
+            (unsigned long long) fi->fh, path);
+
+        return fs->op.fgetxattr(fsm, path, name, value, size, fi);
+    } else if (path && fs->op.getxattr) {
+        if (fs->debug)
+            fuse_log_debug( "fgetxattr %s\n", path);
+
+        return fs->op.getxattr(fsm, path, name, value, size);
+    } 
+    return -ENOSYS;
 }
 
 int fuse_fs_listxattr( struct fuse_fsm* fsm __attribute__((unused)), struct fuse_fs *fs, const char *path, char *list, size_t size )

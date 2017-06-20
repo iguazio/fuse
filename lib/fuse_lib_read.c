@@ -26,10 +26,9 @@ static struct fuse_fsm_event f1(struct fuse_fsm* fsm __attribute__((unused)), vo
 /*Send successfully read data*/
 static struct fuse_fsm_event f2(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
 	struct fsm_read_data *dt = (struct fsm_read_data *)data;
-	
-	dt->buf[0].buf->size = *((size_t*)(&dt->fi));
-
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
+    dt->buf[0].buf->size = fuse_fsm_get_err(fsm);
+
     free_path(dt->f, dt->ino, dt->path);
 	fuse_reply_data(dt->req, dt->buf, FUSE_BUF_SPLICE_MOVE);
 	fuse_buf_free(dt->buf);
@@ -84,4 +83,3 @@ void fuse_lib_read(fuse_req_t req, fuse_ino_t ino, size_t size,
     }else
         reply_err(req, res);
 }
-

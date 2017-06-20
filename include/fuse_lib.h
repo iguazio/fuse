@@ -25,5 +25,7 @@ void fuse_lib_rename(fuse_req_t req, fuse_ino_t olddir,
                      const char *oldname, fuse_ino_t newdir,
                      const char *newname, unsigned int flags);
 
+void fuse_lib_getxattr(fuse_req_t req, fuse_ino_t ino, const char *name, size_t size);
+
 
 

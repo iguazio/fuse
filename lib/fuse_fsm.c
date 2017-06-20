@@ -7,9 +7,10 @@ struct fuse_dlist_head pending_fsm_queue = FUSE_DLIST_HEAD_INIT(pending_fsm_queu
 
 
 
-static  struct fuse_fsm_event fsm_process_event( struct fuse_fsm * fsm, struct fuse_fsm_event event ){
+static  struct fuse_fsm_event fsm_process_event( struct fuse_fsm * fsm, struct fuse_fsm_event event )
+{
     int curr_s = fsm->current_state;
-	int event_id = event.id;
+    int event_id = event.id;
     assert (event_id >= 0);
 
     const struct fuse_fsm_entry *entry = &fsm->fuse_fsm_transition_table[fsm->num_of_states*event_id + curr_s];
@@ -21,6 +22,7 @@ static  struct fuse_fsm_event fsm_process_event( struct fuse_fsm * fsm, struct f
 
     return next_event;
 }
+
 void fuse_fsm_run( struct fuse_fsm * fsm, struct fuse_fsm_event event ) 
 {
     *fuse_get_context() = fsm->fuse_ctxt;
@@ -33,7 +35,8 @@ const char* fuse_fsm_cur_state( struct fuse_fsm * fsm )
     return fsm->states[fsm->current_state];
 }
 
-struct fuse_fsm_event fuse_lib_fsm_transition_function_null(struct fuse_fsm* fsm __attribute__((unused)),void *data){
+struct fuse_fsm_event fuse_lib_fsm_transition_function_null(struct fuse_fsm* fsm __attribute__((unused)),void *data)
+{
     fuse_log_err("panic - unexpected state transition in %s %p\n", fsm->name, data);
 	return FUSE_FSM_EVENT_NONE;
 }

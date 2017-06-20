@@ -26,12 +26,8 @@ static struct fuse_fsm_event f1(struct fuse_fsm* fsm __attribute__((unused)), vo
 static struct fuse_fsm_event f2(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
     struct fsm_write_data *dt = (struct fsm_write_data *)data;
 
-    // FixMe:
-    // This is an ugly workaround of the fact that the actual size
-    // is expected to be return by this function
-    // Instead we will return it in the fi structure, since we are working with a copy
-    // The right way would be to pass a pointer to actual_size that would be updated in the ig_write_response 
-    int size = *((size_t*)(&dt->fi));
+    // actual size is returned via the returned value of the plug in
+    int size = fuse_fsm_get_err(fsm);
 
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
     free_path(dt->f, dt->ino, dt->path);
@@ -84,4 +80,3 @@ void fuse_lib_write_buf(fuse_req_t req, fuse_ino_t ino,struct fuse_bufvec *buf, 
     }else
         reply_err(req, res);
 }
-
