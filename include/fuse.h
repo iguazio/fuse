@@ -771,6 +771,7 @@ int fuse_getgroups(int size, gid_t list[]);
  */
 int fuse_interrupted(void);
 
+uint64_t fuse_current_uniqueid(void);
 /**
  * The real main function
  *
