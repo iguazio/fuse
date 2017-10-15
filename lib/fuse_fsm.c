@@ -14,7 +14,7 @@ static  struct fuse_fsm_event fsm_process_event( struct fuse_fsm * fsm, struct f
 
     const struct fuse_fsm_entry *entry = &fsm->fuse_fsm_transition_table[fsm->num_of_states*event_id + curr_s];
 
-    fuse_log_debug("FSM %p %s %s %s->%s\n",fsm, fsm->name, event.name, fsm->states[curr_s],entry->next_state);
+    fuse_log_debug_unique("FSM %p %s %s %s->%s\n",fsm->fuse_unique_id, fsm, fsm->name, event.name, fsm->states[curr_s],entry->next_state);
 
     fsm->current_state = entry->next_state_id;
     struct fuse_fsm_event next_event = entry->f(fsm, fsm->data);
@@ -26,6 +26,11 @@ void fuse_fsm_run( struct fuse_fsm * fsm, struct fuse_fsm_event event )
     *fuse_get_context() = fsm->fuse_ctxt;
     while (event.id != FUSE_FSM_EVENT_NONE.id)
         event = fsm_process_event(fsm,event);
+}
+uint64_t fuse_get_fsm_unique_id(struct fuse_fsm * fsm) {
+    if (fsm)
+        return fsm->fuse_unique_id;
+    return 0;
 }
 
 const char* fuse_fsm_cur_state( struct fuse_fsm * fsm ) 

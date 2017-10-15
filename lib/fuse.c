@@ -1064,6 +1064,16 @@ int fuse_interrupted(void)
 		return 0;
 }
 
+uint64_t  fuse_current_uniqueid(void)
+{
+    struct fuse_context_i *c = fuse_get_context_internal();
+
+    if (c)
+        return c->req->unique;
+    else
+        return 0;
+}
+
 enum {
 	KEY_HELP,
 };
