@@ -24,9 +24,11 @@ static  struct fuse_fsm_event fsm_process_event( struct fuse_fsm * fsm, struct f
 void fuse_fsm_run( struct fuse_fsm * fsm, struct fuse_fsm_event event ) 
 {
     *fuse_get_context() = fsm->fuse_ctxt;
+
     while (event.id != FUSE_FSM_EVENT_NONE.id)
         event = fsm_process_event(fsm,event);
 }
+
 
 const char* fuse_fsm_cur_state( struct fuse_fsm * fsm ) 
 {
@@ -53,7 +55,6 @@ int fuse_fsm_is_done(struct fuse_fsm *fsm)
 {
 	return fsm->current_state == fsm->num_of_states-1;
 }
-
 
 int _fuse_fsm_state_str_to_id( int num_of_states,const char** states,const char *state )
 {

@@ -45,8 +45,8 @@ libfuse3_la_SOURCES = 		\
 	fuse_queue_element.c\
 	fuse_lib_context.c \
 	fuse_id_hash.c \
-	fuse_req.c \ 
-	fuse_list.c \ 
+	fuse_req.c \
+	fuse_list.c \
 	fuse_fs.c			\
 	fuse_lib.c			\
 	fuse.c			\

@@ -121,9 +121,10 @@ static void list_add_req(struct fuse_req *req, struct fuse_req *next)
 
 static void destroy_req(fuse_req_t req)
 {
-	pthread_mutex_destroy(&req->lock);
+    pthread_mutex_destroy(&req->lock);
 	fuse_free(req);
 }
+
 
 void fuse_free_req(fuse_req_t req)
 {
@@ -247,13 +248,11 @@ static int fuse_send_msg(struct fuse_ll *f, struct fuse_chan *ch,
 				out->error, out->len);
 		} else if (out->error) {
             fuse_log_debug(
-				"   unique: %llu, error: %i (%s), outsize: %i\n",
-				(unsigned long long) out->unique, out->error,
+				"error: %i (%s), outsize: %i\n", out->error,
 				strerror(-out->error), out->len);
 		} else {
             fuse_log_debug(
-				"   unique: %llu, success, outsize: %i\n",
-				(unsigned long long) out->unique, out->len);
+				"success, outsize: %i\n",out->len);
 		}
 	}
 
@@ -266,7 +265,7 @@ int fuse_send_reply_iov_nofree(fuse_req_t req, int error, struct iovec *iov,
 	struct fuse_out_header out;
 
 	if (error <= -1000 || error > 0) {
-		fuse_log_err( "fuse: bad error value: %i\n",	error);
+		fuse_log_err( "fuse: bad error value: %i\n",error);
 		error = -ERANGE;
 	}
 
@@ -1869,7 +1868,7 @@ static void do_init(fuse_req_t req, fuse_ino_t nodeid, const void *inarg)
 	if (f->debug) {
         fuse_log_debug( "INIT: %u.%u\n", arg->major, arg->minor);
 		if (arg->major == 7 && arg->minor >= 6) {
-            fuse_log_debug( "flags=0x%08x\n", arg->flags);
+            fuse_log_debug( "flags=0x%08x\n",arg->flags);
             fuse_log_debug( "max_readahead=0x%08x\n",
 				arg->max_readahead);
 		}
@@ -2044,10 +2043,10 @@ static void do_init(fuse_req_t req, fuse_ino_t nodeid, const void *inarg)
 
 	if (f->debug) {
         fuse_log_debug( "   INIT: %u.%u\n", outarg.major, outarg.minor);
-        fuse_log_debug( "   flags=0x%08x\n", outarg.flags);
+        fuse_log_debug( "   flags=0x%08x\n",outarg.flags);
         fuse_log_debug( "   max_readahead=0x%08x\n",
 			outarg.max_readahead);
-        fuse_log_debug( "   max_write=0x%08x\n", outarg.max_write);
+        fuse_log_debug( "   max_write=0x%08x\n",outarg.max_write);
         fuse_log_debug( "   max_background=%i\n",
 			outarg.max_background);
         fuse_log_debug( "   congestion_threshold=%i\n",
@@ -2513,10 +2512,11 @@ void fuse_session_process_buf(struct fuse_session *se,
 		in = buf->mem;
 	}
 
+    fuse_set_current_context_uniqueid(in->unique);
+
 	if (f->debug) {
         fuse_log_debug(
-			"unique: %llu, opcode: %s (%i), nodeid: %llu, insize: %zu, pid: %u\n",
-			(unsigned long long) in->unique,
+			"opcode: %s (%i), nodeid: %llu, insize: %zu, pid: %u\n",
 			opname((enum fuse_opcode) in->opcode), in->opcode,
 			(unsigned long long) in->nodeid, buf->size, in->pid);
 	}
@@ -2779,7 +2779,6 @@ int fuse_session_receive_buf(struct fuse_session *se, struct fuse_buf *buf,
 		if (llp->size < bufsize)
 			goto fallback;
 	}
-
 	res = splice(fuse_chan_fd(ch), NULL, llp->pipe[1], NULL, bufsize, 0);
 	err = errno;
 

@@ -646,13 +646,6 @@ int do_lookup(struct fuse *f, fuse_ino_t nodeid, const char *name,
 	set_stat(f, e->ino, &e->attr);
 	return 0;
 }
-
-
-
-
-
-
-
 void reply_err(fuse_req_t req, int err)
 {
 	/* fuse_reply_err() uses non-negated errno values */
@@ -1063,6 +1056,17 @@ int fuse_interrupted(void)
 	else
 		return 0;
 }
+/*Used for tracing request*/
+static uint64_t current_req_uniqueid_context = 0;
+uint64_t fuse_current_context_uniqueid(void)
+{
+    return current_req_uniqueid_context;
+}
+
+void fuse_set_current_context_uniqueid(uint64_t  id)
+{
+    current_req_uniqueid_context = id;
+}
 
 enum {
 	KEY_HELP,
@@ -1305,14 +1309,10 @@ struct fuse *fuse_new(struct fuse_chan *ch, struct fuse_args *args,
 	}
 	pthread_mutex_unlock(&fuse_context_lock);
 
-
-	if (fuse_create_context_key() == -1)
-		goto out;
-
 	f = (struct fuse *) fuse_calloc(1, sizeof(struct fuse));
 	if (f == NULL) {
 		fuse_log_err( "fuse: failed to allocate fuse object\n");
-		goto out_delete_context_key;
+		goto out;
 	}
 
 	fs = fuse_fs_new(op, op_size, user_data);
@@ -1433,8 +1433,6 @@ out_free_fs:
 	fuse_free(f->conf.modules);
 out_free:
 	fuse_free(f);
-out_delete_context_key:
-	fuse_delete_context_key();
 out:
 	return NULL;
 }
@@ -1483,7 +1481,6 @@ void fuse_destroy(struct fuse *f)
 	fuse_session_destroy(f->se);
 	fuse_free(f->conf.modules);
 	fuse_free(f);
-	fuse_delete_context_key();
 }
 
 

@@ -756,6 +756,11 @@ int fuse_getgroups(int size, gid_t list[]);
  */
 int fuse_interrupted(void);
 
+struct fuse_req;
+typedef struct fuse_req *fuse_req_t;
+uint64_t    fuse_current_context_uniqueid(void);
+void        fuse_set_current_context_uniqueid(uint64_t  id);
+
 /**
  * The real main function
  *
