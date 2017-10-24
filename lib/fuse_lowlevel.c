@@ -121,9 +121,10 @@ static void list_add_req(struct fuse_req *req, struct fuse_req *next)
 
 static void destroy_req(fuse_req_t req)
 {
-	pthread_mutex_destroy(&req->lock);
+    pthread_mutex_destroy(&req->lock);
 	fuse_free(req);
 }
+
 
 void fuse_free_req(fuse_req_t req)
 {

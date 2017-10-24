@@ -1064,12 +1064,11 @@ int fuse_interrupted(void)
 		return 0;
 }
 
-uint64_t  fuse_current_uniqueid(void)
+uint64_t fuse_current_uniqueid(void)
 {
     struct fuse_context_i *c = fuse_get_context_internal();
-
-    if (c && c->req)
-        return c->req->unique;
+    if (c)
+        return c->req_id;
     else
         return 0;
 }
@@ -1315,14 +1314,10 @@ struct fuse *fuse_new(struct fuse_chan *ch, struct fuse_args *args,
 	}
 	pthread_mutex_unlock(&fuse_context_lock);
 
-
-	if (fuse_create_context_key() == -1)
-		goto out;
-
 	f = (struct fuse *) fuse_calloc(1, sizeof(struct fuse));
 	if (f == NULL) {
 		fuse_log_err( "fuse: failed to allocate fuse object\n");
-		goto out_delete_context_key;
+		goto out;
 	}
 
 	fs = fuse_fs_new(op, op_size, user_data);
@@ -1443,8 +1438,6 @@ out_free_fs:
 	fuse_free(f->conf.modules);
 out_free:
 	fuse_free(f);
-out_delete_context_key:
-	fuse_delete_context_key();
 out:
 	return NULL;
 }
@@ -1493,7 +1486,6 @@ void fuse_destroy(struct fuse *f)
 	fuse_session_destroy(f->se);
 	fuse_free(f->conf.modules);
 	fuse_free(f);
-	fuse_delete_context_key();
 }
 
 
