@@ -4,9 +4,8 @@
 #define FUSE_LOG_WARN 1
 #define FUSE_LOG_DEBUG 2
 
-uint64_t fuse_current_uniqueid(void);
-
 typedef void(*fuse_log_t)(const char *file, int line, const char *function, int level, const char *fmt, ...);
+uint64_t    fuse_current_uniqueid(void);
 
 extern fuse_log_t _fuse_log;
 fuse_log_t fuse_log_set(fuse_log_t new_callback);

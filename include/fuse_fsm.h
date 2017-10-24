@@ -102,7 +102,6 @@ struct fuse_fsm{
     struct fuse_dlist_node node;
     struct fuse_fsm_event pending_event;
     struct fuse_context fuse_ctxt;
-    uint64_t fuse_unique_id;
     char data[0];
 };
 
@@ -110,7 +109,6 @@ void   fuse_fsm_set_err(struct fuse_fsm *fsm, int err);
 int    fuse_fsm_get_err(struct fuse_fsm *fsm);
 int    fuse_fsm_is_done(struct fuse_fsm *fsm);
 void   fuse_fsm_run( struct fuse_fsm * fsm, struct fuse_fsm_event event );
-uint64_t fuse_get_fsm_unique_id(struct fuse_fsm * fsm);
 const char* fuse_fsm_cur_state(struct fuse_fsm * fsm);
 
 #define FUSE_FSM_BAD {NULL,fuse_lib_fsm_transition_function_null}
@@ -161,7 +159,6 @@ __attribute__((constructor)) static void fuse_fsm_init_##api_name(void) {\
     memcpy(fsm,&f,sizeof(struct fuse_fsm));\
     fuse_dlist_add(&allocated_fsm, &fsm->node); \
     ((fsm)->fuse_ctxt) = *fuse_get_context();\
-    ((fsm)->fuse_unique_id) = fuse_current_uniqueid();\
     _Pragma("GCC diagnostic pop") }
 
 
