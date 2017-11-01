@@ -102,6 +102,7 @@ struct fuse_fsm{
     struct fuse_dlist_node node;
     struct fuse_fsm_event pending_event;
     struct fuse_context fuse_ctxt;
+    uint64_t uniqueid;
     char data[0];
 };
 
@@ -159,6 +160,7 @@ __attribute__((constructor)) static void fuse_fsm_init_##api_name(void) {\
     memcpy(fsm,&f,sizeof(struct fuse_fsm));\
     fuse_dlist_add(&allocated_fsm, &fsm->node); \
     ((fsm)->fuse_ctxt) = *fuse_get_context();\
+    ((fsm)->uniqueid)  = fuse_current_uniqueid();\
     _Pragma("GCC diagnostic pop") }
 
 
