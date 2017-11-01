@@ -646,13 +646,6 @@ int do_lookup(struct fuse *f, fuse_ino_t nodeid, const char *name,
 	set_stat(f, e->ino, &e->attr);
 	return 0;
 }
-
-
-
-
-
-
-
 void reply_err(fuse_req_t req, int err)
 {
 	/* fuse_reply_err() uses non-negated errno values */
@@ -1071,6 +1064,13 @@ uint64_t fuse_current_uniqueid(void)
         return c->req_id;
     else
         return 0;
+}
+
+void fuse_set_current_uniqueid(uint64_t  id)
+{
+    struct fuse_context_i *c = fuse_get_context_internal();
+    if (c)
+        c->req_id = id;
 }
 
 enum {
