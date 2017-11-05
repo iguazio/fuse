@@ -758,10 +758,8 @@ int fuse_interrupted(void);
 
 struct fuse_req;
 typedef struct fuse_req *fuse_req_t;
-fuse_req_t  fuse_current_req(void);
-fuse_req_t  fuse_current_req_set(fuse_req_t new_req);
-uint64_t    fuse_current_uniqueid(void);
-void        fuse_set_current_uniqueid(uint64_t  id);
+uint64_t    fuse_current_context_uniqueid(void);
+void        fuse_set_current_context_uniqueid(uint64_t  id);
 
 /**
  * The real main function

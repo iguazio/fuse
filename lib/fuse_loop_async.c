@@ -109,6 +109,7 @@ int fuse_session_loop_async( struct fuse_session *se, int fd, fuse_async_get_msg
             }
             while ((fsm = fuse_dlist_pop(&pending_fsm_queue, struct fuse_fsm, node)) != NULL) {
                 fuse_dlist_add(&allocated_fsm, &fsm->node);
+                fuse_set_current_context_uniqueid(fsm->uniqueid);
                 fuse_fsm_run(fsm, fsm->pending_event);
                 if (fuse_fsm_is_done(fsm))
                     FUSE_FSM_FREE(fsm);

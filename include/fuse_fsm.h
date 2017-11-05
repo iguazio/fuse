@@ -93,6 +93,7 @@ struct fuse_fsm_entry{
 struct fuse_fsm{
     const char *name;
     int err;
+    uint64_t uniqueid;
     int current_state;
     const char** events;
     const char** states;
@@ -102,7 +103,6 @@ struct fuse_fsm{
     struct fuse_dlist_node node;
     struct fuse_fsm_event pending_event;
     struct fuse_context fuse_ctxt;
-    uint64_t uniqueid;
     char data[0];
 };
 
@@ -146,7 +146,7 @@ __attribute__((constructor)) static void fuse_fsm_init_##api_name(void) {\
         assert(!strcmp(fuse_fsm_states_##api_name[num_of_states-1],"DONE"));\
 }
 
-#define _FUSE_FSM_INIT(api_name) {#api_name,0, 0, (const char**)fuse_fsm_events_##api_name,\
+#define _FUSE_FSM_INIT(api_name) {#api_name,0, 0, 0, (const char**)fuse_fsm_events_##api_name,\
     (const char**)fuse_fsm_states_##api_name,\
    (const struct fuse_fsm_entry *)fuse_fsm_transition_table_##api_name,\
     sizeof(fuse_fsm_states_##api_name)/sizeof(fuse_fsm_states_##api_name[0]),\
@@ -160,7 +160,7 @@ __attribute__((constructor)) static void fuse_fsm_init_##api_name(void) {\
     memcpy(fsm,&f,sizeof(struct fuse_fsm));\
     fuse_dlist_add(&allocated_fsm, &fsm->node); \
     ((fsm)->fuse_ctxt) = *fuse_get_context();\
-    ((fsm)->uniqueid)  = fuse_current_uniqueid();\
+    ((fsm)->uniqueid) = fuse_current_context_uniqueid();\
     _Pragma("GCC diagnostic pop") }
 
 
