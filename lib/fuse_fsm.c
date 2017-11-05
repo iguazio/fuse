@@ -24,7 +24,6 @@ static  struct fuse_fsm_event fsm_process_event( struct fuse_fsm * fsm, struct f
 void fuse_fsm_run( struct fuse_fsm * fsm, struct fuse_fsm_event event ) 
 {
     *fuse_get_context() = fsm->fuse_ctxt;
-    fuse_set_current_uniqueid(fsm->uniqueid);
 
     while (event.id != FUSE_FSM_EVENT_NONE.id)
         event = fsm_process_event(fsm,event);
@@ -55,12 +54,6 @@ int fuse_fsm_get_err( struct fuse_fsm *fsm )
 int fuse_fsm_is_done(struct fuse_fsm *fsm)
 {
 	return fsm->current_state == fsm->num_of_states-1;
-}
-
-uint64_t fuse_get_fsm_unique_id(struct fuse_fsm * unused)
-{
-    (void)unused;
-    return fuse_current_uniqueid();
 }
 
 int _fuse_fsm_state_str_to_id( int num_of_states,const char** states,const char *state )

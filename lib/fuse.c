@@ -344,7 +344,7 @@ static int hash_name(struct fuse *f, struct node *node, fuse_ino_t parentid,
 void delete_node(struct fuse *f, struct node *node)
 {
 	if (f->conf.debug)
-        fuse_log_debug_unique( "DELETE: %llu\n", 0,
+        fuse_log_debug( "DELETE: %llu\n",
 			(unsigned long long) node->nodeid);
 
 //	assert(node->treelock == 0);
@@ -1056,21 +1056,16 @@ int fuse_interrupted(void)
 	else
 		return 0;
 }
-
-uint64_t fuse_current_uniqueid(void)
+/*Used for tracing request*/
+static uint64_t current_req_uniqueid_context = 0;
+uint64_t fuse_current_context_uniqueid(void)
 {
-    struct fuse_context_i *c = fuse_get_context_internal();
-    if (c)
-        return c->req_id;
-    else
-        return 0;
+    return current_req_uniqueid_context;
 }
 
-void fuse_set_current_uniqueid(uint64_t  id)
+void fuse_set_current_context_uniqueid(uint64_t  id)
 {
-    struct fuse_context_i *c = fuse_get_context_internal();
-    if (c)
-        c->req_id = id;
+    current_req_uniqueid_context = id;
 }
 
 enum {
