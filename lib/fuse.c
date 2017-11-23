@@ -329,14 +329,20 @@ static int hash_name(struct fuse *f, struct node *node, fuse_ino_t parentid,
 			return -1;
 	}
 
+    fuse_log_debug("hash_name() - hashing: %llu %s\n",
+        (unsigned long long) node->nodeid, (node->name ? node->name : "<NULL>"));
+
 	parent->refctr ++;
 	node->parent = parent;
 	node->name_next = f->name_table.array[hash];
 	f->name_table.array[hash] = node;
 	f->name_table.use++;
 
-	if (f->name_table.use >= f->name_table.size / 2)
-		rehash_name(f);
+    if (f->name_table.use >= f->name_table.size / 2) {
+        fuse_log_debug("rehash_name() - hashing: %llu %s\n",
+            (unsigned long long) node->nodeid, (node->name ? node->name : "<NULL>"));
+        rehash_name(f);
+    }
 
 	return 0;
 }
@@ -348,7 +354,9 @@ void delete_node(struct fuse *f, struct node *node)
 			(unsigned long long) node->nodeid);
 
 //	assert(node->treelock == 0);
-	unhash_name(f, node);
+    fuse_log_debug("delete_node() - unhashing: %llu %s\n",
+        (unsigned long long) node->nodeid, (node->name?node->name:"<NULL>"));
+    unhash_name(f, node);
 	if (lru_enabled(&f->conf))
 		remove_node_lru(node);
 	unhash_id(f, node);
@@ -479,7 +487,9 @@ static void unlink_node(struct fuse *f, struct node *node)
 		assert(node->nlookup > 1);
 		node->nlookup--;
 	}
-	unhash_name(f, node);
+    fuse_log_debug("unlink_node() - unhashing: %llu %s\n",
+        (unsigned long long) node->nodeid, (node->name ? node->name : "<NULL>"));
+    unhash_name(f, node);
 }
 
 void remove_node(struct fuse *f, fuse_ino_t dir, const char *name)
@@ -515,7 +525,9 @@ int rename_node(struct fuse *f, fuse_ino_t olddir, const char *oldname,
 		unlink_node(f, newnode);
 	}
 
-	unhash_name(f, node);
+    fuse_log_debug("rename_node() - unhashing: %llu %s\n",
+        (unsigned long long) node->nodeid, (node->name ? node->name : "<NULL>"));
+    unhash_name(f, node);
 	if (hash_name(f, node, newdir, newname) == -1) {
 		err = -ENOMEM;
 		goto out;
@@ -540,10 +552,16 @@ int exchange_node(struct fuse *f, fuse_ino_t olddir, const char *oldname,
 	oldnode  = lookup_node(f, olddir, oldname);
 	newnode	 = lookup_node(f, newdir, newname);
 
-	if (oldnode)
-		unhash_name(f, oldnode);
-	if (newnode)
-		unhash_name(f, newnode);
+    if (oldnode) {
+        fuse_log_debug("exchange() - unhashing: %llu\n",
+            (unsigned long long) oldnode->nodeid, (oldnode->name ? oldnode->name : "<NULL>"));
+        unhash_name(f, oldnode);
+    }
+    if (newnode) {
+        fuse_log_debug("exchange() - unhashing: %llu\n",
+            (unsigned long long) newnode->nodeid, (newnode->name ? newnode->name : "<NULL>"));
+        unhash_name(f, newnode);
+    }
 
 	err = -ENOMEM;
 	if (oldnode) {
@@ -928,6 +946,8 @@ int fuse_clean_cache(struct fuse *f)
 			continue;
 
 		node->nlookup = 0;
+        fuse_log_debug("unhash_name() - unhashing: %llu %s\n",
+            (unsigned long long) node->nodeid, (node->name ? node->name : "<NULL>"));
 		unhash_name(f, node);
 		unref_node(f, node);
 	}
