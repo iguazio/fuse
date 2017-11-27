@@ -31,6 +31,8 @@ static struct fuse_fsm_event f10(struct fuse_fsm* fsm __attribute__((unused)), v
     remove_node(dt->f, dt->parent, dt->name);
     free_path_wrlock(dt->f, dt->parent, dt->wnode, (char*)dt->path);
     reply_err(dt->req, 0);
+    fuse_free(dt->name);
+    fuse_free(dt->path);
 
     return FUSE_FSM_EVENT_NONE;
 }
@@ -41,6 +43,8 @@ static struct fuse_fsm_event f13(struct fuse_fsm* fsm __attribute__((unused)), v
     int err = fuse_fsm_get_err(fsm);
     free_path_wrlock(dt->f, dt->parent, dt->wnode, (char*)dt->path);
     reply_err(dt->req, err);
+    fuse_free(dt->name);
+    fuse_free(dt->path);
     return FUSE_FSM_EVENT_NONE;
 }
 
@@ -73,13 +77,16 @@ void fuse_lib_rmdir(fuse_req_t req, fuse_ino_t parent, const char *name)
         dt->f = f;
         dt->parent = parent;
         dt->req = req;
-        dt->path = path;
-        dt->name = name;
+        dt->path = fuse_strdup(path);
+        dt->name = fuse_strdup(name);
         dt->wnode = wnode;
 
         fuse_fsm_run(new_fsm, FUSE_FSM_EVENT_OK);
-        if (fuse_fsm_is_done(new_fsm))
+        if (fuse_fsm_is_done(new_fsm)) {
+            fuse_free(dt->name);
+            fuse_free(dt->path);
             FUSE_FSM_FREE(new_fsm);
+        }
     }else
         reply_err(req, err);
 }

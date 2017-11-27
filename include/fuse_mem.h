@@ -18,12 +18,12 @@ void  fuse_mem_verify(void);
     #define fuse_malloc(size) _fuse_malloc(size,__LINE__,__FILE__)
     #define fuse_calloc(nmenb,size) _fuse_calloc(nmenb,size,__LINE__,__FILE__)
     #define fuse_realloc(ptr,size) _fuse_realloc(ptr,size,__LINE__,__FILE__)
-    #define fuse_free(ptr) _fuse_free(ptr,__LINE__,__FILE__)
+    #define fuse_free(ptr) _fuse_free((void*)ptr,__LINE__,__FILE__)
     #define fuse_strdup(ptr) _fuse_strdup(ptr,__LINE__,__FILE__)
 #else
     #define fuse_malloc(size) malloc(size)
     #define fuse_calloc(nmenb,size) calloc(nmenb,size)
     #define fuse_realloc(ptr,size) realloc(ptr,size)
-    #define fuse_free(ptr) free(ptr)
+    #define fuse_free(ptr) free((void*)ptr)
     #define fuse_strdup(ptr) strdup(ptr)
 #endif
