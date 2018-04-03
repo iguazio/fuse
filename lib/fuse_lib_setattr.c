@@ -61,7 +61,7 @@ static struct fuse_fsm_event f4(struct fuse_fsm* fsm __attribute__((unused)),voi
     struct fsm_setattr_data *dt = (struct fsm_setattr_data *)data;
     int err = 0;
 
-    #ifdef HAVE_UTIMENSAT
+    #if 0 // #ifdef HAVE_UTIMENSAT
     if (!err &&
         (valid & (FUSE_SET_ATTR_ATIME | FUSE_SET_ATTR_MTIME))) {
             struct timespec tv[2];
