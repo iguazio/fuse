@@ -7,6 +7,7 @@
 */
 
 #include <pthread.h>
+#include <config.h>
 
 #ifndef USE_UCLIBC
 //#define fuse_mutex_init(mut) pthread_mutex_init(mut, NULL)
