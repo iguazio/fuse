@@ -122,7 +122,7 @@ const char* fuse_fsm_cur_state(struct fuse_fsm * fsm);
     error when trying to have more (or less) events
 */
 #define FUSE_FSM_EVENTS(api_name,_ok_,_error_,...) \
-		static const struct fuse_fsm_event fuse_fsm_events_##api_name[] = { {0,"ok"}, {1,"error"} __VA_ARGS__ };
+		static const struct fuse_fsm_event fuse_fsm_events_##api_name[] = { {0,"ok"}, {1,"error"} ,__VA_ARGS__ };
 
 #define FUSE_FSM_STATES(api_name,...)\
     _Pragma("GCC diagnostic push") \
