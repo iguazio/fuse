@@ -24,15 +24,18 @@ struct fsm_rename_data{
     char *newname;
     fuse_req_t req;
     struct fuse_intr_data d;
+    // cpoy+delele implementation
     char *io_buf;
-
     size_t cur_offset;
     size_t actually_read;
     struct fuse_file_info src_finfo;
     struct fuse_file_info dst_finfo;
     struct stat src_stat;
     struct stat src_stat_after;
+    int err;
 };
+
+#define update_err(_old_err,_fsm) do {if(!(_old_err)) (_old_err) = fuse_fsm_get_err(_fsm); }while(0)
 
 /*Send request to the fs*/
 static struct fuse_fsm_event ren(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
@@ -69,7 +72,7 @@ static struct fuse_fsm_event f10(struct fuse_fsm* fsm __attribute__((unused)), v
 
 static struct fuse_fsm_event f13(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
     struct fsm_rename_data *dt = (struct fsm_rename_data *)data;
-    int err = fuse_fsm_get_err(fsm);
+    int err = dt->err;
 
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
     free_path2(dt->f, dt->olddir, dt->newdir, dt->wnode1, dt->wnode2,(char*) dt->oldpath, (char*)dt->newpath);
@@ -83,6 +86,7 @@ static struct fuse_fsm_event f13(struct fuse_fsm* fsm __attribute__((unused)), v
 static struct fuse_fsm_event opnsrc(struct fuse_fsm* fsm __attribute__((unused)), void *data) 
 {
     struct fsm_rename_data *dt = (struct fsm_rename_data *)data;
+    update_err(dt->err, fsm);
     fuse_prepare_interrupt(dt->f, dt->req, &dt->d);
     dt->src_finfo.flags = O_RDONLY;
     int err = fuse_fs_open(fsm, dt->f->fs, dt->oldpath, &dt->src_finfo);
@@ -94,17 +98,20 @@ static struct fuse_fsm_event opnsrc(struct fuse_fsm* fsm __attribute__((unused))
 static struct fuse_fsm_event opndst(struct fuse_fsm* fsm __attribute__((unused)), void *data)
 {
     struct fsm_rename_data *dt = (struct fsm_rename_data *)data;
+    update_err(dt->err, fsm);
     fuse_prepare_interrupt(dt->f, dt->req, &dt->d);
     dt->dst_finfo.flags = O_WRONLY | O_CREAT;
     int err = fuse_fs_create(fsm, dt->f->fs, dt->newpath, S_IWUSR , &dt->dst_finfo);
     if (err == FUSE_LIB_ERROR_PENDING_REQ)
         return FUSE_FSM_EVENT_NONE;
     fuse_fsm_set_err(fsm, err);
+    update_err(dt->err, fsm);
     return (err) ? FUSE_FSM_EVENT_ERROR : FUSE_FSM_EVENT_OK;
 }
 static struct fuse_fsm_event rd(struct fuse_fsm* fsm __attribute__((unused)), void *data)
 {
     struct fsm_rename_data *dt = (struct fsm_rename_data *)data;
+    update_err(dt->err, fsm);
     size_t size = min(dt->src_stat.st_size - dt->cur_offset, BUF_SIZE);
     if (size == 0)
         return FUSE_FSM_EVENT_COMPLETED;
@@ -116,12 +123,14 @@ static struct fuse_fsm_event rd(struct fuse_fsm* fsm __attribute__((unused)), vo
     if (err == FUSE_LIB_ERROR_PENDING_REQ)
         return FUSE_FSM_EVENT_NONE;
     fuse_fsm_set_err(fsm, err);
+    update_err(dt->err, fsm);
     return (err) ? FUSE_FSM_EVENT_ERROR : FUSE_FSM_EVENT_OK;
 }
 
 static struct fuse_fsm_event wt(struct fuse_fsm* fsm __attribute__((unused)), void *data)
 {
     struct fsm_rename_data *dt = (struct fsm_rename_data *)data;
+    update_err(dt->err, fsm);
     fuse_prepare_interrupt(dt->f, dt->req, &dt->d);
     size_t size = min(dt->src_stat.st_size - dt->cur_offset, BUF_SIZE);
     int err = fuse_fs_write(fsm, dt->f->fs, dt->newpath, dt->io_buf, size, dt->cur_offset, &dt->dst_finfo);
@@ -129,6 +138,7 @@ static struct fuse_fsm_event wt(struct fuse_fsm* fsm __attribute__((unused)), vo
     if (err == FUSE_LIB_ERROR_PENDING_REQ)
         return FUSE_FSM_EVENT_NONE;
     fuse_fsm_set_err(fsm, err);
+    update_err(dt->err, fsm);
     return (err) ? FUSE_FSM_EVENT_ERROR : FUSE_FSM_EVENT_OK;
 }
 
@@ -137,11 +147,13 @@ static struct fuse_fsm_event clsdst(struct fuse_fsm* fsm __attribute__((unused))
     struct fsm_rename_data *dt = (struct fsm_rename_data *)data;
     if (dt->dst_finfo.fh == 0)
         return FUSE_FSM_EVENT_OK;
+    update_err(dt->err, fsm);
     fuse_prepare_interrupt(dt->f, dt->req, &dt->d);
     int err = fuse_fs_release(fsm, dt->f->fs, dt->newpath, &dt->dst_finfo);
     if (err == FUSE_LIB_ERROR_PENDING_REQ)
         return FUSE_FSM_EVENT_NONE;
     fuse_fsm_set_err(fsm, err);
+    update_err(dt->err, fsm);
     return (err) ? FUSE_FSM_EVENT_ERROR : FUSE_FSM_EVENT_OK;
 }
 
@@ -150,11 +162,13 @@ static struct fuse_fsm_event clsrc(struct fuse_fsm* fsm __attribute__((unused)),
     struct fsm_rename_data *dt = (struct fsm_rename_data *)data;
     if (dt->src_finfo.fh == 0)
         return FUSE_FSM_EVENT_OK;
+    update_err(dt->err, fsm);
     fuse_prepare_interrupt(dt->f, dt->req, &dt->d);
     int err = fuse_fs_release(fsm, dt->f->fs, dt->oldpath, &dt->src_finfo);
     if (err == FUSE_LIB_ERROR_PENDING_REQ)
         return FUSE_FSM_EVENT_NONE;
     fuse_fsm_set_err(fsm, err);
+    update_err(dt->err, fsm);
     return (err) ? FUSE_FSM_EVENT_ERROR : FUSE_FSM_EVENT_OK;
 }
 
@@ -162,21 +176,25 @@ static struct fuse_fsm_event clsrc(struct fuse_fsm* fsm __attribute__((unused)),
 static struct fuse_fsm_event deldst(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
     struct fsm_rename_data *dt = (struct fsm_rename_data *)data;
     fuse_prepare_interrupt(dt->f, dt->req, &dt->d);
+    update_err(dt->err, fsm);
     int err = fuse_fs_unlink(fsm, dt->f->fs, dt->newpath);
     if (err == FUSE_LIB_ERROR_PENDING_REQ)
         return FUSE_FSM_EVENT_NONE;
     fuse_fsm_set_err(fsm, err);
+    update_err(dt->err, fsm);
     return (err) ? FUSE_FSM_EVENT_ERROR : FUSE_FSM_EVENT_OK;
 }
 
 static struct fuse_fsm_event delsrc(struct fuse_fsm* fsm __attribute__((unused)), void *data)
 {
     struct fsm_rename_data *dt = (struct fsm_rename_data *)data;
+    update_err(dt->err, fsm);
     fuse_prepare_interrupt(dt->f, dt->req, &dt->d);
     int err = fuse_fs_unlink(fsm, dt->f->fs, dt->oldpath);
     if (err == FUSE_LIB_ERROR_PENDING_REQ)
         return FUSE_FSM_EVENT_NONE;
     fuse_fsm_set_err(fsm, err);
+    update_err(dt->err, fsm);
     return (err) ? FUSE_FSM_EVENT_ERROR : FUSE_FSM_EVENT_OK;
 }
 
@@ -185,22 +203,26 @@ static struct fuse_fsm_event prop(struct fuse_fsm* fsm __attribute__((unused)), 
     struct fsm_rename_data *dt = (struct fsm_rename_data *)data;
     // This is the start of the 'copy + delete' implementation. Reset the error 
     fuse_fsm_set_err(fsm, 0);
+    dt->err = 0;
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
     int err = fuse_fs_getattr(fsm, dt->f->fs, dt->oldpath, &dt->src_stat);
     if (err == FUSE_LIB_ERROR_PENDING_REQ)
         return FUSE_FSM_EVENT_NONE;
     fuse_fsm_set_err(fsm, err);
+    update_err(dt->err, fsm);
     return (err) ? FUSE_FSM_EVENT_ERROR : FUSE_FSM_EVENT_OK;
 }
 
 static struct fuse_fsm_event prop2(struct fuse_fsm* fsm __attribute__((unused)), void *data)
 {
     struct fsm_rename_data *dt = (struct fsm_rename_data *)data;
+    update_err(dt->err, fsm);
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
     int err = fuse_fs_getattr(fsm, dt->f->fs, dt->oldpath, &dt->src_stat_after);
     if (err == FUSE_LIB_ERROR_PENDING_REQ)
         return FUSE_FSM_EVENT_NONE;
     fuse_fsm_set_err(fsm, err);
+    update_err(dt->err, fsm);
     return (err) ? FUSE_FSM_EVENT_ERROR : FUSE_FSM_EVENT_OK;
 }
 
@@ -210,6 +232,7 @@ static struct fuse_fsm_event verify(struct fuse_fsm* fsm __attribute__((unused))
     if (dt->src_stat.st_mtime != dt->src_stat_after.st_mtime) 
     {
         fuse_fsm_set_err(fsm, -EBUSY);
+        update_err(dt->err, fsm);
         return FUSE_FSM_EVENT_ERROR;
     }
     return FUSE_FSM_EVENT_OK;
@@ -217,25 +240,30 @@ static struct fuse_fsm_event verify(struct fuse_fsm* fsm __attribute__((unused))
 
 static struct fuse_fsm_event chmd(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
     struct fsm_rename_data *dt = (struct fsm_rename_data *)data;
+    update_err(dt->err, fsm);
     int err = fuse_fs_chmod(fsm, dt->f->fs, dt->newpath, dt->src_stat.st_mode);
     if (err == FUSE_LIB_ERROR_PENDING_REQ)
         return FUSE_FSM_EVENT_NONE;
     fuse_fsm_set_err(fsm, err);
+    update_err(dt->err, fsm);
     return (err) ? FUSE_FSM_EVENT_ERROR : FUSE_FSM_EVENT_OK;
 }
 
 static struct fuse_fsm_event chwn(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
     struct fsm_rename_data *dt = (struct fsm_rename_data *)data;
+    update_err(dt->err, fsm);
     int err = fuse_fs_chown(fsm, dt->f->fs,  dt->newpath, dt->src_stat.st_uid,  dt->src_stat.st_gid);
     if (err == FUSE_LIB_ERROR_PENDING_REQ)
         return FUSE_FSM_EVENT_NONE;
     fuse_fsm_set_err(fsm, err);
+    update_err(dt->err, fsm);
     return (err) ? FUSE_FSM_EVENT_ERROR : FUSE_FSM_EVENT_OK;
 }
 
 static struct fuse_fsm_event chutim(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
     struct fsm_rename_data *dt = (struct fsm_rename_data *)data;
     struct timespec tv[2];
+    update_err(dt->err, fsm);
     tv[0].tv_sec = dt->src_stat.st_atime;
     tv[0].tv_nsec = ST_ATIM_NSEC(&dt->src_stat);
     tv[1].tv_sec = dt->src_stat.st_mtime;
@@ -244,6 +272,7 @@ static struct fuse_fsm_event chutim(struct fuse_fsm* fsm __attribute__((unused))
     if (err == FUSE_LIB_ERROR_PENDING_REQ)
         return FUSE_FSM_EVENT_NONE;
     fuse_fsm_set_err(fsm, err);
+    update_err(dt->err, fsm);
     return (err) ? FUSE_FSM_EVENT_ERROR : FUSE_FSM_EVENT_OK;
 }
 
