@@ -72,6 +72,7 @@ static struct fuse_fsm_event f10(struct fuse_fsm* fsm __attribute__((unused)), v
 
 static struct fuse_fsm_event f13(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
     struct fsm_rename_data *dt = (struct fsm_rename_data *)data;
+    update_err(dt->err, fsm);
     int err = dt->err;
 
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
@@ -86,6 +87,12 @@ static struct fuse_fsm_event f13(struct fuse_fsm* fsm __attribute__((unused)), v
 static struct fuse_fsm_event opnsrc(struct fuse_fsm* fsm __attribute__((unused)), void *data) 
 {
     struct fsm_rename_data *dt = (struct fsm_rename_data *)data;
+    if (S_ISDIR(dt->src_stat.st_mode)) {
+        fuse_fsm_set_err(fsm, -EOPNOTSUPP);
+        update_err(dt->err, fsm);
+        return FUSE_FSM_EVENT_ERROR;
+    }
+
     update_err(dt->err, fsm);
     fuse_prepare_interrupt(dt->f, dt->req, &dt->d);
     dt->src_finfo.flags = O_RDONLY;
@@ -145,11 +152,12 @@ static struct fuse_fsm_event wt(struct fuse_fsm* fsm __attribute__((unused)), vo
 static struct fuse_fsm_event clsdst(struct fuse_fsm* fsm __attribute__((unused)), void *data)
 {
     struct fsm_rename_data *dt = (struct fsm_rename_data *)data;
-    if (dt->dst_finfo.fh == 0)
+    if (dt->dst_finfo.fh == 0 || dt->dst_finfo.fh == UINT64_MAX)
         return FUSE_FSM_EVENT_OK;
     update_err(dt->err, fsm);
     fuse_prepare_interrupt(dt->f, dt->req, &dt->d);
     int err = fuse_fs_release(fsm, dt->f->fs, dt->newpath, &dt->dst_finfo);
+    dt->dst_finfo.fh = UINT64_MAX;
     if (err == FUSE_LIB_ERROR_PENDING_REQ)
         return FUSE_FSM_EVENT_NONE;
     fuse_fsm_set_err(fsm, err);
@@ -160,11 +168,12 @@ static struct fuse_fsm_event clsdst(struct fuse_fsm* fsm __attribute__((unused))
 static struct fuse_fsm_event clsrc(struct fuse_fsm* fsm __attribute__((unused)), void *data)
 {
     struct fsm_rename_data *dt = (struct fsm_rename_data *)data;
-    if (dt->src_finfo.fh == 0)
+    if (dt->src_finfo.fh == 0 || dt->src_finfo.fh == UINT64_MAX)
         return FUSE_FSM_EVENT_OK;
     update_err(dt->err, fsm);
     fuse_prepare_interrupt(dt->f, dt->req, &dt->d);
     int err = fuse_fs_release(fsm, dt->f->fs, dt->oldpath, &dt->src_finfo);
+    dt->src_finfo.fh = UINT64_MAX;
     if (err == FUSE_LIB_ERROR_PENDING_REQ)
         return FUSE_FSM_EVENT_NONE;
     fuse_fsm_set_err(fsm, err);
