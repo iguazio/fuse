@@ -107,7 +107,7 @@ static struct fuse_fsm_event opndst(struct fuse_fsm* fsm __attribute__((unused))
     struct fsm_rename_data *dt = (struct fsm_rename_data *)data;
     update_err(dt->err, fsm);
     fuse_prepare_interrupt(dt->f, dt->req, &dt->d);
-    dt->dst_finfo.flags = O_WRONLY | O_CREAT;
+    dt->dst_finfo.flags = O_WRONLY | O_CREAT | O_TRUNC;
     int err = fuse_fs_create(fsm, dt->f->fs, dt->newpath, S_IWUSR , &dt->dst_finfo);
     if (err == FUSE_LIB_ERROR_PENDING_REQ)
         return FUSE_FSM_EVENT_NONE;
