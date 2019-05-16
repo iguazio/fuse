@@ -24,6 +24,7 @@ void fuse_lib_unlink(fuse_req_t req, fuse_ino_t parent, const char *name);
 void fuse_lib_rename(fuse_req_t req, fuse_ino_t olddir,
                      const char *oldname, fuse_ino_t newdir,
                      const char *newname, unsigned int flags);
-
+void fuse_lib_readlink(fuse_req_t req, fuse_ino_t ino);
+void fuse_lib_symlink(fuse_req_t req, const char *linkname, fuse_ino_t parent, const char *name);
 
 

@@ -109,7 +109,7 @@ static struct fuse_fsm_event f13(struct fuse_fsm* fsm __attribute__((unused)), v
 //f13 - Replay to the driver - FUSE_FSM_EVENT_ERROR
 
 FUSE_FSM_EVENTS(CREATE, FUSE_FSM_EVENT_OK, FUSE_FSM_EVENT_ERROR)
-FUSE_FSM_STATES(CREATE,         "START",         "CRT"      ,     "LKP"    ,"LKP_OK"       ,"RPLY_OK"       ,"RLS"       , "RPLY_ERR"  ,"DONE")
+FUSE_FSM_STATES(CREATE,         "START",          "CRT"      ,     "LKP"    ,"LKP_OK"       ,"RPLY_OK"       ,"RLS"       , "RPLY_ERR" ,"DONE")
 FUSE_FSM_ENTRY(CREATE,/*ok*/	 {"CRT",f1}     ,{"LKP",f2}  ,{"LKP_OK",f6} ,{"RPLY_OK",f10},{"DONE",f4}     ,{"DONE",f13}, {"DONE",f4}, FUSE_FSM_BAD)
 FUSE_FSM_LAST(CREATE,/*error*/  {"RPLY_ERR",f13},{"DONE",f13},{"RLS",f5}    ,{"RLS",f5}     ,{"RPLY_ERR",f5} ,{"DONE",f13}, {"DONE",f4},FUSE_FSM_BAD)
 

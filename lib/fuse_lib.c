@@ -59,31 +59,6 @@ struct fuse_forget_data *forgets)
     fuse_reply_none(req);
 }
 
-static void fuse_lib_readlink(fuse_req_t req, fuse_ino_t ino)
-{
-    struct fuse *f = req_fuse_prepare(req);
-    char linkname[PATH_MAX + 1];
-    char *path;
-    int err;
-
-    err = get_path(f, ino, &path);
-    if (!err) {
-        struct fuse_intr_data d;
-        fuse_prepare_interrupt(f, req, &d);
-        err = fuse_fs_readlink(NULL, f->fs, path, linkname, sizeof(linkname));
-        fuse_finish_interrupt(f, req, &d);
-        free_path(f, ino, path);
-    }
-    // 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-    // 		fuse_async_add_pending(NULL,f, req, ino, FUSE_READLINK);
-    //         return;
-    //     }
-    if (!err) {
-        linkname[PATH_MAX] = '\0';
-        fuse_reply_readlink(req, linkname);
-    } else
-        reply_err(req, err);
-}
 
 /*FixMe: should be separate host callback*/
 static void fuse_lib_mknod(fuse_req_t req, fuse_ino_t parent, const char *name,
@@ -126,31 +101,6 @@ static void fuse_lib_mknod(fuse_req_t req, fuse_ino_t parent, const char *name,
 
 
 
-static void fuse_lib_symlink(fuse_req_t req, const char *linkname,
-                             fuse_ino_t parent, const char *name)
-{
-    struct fuse *f = req_fuse_prepare(req);
-    struct fuse_entry_param e;
-    char *path;
-    int err;
-
-    err = get_path_name(f, parent, name, &path);
-    if (!err) {
-        struct fuse_intr_data d;
-
-        fuse_prepare_interrupt(f, req, &d);
-        err = fuse_fs_symlink(NULL, f->fs, linkname, path);
-        if (!err)
-            err = lookup_path(NULL, f, parent, name, path, &e, NULL);
-        fuse_finish_interrupt(f, req, &d);
-        free_path(f, parent, path);
-    }
-    // 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-    // 		fuse_async_add_pending(NULL,f, req, 0, FUSE_SYMLINK);
-    //         return;
-    //     }
-    reply_entry(req, &e, err);
-}
 
 
 static void fuse_lib_link(fuse_req_t req, fuse_ino_t ino, fuse_ino_t newparent,
