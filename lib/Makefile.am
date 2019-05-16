@@ -18,6 +18,8 @@ iconv_source =
 endif
 
 libfuse3_la_SOURCES = 		\
+	fuse_lib_readlink.c \
+	fuse_lib_symlink.c \
 	fuse_mem.c \
 	fuse_log.c \
   hide_node.c \

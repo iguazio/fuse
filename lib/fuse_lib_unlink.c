@@ -31,7 +31,7 @@ static struct fuse_fsm_event f10(struct fuse_fsm* fsm __attribute__((unused)), v
     remove_node(dt->f, dt->parent, dt->name);
     free_path_wrlock(dt->f, dt->parent, dt->wnode, (char*)dt->path);
     reply_err(dt->req, 0);
-    fuse_free(dt->name);
+    fuse_free((char*)dt->name);
 
     return FUSE_FSM_EVENT_NONE;
 }
@@ -44,7 +44,7 @@ static struct fuse_fsm_event f13(struct fuse_fsm* fsm __attribute__((unused)), v
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
     free_path_wrlock(dt->f, dt->parent, dt->wnode, (char*)dt->path);
     reply_err(dt->req, err);
-    fuse_free(dt->name);
+    fuse_free((char*)dt->name);
     return FUSE_FSM_EVENT_NONE;
 }
 
