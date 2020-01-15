@@ -53,4 +53,17 @@ char *add_name(char **buf, unsigned *bufsize, char *s, const char *name);
 int try_get_path(struct fuse *f, fuse_ino_t nodeid, const char *name,char **path, struct node **wnodep, bool need_lock);
 
 
+#define sprintf_node_parent_trace(_out, _node,_depth) {                             \
+    size_t   written = 0;                                                           \
+    size_t out_size = sizeof(_out);                                                 \
+    struct node *n = _node;                                                         \
+    _depth = 0;                                                                     \
+    do {                                                                            \
+        written += sprintf_node_trace(n, &_out[written], out_size - written);       \
+        if (n)                                                                      \
+            n = n->parent;                                                          \
+        _depth++;                                                                   \
+    } while (n && _depth < 256) ;}                                                  \
 
+
+size_t sprintf_node_trace(struct node *node, char *buf, int buf_len);

@@ -48,7 +48,7 @@
 #include <sys/time.h>
 #include <sys/mman.h>
 #include <sys/file.h>
-
+#include <stdarg.h>
 
 
 
@@ -493,18 +493,54 @@ void remove_node(struct fuse *f, fuse_ino_t dir, const char *name)
 	pthread_mutex_unlock(&f->lock);
 }
 
+
+static size_t str_format_ok(char *dest, const size_t max_len, const char *format, ...)
+{
+    va_list ar;
+    int32_t count;
+
+    va_start(ar, format);
+    count = vsnprintf(dest, max_len, format, ar);
+    va_end(ar);
+    if ((count < 0) || (count >= (int)max_len)) {
+        dest[max_len - 1] = 0;
+        return max_len;
+    }
+    return (size_t)count;
+}
+
+size_t sprintf_node_trace(struct node *node, char *buf, int buf_len) {
+    if (!node)
+        return str_format_ok(buf, buf_len, "nul");
+    return str_format_ok(buf, buf_len, "%s %d(%p->%p)->", node->name, node->nodeid, node, node->parent);
+}
+
+
+
+
+static char rename_node_trace[5][4096];
+void print_rename_trace() {
+    for (int i = 0; i < 5; i++) {
+        fuse_log_err("rename trace %d - %s\n", i, rename_node_trace[i]);
+    }
+}
 int rename_node(struct fuse *f, fuse_ino_t olddir, const char *oldname,
 		       fuse_ino_t newdir, const char *newname, int hide)
 {
 	struct node *node;
 	struct node *newnode;
 	int err = 0;
+    int depth;
 
 	pthread_mutex_lock(&f->lock);
 	node  = lookup_node(f, olddir, oldname);
 	newnode	 = lookup_node(f, newdir, newname);
-	if (node == NULL)
-		goto out;
+
+    sprintf_node_parent_trace(rename_node_trace[0], node, depth);
+    sprintf_node_parent_trace(rename_node_trace[1], newnode, depth);
+
+    if (node == NULL)
+        goto out;
 
 	if (newnode != NULL) {
 		if (hide) {
@@ -513,13 +549,18 @@ int rename_node(struct fuse *f, fuse_ino_t olddir, const char *oldname,
 			goto out;
 		}
 		unlink_node(f, newnode);
-	}
+        sprintf_node_parent_trace(rename_node_trace[2], newnode, depth);
+    }
 
 	unhash_name(f, node);
+    sprintf_node_parent_trace(rename_node_trace[3], newnode, depth);
+
 	if (hash_name(f, node, newdir, newname) == -1) {
 		err = -ENOMEM;
 		goto out;
 	}
+
+    sprintf_node_parent_trace(rename_node_trace[4], newnode, depth);
 
 	if (hide)
 		node->is_hidden = 1;
