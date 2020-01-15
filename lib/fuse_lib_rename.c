@@ -48,9 +48,19 @@ static struct fuse_fsm_event ren(struct fuse_fsm* fsm __attribute__((unused)), v
     return (err)?FUSE_FSM_EVENT_ERROR:FUSE_FSM_EVENT_OK;
 }
 
+void print_rename_trace();
 
 static struct fuse_fsm_event f10(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
     struct fsm_rename_data *dt = (struct fsm_rename_data *)data;
+    char f10_trace[8][4096];
+    int depth1;
+    int depth2;
+    sprintf_node_parent_trace(f10_trace[0], dt->wnode1,depth1);
+    sprintf_node_parent_trace(f10_trace[1], dt->wnode2,depth1);
+
+
+    sprintf_node_parent_trace(f10_trace[2], get_node(dt->f, dt->olddir),depth1);
+    sprintf_node_parent_trace(f10_trace[3], get_node(dt->f, dt->newdir),depth1);
 
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
     int err;
@@ -61,6 +71,21 @@ static struct fuse_fsm_event f10(struct fuse_fsm* fsm __attribute__((unused)), v
         err = rename_node(dt->f, dt->olddir, dt->oldname,
             dt->newdir, dt->newname, 0);
     }
+
+    sprintf_node_parent_trace(f10_trace[4], dt->wnode1, depth1);
+    sprintf_node_parent_trace(f10_trace[5], dt->wnode2, depth1);
+
+    sprintf_node_parent_trace(f10_trace[6], get_node(dt->f, dt->olddir),depth1);
+    sprintf_node_parent_trace(f10_trace[7], get_node(dt->f, dt->newdir),depth2);
+
+    if (depth1 > 255 || depth2 > 255) {
+        print_rename_trace();
+        for (int i = 0; i < 8; i++) {
+            fuse_log_err("rename f10 trace %d - %s\n", i, f10_trace[i]);
+        }
+
+    }
+
     free_path2(dt->f, dt->olddir, dt->newdir, dt->wnode1, dt->wnode2,(char*) dt->oldpath, (char*)dt->newpath);
     fuse_free(dt->newname);
     reply_err(dt->req, err);
