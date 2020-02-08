@@ -20,7 +20,7 @@ struct fsm_rename_data{
     struct node *wnode1;
     struct node *wnode2;
     fuse_ino_t olddir;
-    const char *oldname;
+    char *oldname;
     fuse_ino_t newdir;
     char *newname;
     fuse_req_t req;
@@ -89,6 +89,7 @@ static struct fuse_fsm_event f10(struct fuse_fsm* fsm __attribute__((unused)), v
 
     free_path2(dt->f, dt->olddir, dt->newdir, dt->wnode1, dt->wnode2,(char*) dt->oldpath, (char*)dt->newpath);
     fuse_free(dt->newname);
+    fuse_free(dt->oldname);
     reply_err(dt->req, err);
     if (dt->io_buf)
         fuse_free(dt->io_buf);
@@ -104,6 +105,7 @@ static struct fuse_fsm_event f13(struct fuse_fsm* fsm __attribute__((unused)), v
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
     free_path2(dt->f, dt->olddir, dt->newdir, dt->wnode1, dt->wnode2,(char*) dt->oldpath, (char*)dt->newpath);
     fuse_free(dt->newname);
+    fuse_free(dt->oldname);
     reply_err(dt->req, err);
     if (dt->io_buf)
         fuse_free(dt->io_buf);
@@ -367,7 +369,7 @@ void fuse_lib_rename(fuse_req_t req, fuse_ino_t olddir,
         dt->wnode1 = wnode1;
         dt->wnode2 = wnode2;
         dt->olddir = olddir;
-        dt->oldname = oldname;
+        dt->oldname = fuse_strdup(oldname);
         dt->newdir = newdir;
         dt->newname = fuse_strdup(newname);
         dt->flags = flags;
