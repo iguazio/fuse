@@ -3,7 +3,7 @@
 #include "fuse_lib_lookup_path.h"
 #include "fuse_fsm.h"
 #include "fuse_log.h"
-#define BUF_SIZE (512*1024)
+#define BUF_SIZE (256*1024)
 #define FUSE_FSM_EVENT_COMPLETED_D { 2,"completed"}
 static const struct fuse_fsm_event FUSE_FSM_EVENT_COMPLETED = FUSE_FSM_EVENT_COMPLETED_D;
 
