@@ -10,6 +10,7 @@
 #include "fuse_lowlevel.h"
 #include "fuse_async_response.h"
 #include "fuse.h"
+#include "fuse_log.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -82,9 +83,19 @@ int fuse_session_loop_async( struct fuse_session *se, int fd, fuse_async_get_msg
         return -errno;
     }
 
+    fuse_log_err("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!do_print_checking FUSE \n");
+
+    int print_poll_cntr = 0;
+
     while (!fuse_session_exited(se)) {
         ret = poll(fds, 3, -1);
         if (ret > 0){
+
+            if (fds[0].revents && print_poll_cntr < 1000) {
+                print_poll_cntr++;
+                fuse_log_err("FUSE revent is 0x%x\n", fds[0].revents);
+            }
+
             if (fds[0].revents & POLLIN){
                 res = fuse_session_receive_buf(se, &fbuf, ch);
                 if (res == -EINTR)
