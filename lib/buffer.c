@@ -322,8 +322,11 @@ void fuse_buf_free(struct fuse_bufvec *buf)
     if (buf != NULL) {
         size_t i;
 
-        for (i = 0; i < buf->count; i++)
-            fuse_free(buf->buf[i].mem);
+        for (i = 0; i < buf->count; i++) {
+        	if(buf->buf[i].mem) {
+        		fuse_free(buf->buf[i].mem);
+        	}
+        }
         fuse_free(buf);
     }
 }

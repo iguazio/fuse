@@ -1053,7 +1053,7 @@ int fuse_loop(struct fuse *f)
 	return fuse_session_loop(f->se);
 }
 
-int fuse_loop_async(struct fuse *f, int fd, fuse_async_get_msg_t callback_on_new_msg, void* callback_payload)
+int fuse_loop_async(struct fuse *f)
 {
     if (!f)
         return -1;
@@ -1061,7 +1061,7 @@ int fuse_loop_async(struct fuse *f, int fd, fuse_async_get_msg_t callback_on_new
     if (lru_enabled(&f->conf))
         return fuse_session_loop_remember(f);
 
-    return fuse_session_loop_async(f->se, fd, callback_on_new_msg, callback_payload);
+    return fuse_session_loop_async(f->se);
 }
 
 void fuse_exit(struct fuse *f)

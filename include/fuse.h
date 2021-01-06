@@ -679,7 +679,7 @@ void fuse_destroy(struct fuse *f);
  */
 int fuse_loop(struct fuse *f);
 
-int fuse_loop_async(struct fuse *f, int fd, fuse_async_get_msg_t callback_on_new_msg, void* callback_payload);
+int fuse_loop_async(struct fuse *f);
 
 /**
  * Exit from event loop
@@ -771,7 +771,7 @@ int fuse_main_real(int argc, char *argv[], const struct fuse_operations *op,
 
 
 int fuse_main_real_async(int argc, char *argv[], const struct fuse_operations *op,
-                         size_t op_size, void *user_data,int fd, fuse_async_get_msg_t callback_on_new_msg, void* callback_payload);
+                         size_t op_size);
 
 
 /**

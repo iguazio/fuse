@@ -329,7 +329,7 @@ int fuse_main_real(int argc, char *argv[], const struct fuse_operations *op,
 }
 
 int fuse_main_real_async(int argc, char *argv[], const struct fuse_operations *op,
-                   size_t op_size, void *user_data,int fd, fuse_async_get_msg_t callback_on_new_msg, void* callback_payload)
+                   size_t op_size)
 {
     struct fuse *fuse;
     char *mountpoint;
@@ -337,11 +337,11 @@ int fuse_main_real_async(int argc, char *argv[], const struct fuse_operations *o
     int res;
 
     fuse = fuse_setup(argc, argv, op, op_size, &mountpoint,
-        &multithreaded, user_data);
+        &multithreaded, NULL);
     if (fuse == NULL)
         return 1;
     
-    res = fuse_loop_async(fuse,fd, callback_on_new_msg, callback_payload);
+    res = fuse_loop_async(fuse);
 
     fuse_teardown(fuse, mountpoint);
 

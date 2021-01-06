@@ -10,6 +10,7 @@
 #include "fuse_lowlevel.h"
 #include "fuse_async_response.h"
 #include "fuse.h"
+#include "fuse_user_data_context.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -55,7 +56,7 @@ static int signaler_fd_create(int *out_fd)
 
 
 
-int fuse_session_loop_async( struct fuse_session *se, int fd, fuse_async_get_msg_t callback_on_new_msg, void* callback_payload)
+int fuse_session_loop_async( struct fuse_session *se)
 {
     int res = 0;
     struct fuse_chan *ch = fuse_session_chan(se);
@@ -72,7 +73,7 @@ int fuse_session_loop_async( struct fuse_session *se, int fd, fuse_async_get_msg
     fds[0].events = POLLIN;
 
 
-    fds[1].fd = fd;
+    fds[1].fd = g_fuse_user_data_context.user_context_events_fd;
     fds[1].events = POLLIN;
 
     
@@ -98,7 +99,7 @@ int fuse_session_loop_async( struct fuse_session *se, int fd, fuse_async_get_msg
             }
             if (fds[1].revents & POLLIN){
                 int err;
-                while (!callback_on_new_msg(callback_payload,&err,&fsm)){
+                while (!g_fuse_user_data_context.callback_on_new_msg(&err,&fsm)){
                     if (fsm) {
                         fuse_fsm_set_err(fsm, err);
                         fuse_fsm_run(fsm, err ? FUSE_FSM_EVENT_ERROR : FUSE_FSM_EVENT_OK);
