@@ -30,7 +30,7 @@ static void fuse_lib_destroy(void *data)
 
     fuse_create_context(f);
     fuse_fs_destroy(f->fs);
-    f->fs = NULL;
+ f->fs = NULL;
 }
 
 static void do_forget(struct fuse *f, fuse_ino_t ino, uint64_t nlookup)
@@ -522,69 +522,16 @@ struct fuse_file_info *fi)
 static void fuse_lib_getlk(fuse_req_t req, fuse_ino_t ino,
 			   struct fuse_file_info *fi, struct flock *lock)
 {
-	int err;
-	struct lock l;
-	struct lock *conflict;
-	struct fuse *f = req_fuse(req);
-
-	flock_to_lock(lock, &l);
-	l.owner = fi->lock_owner;
-	pthread_mutex_lock(&f->lock);
-	conflict = locks_conflict(get_node(f, ino), &l);
-	if (conflict)
-		lock_to_flock(conflict, lock);
-	pthread_mutex_unlock(&f->lock);
-	if (!conflict)
-		err = fuse_lock_common(NULL, req, ino, fi, lock, F_GETLK);
-	else
-		err = 0;
-
-	if (!err)
-		fuse_reply_lock(req, lock);
-	else
-		reply_err(req, err);
+	fuse_lib_lock(req, ino, fi, lock, F_GETLK);
 }
 /*FixMe: looks messy*/
 static void fuse_lib_setlk(fuse_req_t req, fuse_ino_t ino,
 			   struct fuse_file_info *fi, struct flock *lock,
 			   int sleep)
 {
-	int err = fuse_lock_common(NULL, req, ino, fi, lock,
-				   sleep ? F_SETLKW : F_SETLK);
-	if (!err) {
-		struct fuse *f = req_fuse(req);
-		struct lock l;
-		flock_to_lock(lock, &l);
-		l.owner = fi->lock_owner;
-		pthread_mutex_lock(&f->lock);
-		locks_insert(get_node(f, ino), &l);
-		pthread_mutex_unlock(&f->lock);
-	}
-	reply_err(req, err);
+	fuse_lib_lock(req, ino, fi, lock, sleep ? F_SETLKW : F_SETLK);
 }
-static void fuse_lib_flock(fuse_req_t req, fuse_ino_t ino,
-			   struct fuse_file_info *fi, int op)
-{
-	struct fuse *f = req_fuse_prepare(req);
-	char *path;
-	int err;
 
-	err = get_path_nullok(f, ino, &path);
-	if (err == 0) {
-		struct fuse_intr_data d;
-		fuse_prepare_interrupt(f, req, &d);
-		err = fuse_fs_flock(NULL, f->fs, path, fi, op);
-		fuse_finish_interrupt(f, req, &d);
-		free_path(f, ino, path);
-	}
-/*FixMe: uses from setctl()
-	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-		fuse_lib_add_pending(f, req, ino, FUSE_FLOCK);
-        return;
-    }
-*/
-	reply_err(req, err);
-}
 
 static void fuse_lib_bmap(fuse_req_t req, fuse_ino_t ino, size_t blocksize,
 			  uint64_t idx)
