@@ -30,7 +30,7 @@ static struct fuse_fsm_event f2(struct fuse_fsm* fsm __attribute__((unused)), vo
     free_path(dt->f, dt->ino, dt->path);
 
 	int err = fuse_fsm_get_err(fsm);
-	fuse_reply_err(dt->req, err);
+	reply_err(dt->req, err);
 
     return FUSE_FSM_EVENT_NONE;
 }

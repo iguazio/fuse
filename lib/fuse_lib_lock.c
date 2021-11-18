@@ -34,7 +34,7 @@ static struct fuse_fsm_event f2(struct fuse_fsm* fsm __attribute__((unused)), vo
 	if(dt->cmd == F_GETLK && !err) {
 		fuse_reply_lock(dt->req, &dt->lock);
 	} else {
-		fuse_reply_err(dt->req, err);
+		reply_err(dt->req, err);
 	}
 
     return FUSE_FSM_EVENT_NONE;
