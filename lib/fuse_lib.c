@@ -693,29 +693,6 @@ static void fuse_lib_poll(fuse_req_t req, fuse_ino_t ino,
 		reply_err(req, err);
 }
 
-static void fuse_lib_fallocate(fuse_req_t req, fuse_ino_t ino, int mode,
-		off_t offset, off_t length, struct fuse_file_info *fi)
-{
-	struct fuse *f = req_fuse_prepare(req);
-	struct fuse_intr_data d;
-	char *path;
-	int err;
-
-	err = get_path_nullok(f, ino, &path);
-	if (!err) {
-		fuse_prepare_interrupt(f, req, &d);
-		err = fuse_fs_fallocate(NULL, f->fs, path, mode, offset, length, fi);
-		fuse_finish_interrupt(f, req, &d);
-		free_path(f, ino, path);
-	}
-// 	if (err == FUSE_LIB_ERROR_PENDING_REQ){
-// 		fuse_async_add_pending(NULL,f, req, ino, FUSE_FALLOCATE);
-//         return;
-//     }
-	reply_err(req, err);
-}
-
-
 struct fuse_lowlevel_ops fuse_path_ops = {
     .init = fuse_lib_init,
     .destroy = fuse_lib_destroy,
