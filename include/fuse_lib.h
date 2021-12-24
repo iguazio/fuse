@@ -26,5 +26,5 @@ void fuse_lib_rename(fuse_req_t req, fuse_ino_t olddir,
                      const char *newname, unsigned int flags);
 void fuse_lib_readlink(fuse_req_t req, fuse_ino_t ino);
 void fuse_lib_symlink(fuse_req_t req, const char *linkname, fuse_ino_t parent, const char *name);
-
+void fuse_lib_fallocate(fuse_req_t req, fuse_ino_t ino, int mode, off_t offset, off_t length, struct fuse_file_info *fi);
 

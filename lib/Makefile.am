@@ -38,6 +38,7 @@ libfuse3_la_SOURCES = 		\
 	fuse_lib_getattr.c \
 	fuse_lib_access.c \
 	fuse_lib_readdir.c \
+	fuse_lib_fallocate.c \
 	fuse_fsm.c			\
 	fuse_interrupt.c			\
 	fuse_lock.c  \
