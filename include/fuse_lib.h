@@ -28,4 +28,5 @@ void fuse_lib_readlink(fuse_req_t req, fuse_ino_t ino);
 void fuse_lib_symlink(fuse_req_t req, const char *linkname, fuse_ino_t parent, const char *name);
 void fuse_lib_lock(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi, struct flock *lock, int cmd);
 void fuse_lib_flock(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi, int op);
+void fuse_lib_fallocate(fuse_req_t req, fuse_ino_t ino, int mode, off_t offset, off_t length, struct fuse_file_info *fi);
 

@@ -40,6 +40,7 @@ libfuse3_la_SOURCES = 		\
 	fuse_lib_readdir.c \
 	fuse_lib_lock.c     \
 	fuse_lib_flock.c    \
+	fuse_lib_fallocate.c \
 	fuse_fsm.c			\
 	fuse_interrupt.c			\
 	fuse_lock.c  \
