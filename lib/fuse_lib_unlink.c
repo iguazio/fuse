@@ -1,6 +1,8 @@
+#include <libgen.h>
 #include "fuse_lib.h"
 #include "fuse_lib_lookup_path.h"
 #include "fuse_fsm.h"
+#include "fuse_log.h"
 
 struct fsm_unlink_data {
     const char *path;
@@ -28,7 +30,14 @@ static struct fuse_fsm_event f10(struct fuse_fsm* fsm __attribute__((unused)), v
     struct fsm_unlink_data *dt = (struct fsm_unlink_data *)data;
 
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
-    remove_node(dt->f, dt->parent, dt->name);
+    if (dt->wnode->open_count) {
+        char hidden_name[NAME_MAX];
+        snprintf(hidden_name, sizeof(hidden_name), "?%s.%08X", dt->name, (uint32_t)clock());
+        hidden_name[sizeof(hidden_name) - 1] = '\0';
+        rename_node(dt->f, dt->parent, dt->name, dt->parent, hidden_name, 1);
+        dt->wnode->is_deleted_from_backend = true;
+    }else
+        remove_node(dt->f, dt->parent, dt->name);
     free_path_wrlock(dt->f, dt->parent, dt->wnode, (char*)dt->path);
     reply_err(dt->req, 0);
     fuse_free((char*)dt->name);
