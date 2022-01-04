@@ -1,5 +1,48 @@
 #include <stdlib.h>
+#include <errno.h>
 #include "fuse_node.h"
+#include "fuse_log.h"
+
+
+void node_add_filehandle(struct node *n, uint64_t fh)
+{
+    if (n->fh == NULL) {
+        if (n->open_count != 1) {
+            fuse_log_err("add_node_filehandle expected open_count be 1, n->open_count=%u\n", n->open_count);
+            return ;
+        }
+        n->fh = fuse_malloc(sizeof(uint64_t));
+    }
+    else {
+        if (n->open_count > 1) {
+            fuse_log_err("add_node_filehandle expected open_count larger then 1, n->open_count=%u\n", n->open_count);
+            return ;
+        }
+        n->fh = fuse_realloc(n->fh, (sizeof(uint64_t) * n->open_count));
+    }
+    n->fh[n->open_count - 1] = fh;
+}
+
+
+void node_remove_filehandle(struct node *n, uint64_t fh)
+{
+    if ((n->fh == NULL) || (n->open_count == 0)) {
+        fuse_log_err("add_remove_filehandle expecting n->fh not null\n", n->open_count);
+        return;
+    }
+    for (int i = 0; i < n->open_count; i++) {
+        if (n->fh[i] == fh) {
+            n->fh[i] = n->fh[n->open_count - 1];
+            if (n->open_count == 1) {
+                fuse_free(n->fh);
+                n->fh = NULL;
+            }else
+                n->fh = fuse_realloc(n->fh, (sizeof(uint64_t) * (n->open_count - 1)));
+            return;
+        }
+    }
+    fuse_log_err("add_remove_filehandle handle %u not found,n->open_count=%d \n", fh, n->open_count);
+}
 
 struct node_lru * node_lru( struct node *node )
 {

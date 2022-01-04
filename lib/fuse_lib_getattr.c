@@ -1,5 +1,6 @@
 #include "fuse_lib.h"
 #include "fuse_fsm.h"
+#include "fuse_log.h"
 
 /*/////////////////////////////////////////////////////////////////////////
                 states
@@ -98,6 +99,15 @@ void fuse_lib_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi)
         dt->has_fi = (fi != NULL);
         if (dt->has_fi)
             dt->fi = *fi;
+        if (fi == NULL) {
+            struct node *n = get_node(f, ino);
+            if (n && n->fh) {
+                fuse_log_debug("fuse_lib_getattr: cached filehandle %u", n->fh[0]);
+                memset(&dt->fi, 0, sizeof(dt->fi));
+                dt->has_fi = true;
+                dt->fi.fh = n->fh[0];
+            }
+        }
         dt->ino = ino;
         dt->req = req;
         dt->path = path;
