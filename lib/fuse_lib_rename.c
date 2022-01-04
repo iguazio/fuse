@@ -33,7 +33,7 @@ static struct fuse_fsm_event ren(struct fuse_fsm* fsm __attribute__((unused)), v
     return (err)?FUSE_FSM_EVENT_ERROR:FUSE_FSM_EVENT_OK;
 }
 
-void print_rename_trace();
+extern void print_rename_trace(void);
 
 static struct fuse_fsm_event f10(struct fuse_fsm* fsm __attribute__((unused)), void *data) {
     struct fsm_rename_data *dt = (struct fsm_rename_data *)data;
