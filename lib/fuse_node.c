@@ -7,20 +7,21 @@
 void node_add_filehandle(struct node *n, uint64_t fh)
 {
     if (n->fh == NULL) {
-        if (n->open_count != 1) {
-            fuse_log_err("add_node_filehandle expected open_count be 1, n->open_count=%u\n", n->open_count);
+        if (n->open_count != 0) {
+            fuse_log_err("add_node_filehandle expected open_count be 0, n->open_count=%u\n", n->open_count);
             return ;
         }
         n->fh = fuse_malloc(sizeof(uint64_t));
     }
     else {
-        if (n->open_count > 1) {
-            fuse_log_err("add_node_filehandle expected open_count larger then 1, n->open_count=%u\n", n->open_count);
+        if (n->open_count > 0) {
+            fuse_log_err("add_node_filehandle expected open_count larger then 0, n->open_count=%u\n", n->open_count);
             return ;
         }
-        n->fh = fuse_realloc(n->fh, (sizeof(uint64_t) * n->open_count));
+        n->fh = fuse_realloc(n->fh, (sizeof(uint64_t) * (n->open_count + 1)));
     }
-    n->fh[n->open_count - 1] = fh;
+    n->fh[n->open_count] = fh;
+    n->open_count++;
 }
 
 
@@ -41,6 +42,7 @@ void node_remove_filehandle(struct node *n, uint64_t fh)
             return;
         }
     }
+    --n->open_count;
     fuse_log_err("add_remove_filehandle handle %u not found,n->open_count=%d \n", fh, n->open_count);
 }
 

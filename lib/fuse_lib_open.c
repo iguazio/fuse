@@ -42,7 +42,6 @@ static struct fuse_fsm_event f2(struct fuse_fsm* fsm, void *data) {
 
 	pthread_mutex_lock(&dt->f->lock);
     struct node *node = get_node(dt->f, dt->ino);
-	node->open_count++;
     node_add_filehandle(node, dt->fi.fh);
     pthread_mutex_unlock(&dt->f->lock);
 	if (fuse_reply_open(dt->req, &dt->fi) == -ENOENT) {
