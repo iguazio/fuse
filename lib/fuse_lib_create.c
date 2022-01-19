@@ -77,8 +77,7 @@ static struct fuse_fsm_event f10(struct fuse_fsm* fsm __attribute__((unused)), v
     fuse_finish_interrupt(dt->f, dt->req, &dt->d);
 
 	pthread_mutex_lock(&dt->f->lock);
-    struct node *node = get_node(dt->f, dt->e.ino);
-    node_add_filehandle(node, dt->fi.fh);
+	get_node(dt->f, dt->e.ino)->open_count++;
 	pthread_mutex_unlock(&dt->f->lock);
     free_path(dt->f, dt->parent, dt->path);
     fuse_free(dt->name);

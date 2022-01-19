@@ -70,7 +70,7 @@ int fuse_do_release(fuse_req_t req, struct fuse *f, fuse_ino_t ino, const char *
     pthread_mutex_lock(&f->lock);
     node = get_node(f, ino);
     assert(node->open_count > 0);
-    node_remove_filehandle(node, fi->fh);
+    --node->open_count;
     if (node->is_hidden && !node->open_count && !node->is_deleted_from_backend) {
         node->is_hidden = 0;
         if (path || f->conf.nopath) {

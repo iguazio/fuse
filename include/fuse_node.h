@@ -28,12 +28,7 @@ struct node {
     unsigned int is_deleted_from_backend : 1;
     //    int treelock;
     char inline_name[32];
-    uint64_t *fh;
 };
-
-void node_add_filehandle(struct node *n, uint64_t fh);
-void node_remove_filehandle(struct node *n, uint64_t fh);
-
 
 struct node_lru {
     struct node node;
