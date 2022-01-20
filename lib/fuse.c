@@ -50,7 +50,7 @@
 #include <sys/file.h>
 #include <stdarg.h>
 
-
+void print_rename_trace(void);
 
 struct node *get_node_nocheck(struct fuse *f, fuse_ino_t nodeid)
 {
@@ -519,7 +519,8 @@ size_t sprintf_node_trace(struct node *node, char *buf, int buf_len) {
 
 
 static char rename_node_trace[5][4096];
-void print_rename_trace() {
+void print_rename_trace(void)
+{
     for (int i = 0; i < 5; i++) {
         fuse_log_err("rename trace %d - %s\n", i, rename_node_trace[i]);
     }
