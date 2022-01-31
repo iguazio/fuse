@@ -64,6 +64,11 @@ struct fuse_forget_data *forgets)
 static void fuse_lib_mknod(fuse_req_t req, fuse_ino_t parent, const char *name,
                            mode_t mode, dev_t rdev)
 {
+    struct fuse_entry_param e;
+
+    reply_entry(req, &e, -ENOSYS);
+    return;
+#if 0
     struct fuse *f = req_fuse_prepare(req);
     struct fuse_entry_param e;
     char *path;
@@ -97,6 +102,7 @@ static void fuse_lib_mknod(fuse_req_t req, fuse_ino_t parent, const char *name,
         free_path(f, parent, path);
     }
     reply_entry(req, &e, err);
+#endif
 }
 
 
