@@ -290,7 +290,7 @@ static int receive_fd(int fd)
 	return *(int*)CMSG_DATA(cmsg);
 }
 
-void fuse_kern_unmount(const char *mountpoint, int fd)
+void fuse_kern_unmount(const char *mountpoint, int fd, int fusermount_pid)
 {
 	int res;
 	int pid;
@@ -336,10 +336,13 @@ void fuse_kern_unmount(const char *mountpoint, int fd)
 		_exit(1);
 	}
 	waitpid(pid, NULL, 0);
+
+	if(fusermount_pid > 0)	
+		waitpid(fusermount_pid, NULL, 0);
 }
 
 static int fuse_mount_fusermount(const char *mountpoint, struct mount_opts *mo,
-		const char *opts, int quiet)
+		const char *opts, int quiet, int *out_fusermount_pid)
 {
 	int fds[2], pid;
 	int res;
@@ -408,6 +411,7 @@ static int fuse_mount_fusermount(const char *mountpoint, struct mount_opts *mo,
 	if (rv >= 0)
 		fcntl(rv, F_SETFD, FD_CLOEXEC);
 
+	*out_fusermount_pid = pid;
 	return rv;
 }
 
@@ -567,7 +571,7 @@ static int get_mnt_flag_opts(char **mnt_optsp, int flags)
 	return 0;
 }
 
-int fuse_kern_mount(const char *mountpoint, struct fuse_args *args)
+int fuse_kern_mount(const char *mountpoint, struct fuse_args *args, int *out_fusermount_pid)
 {
 	struct mount_opts mo;
 	int res = -1;
@@ -612,13 +616,13 @@ int fuse_kern_mount(const char *mountpoint, struct fuse_args *args)
 				goto out;
 			}
 
-			res = fuse_mount_fusermount(mountpoint, &mo, tmp_opts, 1);
+			res = fuse_mount_fusermount(mountpoint, &mo, tmp_opts, 1, out_fusermount_pid);
 			fuse_free(tmp_opts);
 			if (res == -1)
 				res = fuse_mount_fusermount(mountpoint, &mo,
-							    mnt_opts, 0);
+							    mnt_opts, 0, out_fusermount_pid);
 		} else {
-			res = fuse_mount_fusermount(mountpoint, &mo, mnt_opts, 0);
+			res = fuse_mount_fusermount(mountpoint, &mo, mnt_opts, 0, out_fusermount_pid);
 		}
 	}
 out:

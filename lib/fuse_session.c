@@ -85,6 +85,7 @@ struct fuse_chan *fuse_chan_new(int fd)
 
 	memset(ch, 0, sizeof(*ch));
 	ch->fd = fd;
+	ch->fusermount_pid = -1;
 
 	return ch;
 }
@@ -92,6 +93,16 @@ struct fuse_chan *fuse_chan_new(int fd)
 int fuse_chan_fd(struct fuse_chan *ch)
 {
 	return ch->fd;
+}
+
+void fuse_chan_set_fusermount_pid(struct fuse_chan *ch, int pid)
+{
+	ch->fusermount_pid = pid;
+}
+
+int fuse_chan_fusermount_pid(struct fuse_chan *ch)
+{
+	return ch->fusermount_pid;
 }
 
 struct fuse_session *fuse_chan_session(struct fuse_chan *ch)
