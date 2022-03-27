@@ -217,6 +217,7 @@ struct fuse_chan *fuse_mount(const char *mountpoint, struct fuse_args *args)
 {
 	struct fuse_chan *ch;
 	int fd;
+	int fusermount_pid = -1;
 
 	/*
 	 * Make sure file descriptors 0, 1 and 2 are open, otherwise chaos
@@ -228,13 +229,15 @@ struct fuse_chan *fuse_mount(const char *mountpoint, struct fuse_args *args)
 			close(fd);
 	} while (fd >= 0 && fd <= 2);
 
-	fd = fuse_kern_mount(mountpoint, args);
+	fd = fuse_kern_mount(mountpoint, args, &fusermount_pid);
 	if (fd == -1)
 		return NULL;
 
 	ch = fuse_chan_new(fd);
 	if (!ch)
-		fuse_kern_unmount(mountpoint, fd);
+		fuse_kern_unmount(mountpoint, fd, fusermount_pid);
+	else
+		fuse_chan_set_fusermount_pid(ch, fusermount_pid);
 
 	return ch;
 }
@@ -243,7 +246,7 @@ void fuse_unmount(const char *mountpoint, struct fuse_chan *ch)
 {
 	if (mountpoint) {
 		int fd = ch ? fuse_chan_clearfd(ch) : -1;
-		fuse_kern_unmount(mountpoint, fd);
+		fuse_kern_unmount(mountpoint, fd, fuse_chan_fusermount_pid(ch));
 		if (ch)
 			fuse_chan_destroy(ch);
 	}

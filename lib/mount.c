@@ -290,7 +290,16 @@ static int receive_fd(int fd)
 	return *(int*)CMSG_DATA(cmsg);
 }
 
-void fuse_kern_unmount(const char *mountpoint, int fd)
+static void kill_fusermount(int pid)
+{
+	if (pid > 0)
+	{
+		kill(pid, SIGKILL);
+		waitpid(pid, NULL, 0);
+	}
+}
+
+void fuse_kern_unmount(const char *mountpoint, int fd, int fusermount_pid)
 {
 	int res;
 	int pid;
@@ -312,11 +321,15 @@ void fuse_kern_unmount(const char *mountpoint, int fd)
 		/* If file poll returns POLLERR on the device file descriptor,
 		   then the filesystem is already unmounted */
 		if (res == 1 && (pfd.revents & POLLERR))
+		{
+			kill_fusermount(fusermount_pid);
 			return;
+		}
 	}
 
 	if (geteuid() == 0) {
 		fuse_mnt_umount("fuse", mountpoint, mountpoint,  1);
+		kill_fusermount(fusermount_pid);
 		return;
 	}
 
@@ -339,7 +352,7 @@ void fuse_kern_unmount(const char *mountpoint, int fd)
 }
 
 static int fuse_mount_fusermount(const char *mountpoint, struct mount_opts *mo,
-		const char *opts, int quiet)
+		const char *opts, int quiet, int *out_fusermount_pid)
 {
 	int fds[2], pid;
 	int res;
@@ -408,6 +421,7 @@ static int fuse_mount_fusermount(const char *mountpoint, struct mount_opts *mo,
 	if (rv >= 0)
 		fcntl(rv, F_SETFD, FD_CLOEXEC);
 
+	*out_fusermount_pid = pid;
 	return rv;
 }
 
@@ -567,7 +581,7 @@ static int get_mnt_flag_opts(char **mnt_optsp, int flags)
 	return 0;
 }
 
-int fuse_kern_mount(const char *mountpoint, struct fuse_args *args)
+int fuse_kern_mount(const char *mountpoint, struct fuse_args *args, int *out_fusermount_pid)
 {
 	struct mount_opts mo;
 	int res = -1;
@@ -612,13 +626,13 @@ int fuse_kern_mount(const char *mountpoint, struct fuse_args *args)
 				goto out;
 			}
 
-			res = fuse_mount_fusermount(mountpoint, &mo, tmp_opts, 1);
+			res = fuse_mount_fusermount(mountpoint, &mo, tmp_opts, 1, out_fusermount_pid);
 			fuse_free(tmp_opts);
 			if (res == -1)
 				res = fuse_mount_fusermount(mountpoint, &mo,
-							    mnt_opts, 0);
+							    mnt_opts, 0, out_fusermount_pid);
 		} else {
-			res = fuse_mount_fusermount(mountpoint, &mo, mnt_opts, 0);
+			res = fuse_mount_fusermount(mountpoint, &mo, mnt_opts, 0, out_fusermount_pid);
 		}
 	}
 out:

@@ -1709,6 +1709,22 @@ int fuse_session_loop_mt(struct fuse_session *se);
 int fuse_chan_fd(struct fuse_chan *ch);
 
 /**
+ * Set the pid of the fusemounter child process related to the channel
+ *
+ * @param ch the channel
+ * @param pid fusermount pid
+ */
+void fuse_chan_set_fusermount_pid(struct fuse_chan *ch, int pid);
+
+/**
+ * Set the pid of the fusemounter child process related to the channel
+ *
+ * @param ch the channel
+ * @return the fusermount pid 
+ */
+int fuse_chan_fusermount_pid(struct fuse_chan *ch);
+
+/**
  * Destroy a channel
  *
  * @param ch the channel

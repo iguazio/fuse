@@ -23,6 +23,7 @@ struct fuse_session {
 struct fuse_chan {
 	struct fuse_session *se;
 
+	int fusermount_pid;
 	int fd;
 };
 
@@ -137,8 +138,9 @@ struct fuse_chan *fuse_chan_new(int fd);
  */
 struct fuse_session *fuse_chan_session(struct fuse_chan *ch);
 
-void fuse_kern_unmount(const char *mountpoint, int fd);
-int fuse_kern_mount(const char *mountpoint, struct fuse_args *args);
+void fuse_kern_unmount(const char *mountpoint, int fd, int fusermount_pid);
+
+int fuse_kern_mount(const char *mountpoint, struct fuse_args *args, int *out_fusermount_pid);
 
 int fuse_send_reply_iov_nofree(fuse_req_t req, int error, struct iovec *iov,
 			       int count);
