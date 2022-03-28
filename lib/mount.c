@@ -292,6 +292,8 @@ static int receive_fd(int fd)
 
 static void kill_fusermount(int pid)
 {
+	/* if there is no fusermount process then pid value is -1,
+	   and we souhldn't wait.*/ 
 	if (pid > 0)
 	{
 		kill(pid, SIGKILL);

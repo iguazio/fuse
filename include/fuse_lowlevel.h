@@ -1717,7 +1717,7 @@ int fuse_chan_fd(struct fuse_chan *ch);
 void fuse_chan_set_fusermount_pid(struct fuse_chan *ch, int pid);
 
 /**
- * Set the pid of the fusemounter child process related to the channel
+ * Query the pid of the fusemounter child process related to the channel
  *
  * @param ch the channel
  * @return the fusermount pid 
