@@ -219,7 +219,7 @@ static void do_unmount(char *dev, int fd)
 	waitpid(pid, NULL, 0);
 }
 
-void fuse_kern_unmount(const char *mountpoint, int fd)
+void fuse_kern_unmount(const char *mountpoint, int fd, int fusermount_pid)
 {
 	char *ep, dev[128];
 	struct stat sbuf;
@@ -359,7 +359,7 @@ out:
 	return fd;
 }
 
-int fuse_kern_mount(const char *mountpoint, struct fuse_args *args)
+int fuse_kern_mount(const char *mountpoint, struct fuse_args *args, int *out_fusermount_pid)
 {
 	struct mount_opts mo;
 	int res = -1;
