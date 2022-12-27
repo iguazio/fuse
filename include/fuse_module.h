@@ -6,8 +6,6 @@ struct fusemod_so {
     int ctr;
 };
 
-extern fuse_module_factory_t fuse_module_subdir_factory;
-extern fuse_module_factory_t fuse_module_iconv_factory;
 extern struct fuse_module *fuse_modules;
 
 int fuse_register_module(const char *name,fuse_module_factory_t factory,struct fusemod_so *so);
