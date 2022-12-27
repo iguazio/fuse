@@ -50,6 +50,11 @@
 #include <sys/file.h>
 #include <stdarg.h>
 
+
+/* Defined by FUSE_REGISTER_MODULE() in lib/modules/subdir.c and iconv.c.  */
+extern fuse_module_factory_t fuse_module_subdir_factory;
+extern fuse_module_factory_t fuse_module_iconv_factory;
+
 void print_rename_trace(void);
 
 struct node *get_node_nocheck(struct fuse *f, fuse_ino_t nodeid)
