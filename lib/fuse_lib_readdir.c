@@ -1,15 +1,42 @@
 #include "fuse_lib.h"
 #include "fuse_fsm.h"
+
+#define FUSE_FSM_EVENT_SEEK_D  { 2,"seek" }
+static const struct fuse_fsm_event FUSE_FSM_EVENT_SEEK = FUSE_FSM_EVENT_SEEK_D;
+
 static int readdir_fill_from_list(fuse_req_t req, struct fuse_dh *dh,
                                   off_t off, enum fuse_readdir_flags flags);
 
+
+
+struct fuse_filler_wrapper {
+    struct fuse_dh *dh;
+    fuse_fill_dir_t fuse_filler;
+    unsigned int start_offset;
+    unsigned int filled_cntr;
+    unsigned int tried_cntr;
+};
+
+static int fuse_filler_wrapper_callback(void *buf, const char *name,
+    const struct stat *stbuf, off_t off,
+    enum fuse_fill_dir_flags flags) {
+    struct fuse_filler_wrapper *self = (struct fuse_filler_wrapper *)buf;
+    self->tried_cntr++;
+    if (off <= self->start_offset)
+        return 0;
+    self->filled_cntr++;
+    return self->fuse_filler(self->dh, name, stbuf, off, flags);
+}
+
+
 struct fsm_readdir_data{
     char *path;
+    struct fuse_dh *dh;
     struct fuse * f;
     struct fuse_file_info fi;
     fuse_ino_t ino;
     fuse_req_t req;
-    struct fuse_dh *dh;
+    struct fuse_filler_wrapper filler;
     int size;
     int off;
     enum fuse_readdir_flags flags;
@@ -20,29 +47,31 @@ struct fsm_readdir_data{
 /*Send request to the fs*/
 static struct fuse_fsm_event f1(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_readdir_data *dt = (struct fsm_readdir_data *)data;
-    fuse_fill_dir_t filler = fill_dir;
-
-    if (dt->flags & FUSE_READDIR_PLUS)
-        filler = fill_dir_plus;
-
-    free_direntries(dt->dh->first);
-    dt->dh->first = NULL;
-    dt->dh->last = &dt->dh->first;
-    dt->dh->len = 0;
-    dt->dh->error = 0;
-    dt->dh->needlen = dt->size;
-    dt->dh->req = dt->req;
-    dt->dh->filled = 1;
-//    fuse_prepare_interrupt(dt->f, dt->req, &d);
-    int err = fuse_fs_readdir(fsm, dt->f->fs, dt->path, dt->dh, filler, dt->off, &dt->fi, dt->flags);
+    dt->filler.tried_cntr = 0;
+    dt->filler.filled_cntr = 0;
+    int err = fuse_fs_readdir(fsm, dt->f->fs, dt->path, &dt->filler, fuse_filler_wrapper_callback, dt->off, &dt->fi, dt->flags);
     if (err == FUSE_LIB_ERROR_PENDING_REQ)
         return FUSE_FSM_EVENT_NONE;
+    if (err == -EAGAIN) {
+        dt->off = 0;
+        return FUSE_FSM_EVENT_SEEK;
+    }
     fuse_fsm_set_err(fsm, err);
     return (err)?FUSE_FSM_EVENT_ERROR:FUSE_FSM_EVENT_OK;
 }
 /*There is correct data - send it back to the driver*/
 static struct fuse_fsm_event f2(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_readdir_data *dt = (struct fsm_readdir_data *)data;
+    
+    // Still in the seek mode, when:
+    // - At least one file retrieved, means not the end of the directory yet
+    // - No files where pushed to the filler buffer
+    // 
+    if (!dt->dh->error && dt->filler.tried_cntr && !dt->filler.filled_cntr)  
+    {
+        dt->off += dt->filler.tried_cntr;
+        return FUSE_FSM_EVENT_SEEK;
+    }
     dt->dh->req = NULL;
     if (dt->dh->error)
         dt->dh->filled = 0;
@@ -116,11 +145,12 @@ static int readdir_fill_from_list(fuse_req_t req, struct fuse_dh *dh,
     }
     return 0;
 }
+FUSE_FSM_EVENTS(READDIR,FUSE_FSM_EVENT_OK,FUSE_FSM_EVENT_ERROR, FUSE_FSM_EVENT_SEEK_D)
 
-FUSE_FSM_EVENTS(READDIR,FUSE_FSM_EVENT_OK,FUSE_FSM_EVENT_ERROR)
-FUSE_FSM_STATES(READDIR,          "CREATED",  "RDIR"      ,   "DONE")
-FUSE_FSM_ENTRY(READDIR,/*ok*/   {"RDIR",f1},  {"DONE",f2} ,   FUSE_FSM_BAD)           
-FUSE_FSM_LAST (READDIR,/*error*/{"DONE",f3},  {"DONE",f3} ,   FUSE_FSM_BAD)           
+FUSE_FSM_STATES(READDIR,          "CREATED",      "RDIR"      ,   "DONE")
+FUSE_FSM_ENTRY(READDIR,/*ok*/   {"RDIR",f1},      {"DONE",f2} ,   FUSE_FSM_BAD)           
+FUSE_FSM_ENTRY(READDIR,/*error*/{"DONE",f3},      {"DONE",f3} ,   FUSE_FSM_BAD)           
+FUSE_FSM_LAST (READDIR,/*seek*/FUSE_FSM_BAD,      {"RDIR",f1} ,   FUSE_FSM_BAD)           
 
 static void fuse_readdir_common(fuse_req_t req, fuse_ino_t ino, size_t size,
 				off_t off, struct fuse_file_info *llfi,
@@ -150,7 +180,20 @@ static void fuse_readdir_common(fuse_req_t req, fuse_ino_t ino, size_t size,
             FUSE_FSM_ALLOC(READDIR,new_fsm,struct fsm_readdir_data);
             struct fsm_readdir_data *dt = (struct fsm_readdir_data*)new_fsm->data;
 
+            free_direntries(dh->first);
+            dh->first = NULL;
+            dh->last = &dh->first;
+            dh->len = 0;
+            dh->error = 0;
+            dh->needlen = size;
+            dh->req = req;
+            dh->filled = 1;
+
             dt->dh = dh;
+            dt->filler.dh = dh;
+            dt->filler.fuse_filler = (flags & FUSE_READDIR_PLUS) ? fill_dir_plus : fill_dir;
+            dt->filler.start_offset = off;
+
             dt->off = off;
             dt->size = size;
             dt->flags = flags;
