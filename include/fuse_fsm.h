@@ -83,6 +83,21 @@ static const struct fuse_fsm_event FUSE_FSM_EVENT_ERROR = {1,"error"};
 typedef struct fuse_fsm_event(*fuse_lib_fsm_transition_function_t)(struct fuse_fsm* fsm __attribute__((unused)),void *data);
 struct fuse_fsm_event fuse_lib_fsm_transition_function_null(struct fuse_fsm* fsm __attribute__((unused)),void *data);
 
+#define FSM_HIST_DEPTH 16
+
+struct fuse_fsm_hist_entry {
+    uint8_t id;
+    uint8_t from_state;
+    uint8_t to_state;
+    uint8_t by_event;
+    uint8_t next_event;
+    uint32_t fsm_err_after_transition;
+};
+
+struct fuse_fsm_hist {
+    int32_t curr_idx;
+    struct fuse_fsm_hist_entry  entries[FSM_HIST_DEPTH];
+};
 
 struct fuse_fsm_entry{
     const char *next_state;
@@ -103,6 +118,7 @@ struct fuse_fsm{
     struct fuse_dlist_node node;
     struct fuse_fsm_event pending_event;
     struct fuse_context fuse_ctxt;
+    struct fuse_fsm_hist hist;
     char data[0];
 };
 
