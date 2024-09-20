@@ -50,7 +50,7 @@ struct fuse_fsm_event fuse_lib_fsm_transition_function_null(struct fuse_fsm* fsm
     fuse_log_err("panic - unexpected state transition in %s %p. Dumping history of processed %d states:\n", fsm->name, data, fsm->hist.curr_idx);
     int num_of_entries = fsm->hist.curr_idx > FSM_HIST_DEPTH ? FSM_HIST_DEPTH:fsm->hist.curr_idx;
     for (int i = 0;i < num_of_entries; i++)
-        fuse_log_err("%s: [%d] %s->%s by %s , err after %d, next event %d\n", 
+        fuse_log_err("%s: [%d] %d->%d by %d , err after %d, next event %d\n", 
             fsm->name,  
             fsm->hist.entries[i].id,
             fsm->hist.entries[i].from_state,
