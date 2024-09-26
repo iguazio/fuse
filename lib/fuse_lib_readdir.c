@@ -63,15 +63,6 @@ static struct fuse_fsm_event f1(struct fuse_fsm* fsm __attribute__((unused)),voi
 static struct fuse_fsm_event f2(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_readdir_data *dt = (struct fsm_readdir_data *)data;
     
-    // Still in the seek mode, when:
-    // - At least one file retrieved, means not the end of the directory yet
-    // - No files where pushed to the filler buffer
-    // 
-    if (!dt->dh->error && dt->filler.tried_cntr && !dt->filler.filled_cntr)  
-    {
-        dt->off += dt->filler.tried_cntr;
-        return FUSE_FSM_EVENT_SEEK;
-    }
     dt->dh->req = NULL;
     if (dt->dh->error)
         dt->dh->filled = 0;
@@ -91,6 +82,22 @@ static struct fuse_fsm_event f2(struct fuse_fsm* fsm __attribute__((unused)),voi
 	return FUSE_FSM_EVENT_NONE;
 }
 
+/*Check if the data is ok, or seeking is required*/
+static struct fuse_fsm_event vrfy(struct fuse_fsm* fsm __attribute__((unused)),void *data){
+    struct fsm_readdir_data *dt = (struct fsm_readdir_data *)data;
+    // Still in the seek mode, when:
+    // - At least one file retrieved, means not the end of the directory yet
+    // - No files where pushed to the filler buffer
+    // 
+    if (!dt->dh->error && dt->filler.tried_cntr && !dt->filler.filled_cntr)  
+    {
+        dt->off += dt->filler.tried_cntr;
+        return FUSE_FSM_EVENT_SEEK;
+    }
+	return FUSE_FSM_EVENT_OK;
+}
+
+
 /*Error - report driver*/
 static struct fuse_fsm_event f3(struct fuse_fsm* fsm __attribute__((unused)),void *data){
     struct fsm_readdir_data *dt = (struct fsm_readdir_data *)data;
@@ -99,8 +106,6 @@ static struct fuse_fsm_event f3(struct fuse_fsm* fsm __attribute__((unused)),voi
     reply_err(dt->req, err);
 	return FUSE_FSM_EVENT_NONE;
 }
-
-
 
 static int readdir_fill_from_list(fuse_req_t req, struct fuse_dh *dh,
                                   off_t off, enum fuse_readdir_flags flags)
@@ -147,10 +152,10 @@ static int readdir_fill_from_list(fuse_req_t req, struct fuse_dh *dh,
 }
 FUSE_FSM_EVENTS(READDIR,FUSE_FSM_EVENT_OK,FUSE_FSM_EVENT_ERROR, FUSE_FSM_EVENT_SEEK_D)
 
-FUSE_FSM_STATES(READDIR,          "CREATED",      "RDIR"      ,   "DONE")
-FUSE_FSM_ENTRY(READDIR,/*ok*/   {"RDIR",f1},      {"DONE",f2} ,   FUSE_FSM_BAD)           
-FUSE_FSM_ENTRY(READDIR,/*error*/{"DONE",f3},      {"DONE",f3} ,   FUSE_FSM_BAD)           
-FUSE_FSM_LAST (READDIR,/*seek*/FUSE_FSM_BAD,      {"RDIR",f1} ,   FUSE_FSM_BAD)           
+FUSE_FSM_STATES(READDIR,          "CREATED",      "RDIR"         ,   "VRFY"     ,  "DONE")
+FUSE_FSM_ENTRY(READDIR,/*ok*/   {"RDIR",f1},      {"VRFY",vrfy}  ,{"DONE",f2}   ,  FUSE_FSM_BAD)
+FUSE_FSM_ENTRY(READDIR,/*error*/{"DONE",f3},      {"DONE",f3}    , FUSE_FSM_BAD ,  FUSE_FSM_BAD)
+FUSE_FSM_LAST (READDIR,/*seek*/FUSE_FSM_BAD,      {"RDIR",f1}    ,{"RDIR",f1}   ,  FUSE_FSM_BAD)
 
 static void fuse_readdir_common(fuse_req_t req, fuse_ino_t ino, size_t size,
 				off_t off, struct fuse_file_info *llfi,
